@@ -22,6 +22,11 @@ This file is the source of truth for commands. If a command here fails or is out
 - The repository is set up by hand before spec 01 (see "Before spec 01" in `Roadmap.md`).
 - The set-up specs (01–05) create the project with official generators and commands, so they involve almost no hand-written code.
 
+### Spec workflow
+
+- **Start:** before you write any code for a spec, set its status to In progress in the spec file. Update the status whenever it changes (Not started, In progress, or Done), and set it to Done only once every "Done when" item passes.
+- **Finish:** at the end of every implementation that adds or changes a screen, validate that screen with Playwright in the running app. Check the loading, empty, and error states, the layout at 375 pixels wide, and keyboard-only use. Fix anything that fails before you call the work done.
+
 ## Don't guess
 
 AI agents make most of their mistakes when they write code from memory. These rules prevent most of them:
@@ -264,7 +269,7 @@ This product handles bank data, so these rules are hard requirements.
   - backtest results, if forecasting changed
   - migration notes, if the database schema changed
   - screenshots, if the UI changed
-- **Spec status:** in the same pull request, update your spec's status (Not started, In progress, or Done) and tick off its "Done when" items.
+- **Spec status:** set it to In progress when you start (see "Spec workflow"). In the pull request, set it to Done and tick off its "Done when" items.
 
 ## Deployment
 
