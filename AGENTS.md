@@ -1,6 +1,6 @@
 # AGENTS.md
 
-Instructions for AI coding agents working in this repository. Humans should start with `project-overview.md` and `Roadmap.md`.
+Instructions for AI coding agents working in this repository. Humans should start with `context/project-overview.md` and `context/Roadmap.md`.
 
 ## Project overview
 
@@ -11,15 +11,15 @@ Headroom is a cash flow forecasting product for small businesses in Canada with 
 - names the payments that cause each drop
 - suggests fixes
 
-**Current stage: v1 for the first clients, specs 01–36** (see `Roadmap.md`). Build only what your spec calls for. The features in `specs/later/` wait until clients confirm.
+**Current stage: v1 for the first clients, specs 01–36** (see `context/Roadmap.md`). Build only what your spec calls for. The features in `context/specs/later/` wait until clients confirm.
 
 This file is the source of truth for commands. If a command here fails or is out of date, update the command or this file in the same change.
 
 ## How the work is organized
 
-- The work is a series of short specs in `specs/`, numbered in build order. Each spec is one small piece that can be finished and reviewed in a day or two.
-- A spec can start once every spec in its "Depends on" line is Done. Specs whose dependencies are all Done can be built at the same time, each in its own worktree.
-- The repository is set up by hand before spec 01 (see "Before spec 01" in `Roadmap.md`).
+- The work is a series of short specs in `context/specs/`, numbered in build order. Each spec is one small piece that can be finished and reviewed in a day or two.
+- A spec can start once every spec in its "Depends on" line is Done.
+- The repository is set up by hand before spec 01 (see "Before spec 01" in `context/Roadmap.md`).
 - The set-up specs (01–05) create the project with official generators and commands, so they involve almost no hand-written code.
 
 ### Spec workflow
@@ -44,30 +44,16 @@ AI agents make most of their mistakes when they write code from memory. These ru
 - **Stay small.** Change only what your spec needs. Don't refactor unrelated code.
 - **Prove it.** Every "Done when" item needs a passing test, or a check someone else can repeat.
 
-## Branches and worktrees
+## Branches
 
-- `main` is production. Never commit to it directly.
-- `development` collects finished specs and deploys to staging.
-- Each spec gets its own branch, `spec/NN-name`, in its own worktree created from `development`:
-
-```bash
-# From the main checkout
-git worktree add ../headroom-worktrees/12-bank-connect -b spec/12-bank-connect development
-
-# .env.local files aren't in git, so copy them into the new worktree
-cp services/core/.env.local ../headroom-worktrees/12-bank-connect/services/core/
-cp frontend/.env.local ../headroom-worktrees/12-bank-connect/frontend/
-```
-
-- Work only inside your own worktree, and keep it current with `git rebase development`.
-- When the spec's "Done when" items pass, open a pull request into `development`.
-- After the pull request merges, remove the worktree with `git worktree remove <path>`, then delete the branch.
+- `main` is production only. Never commit to it directly. It changes only through a pull request from `development`, and only when the user asks for a release.
+- `development` is the working branch. Build every spec on it, and it deploys to staging.
 
 ### Shared files
 
 - **Lockfiles** (`uv.lock` and `package-lock.json`): never resolve a conflict in them by hand. Take `development`'s version, then rerun `uv lock` or `npm install`.
 - **Generated files** (`contracts/openapi.json` and `frontend/lib/api/schema.d.ts`): regenerate them. Never edit them by hand.
-- **Design files** (`DESIGN.md` and `design/`): change them only in a separate pull request, on a branch named `design/<what-changes>`.
+- **Design files** (`context/DESIGN.md` and `design/`): change them only in a separate commit, and ask first.
 
 ## Repository layout
 
@@ -76,10 +62,13 @@ Once the set-up specs are done, the repository looks like this:
 ```text
 .
 ├── AGENTS.md
-├── DESIGN.md                   # The design system and writing guidelines
-├── Roadmap.md
-├── project-overview.md
-├── docker-compose.yml          # Local Postgres, shared by every worktree
+├── .claude/skills/             # Agent skills (the-judge, tlc-spec-lean)
+├── context/
+│   ├── DESIGN.md               # The design system and writing guidelines
+│   ├── Roadmap.md
+│   ├── project-overview.md
+│   └── specs/                  # v1 specs 01–36; specs/later/ holds the backlog
+├── docker-compose.yml          # Local Postgres
 ├── contracts/openapi.json      # Spec 09: generated from the API, never edited by hand
 ├── design/mockups/             # The source of every screen mockup
 ├── frontend/                   # Spec 01: created by create-next-app
@@ -101,7 +90,6 @@ Once the set-up specs are done, the repository looks like this:
 │   │   ├── migrations/         # Spec 03: Alembic
 │   │   └── tests/
 │   └── forecast-service/       # Later; not used in v1
-├── specs/                      # v1 specs 01–36; specs/later/ holds the backlog
 └── k8s/                        # Later; not used in v1
 ```
 
@@ -110,14 +98,11 @@ Once the set-up specs are done, the repository looks like this:
 After specs 01–03 are done:
 
 ```bash
-# Shared Postgres: run once, from any worktree
+# Local Postgres: run once. It creates the `headroom` database.
 docker compose up -d postgres
 
-# Your worktree's own database: run once per worktree, named after your spec number
-docker compose exec postgres createdb -U headroom headroom_12
-
 # API (from services/core)
-cp .env.example .env.local            # point DATABASE_URL at your database; use sandbox and test keys only
+cp .env.example .env.local            # point DATABASE_URL at the local database; use sandbox and test keys only
 uv sync
 uv run alembic upgrade head
 uv run fastapi dev app/main.py        # API docs at http://localhost:8000/docs
@@ -127,8 +112,6 @@ cp .env.example .env.local
 npm install
 npm run dev                           # http://localhost:3000
 ```
-
-If several worktrees run servers at the same time, give each one its own ports. For example, use `--port 8012` for the API and `npm run dev -- -p 3012` for the web app.
 
 Never put production credentials in a local environment file. Never commit any `.env*` file except `.env.example`.
 
@@ -150,7 +133,7 @@ Some changes need an extra step:
 
 - **Database model changed:** create a migration with `uv run alembic revision --autogenerate -m "short description"`. Then read the generated file and correct it before committing.
 - **API endpoint changed:** run `uv run python -m app.export_openapi` (from `services/core`), then `npm run api:types` (from `frontend`). Commit both generated files.
-- **Forecasting logic changed:** run the backtest from spec 22, and put the accuracy before and after your change in the pull request description.
+- **Forecasting logic changed:** run the backtest from spec 22, and put the accuracy before and after your change in the commit message.
 
 ## Architecture rules
 
@@ -222,7 +205,7 @@ This product handles bank data, so these rules are hard requirements.
 - Use Next.js with the App Router, and TypeScript in strict mode. Avoid `any`. If it's truly unavoidable, add a comment explaining why.
 - Pages load data in server components and make changes through server actions.
 - Every call to the API goes through the typed client in `lib/api/`. Never hand-write request types.
-- Follow `DESIGN.md` and the mockups in `design/mockups/`. Use only the tokens and the components in `components/ui/`. Never add new colors, fonts, or look-alike components. If something is missing, propose it in a `design/<what-changes>` pull request.
+- Follow `context/DESIGN.md` and the mockups in `design/mockups/`. Use only the tokens and the components in `components/ui/`. Never add new colors, fonts, or look-alike components. If something is missing, ask before adding it.
 - Money arrives as integer cents. Format it only with `lib/format.ts`.
 - All interface text comes from `messages/en.json`. Never hard-code text in components. v1 is English only; French comes later, with Quebec.
 - Every screen:
@@ -265,15 +248,13 @@ This product handles bank data, so these rules are hard requirements.
 - **Python:** add type hints to every function, use Pydantic models at API boundaries, and use ruff for formatting and linting. Every public function in a `service.py` gets a docstring.
 - **TypeScript:** name components in PascalCase, start hook names with `use`, and put one component in each file.
 - **Commit messages and pull request titles:** use Conventional Commits, with the module as the scope and the spec number at the end. For example: `feat(forecasting): detect recurring payments (spec 19)`.
-- **Pull requests:** target `development`, keep each one to a single spec, and link the spec. The description says what changed, why, and how it was tested. Also include:
-  - backtest results, if forecasting changed
-  - migration notes, if the database schema changed
-  - screenshots, if the UI changed
-- **Spec status:** set it to In progress when you start (see "Spec workflow"). In the pull request, set it to Done and tick off its "Done when" items.
+- **Commit bodies:** say what changed, why, and how it was tested. Also include backtest results if forecasting changed, and migration notes if the database schema changed.
+- **Pull requests:** only from `development` into `main`, for a production release, and only when the user asks. The description lists the specs included, what changed, and how it was tested, with screenshots if the UI changed.
+- **Spec status:** set it to In progress when you start (see "Spec workflow"). Set it to Done and tick off its "Done when" items once they all pass.
 
 ## Deployment
 
-- Railway deploys `development` to staging (spec 05) and `main` to production (spec 34). Nothing deploys from spec branches.
+- Railway deploys `development` to staging (spec 05) and `main` to production (spec 34). Nothing deploys from any other branch.
 - Migrations run automatically before each deploy.
 - The `jobs` service (spec 15) runs every hour, and must exit once its work is done.
 
@@ -281,9 +262,10 @@ This product handles bank data, so these rules are hard requirements.
 
 - Change files your spec doesn't need, or the shared design files.
 - Start a spec whose dependencies aren't Done, or build something no spec covers.
-- Build anything from `specs/later/`.
+- Build anything from `context/specs/later/`.
 - Change authentication, encryption, or access checks outside a spec that's about them.
-- Run migrations against any database other than your own worktree's.
+- Run migrations against any database other than the local one.
+- Create a worktree or a new branch. The user asks for one when they need it.
 - Guess. If a requirement, an API, or a command is unclear, stop and ask, or leave a comment starting with `TODO(question):` instead of inventing behavior.
 
 ## Glossary
@@ -297,7 +279,6 @@ This product handles bank data, so these rules are hard requirements.
 - **Included account:** a checking or savings account the owner counts as cash. Cash on hand is the total of the included accounts.
 - **Internal transfer:** money moving between two of the business's own accounts. It's never counted as income or spending.
 - **Generated file:** a file produced by a tool, such as `contracts/openapi.json`. Regenerate it; never edit it by hand.
-- **Worktree:** a separate working folder for one branch, created with `git worktree add`, so that several specs can be built at the same time.
 - **Account shortfall (later):** one account is projected to go below $0, even though the business's combined balance is fine.
 - **Firm (later):** an accounting or bookkeeping practice that manages several client businesses.
 

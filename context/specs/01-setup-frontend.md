@@ -11,14 +11,14 @@ Create the Next.js app with the official generators, so none of its starting cod
 ## Steps
 
 ```bash
-# From the repository root, on branch spec/01-setup-frontend
+# From the repository root, on branch development
 npx create-next-app@latest frontend --yes --tailwind --eslint --app --no-src-dir --use-npm
 cd frontend
 npx shadcn@latest init
 npm run dev        # http://localhost:3000 shows the starter page
 ```
 
-- create-next-app also creates `frontend/AGENTS.md`. Keep it, and add this line at the top: "Also follow the root `AGENTS.md` and `DESIGN.md`."
+- create-next-app also creates `frontend/AGENTS.md`. Keep it, and add this line at the top: "Also follow the root `AGENTS.md` and `context/DESIGN.md`."
 - Commit exactly what the generators produced. Don't change any other generated file in this spec.
 
 **Docs:** [create-next-app](https://nextjs.org/docs/app/api-reference/cli/create-next-app), [shadcn/ui for Next.js](https://ui.shadcn.com/docs/installation/next)

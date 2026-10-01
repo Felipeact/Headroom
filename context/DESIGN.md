@@ -2,7 +2,7 @@
 
 The design system and writing guidelines for Headroom's web app and emails. Every spec that touches the web app or emails builds against this file and the mockups in `design/mockups/`.
 
-Like the contracts, this file is shared. Change it only in its own pull request, on a branch named `design/<what-changes>`.
+Like the contracts, this file is shared. Change it only in its own commit, and only after asking.
 
 The live mockups are on the Headroom mockups canvas. `design/mockups/` holds a copy of every artboard's source, which shows the exact layout, sizes, and colors. To add pictures of the screens to the repository, export them from the canvas.
 

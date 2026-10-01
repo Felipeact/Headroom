@@ -10,15 +10,16 @@ This file says **when** things happen. The specs in [`specs/`](specs/) say **wha
 
 - **Specs 01–05 set the project up** with official generators and commands, so almost nothing is written by hand.
 - **Every later spec is short:** one piece of the product, finished and reviewed in a day or two.
-- **A spec starts when its dependencies are done.** Specs whose dependencies are all done can be built at the same time, each in its own worktree.
+- **A spec starts when its dependencies are done.** Specs are built one at a time on the `development` branch.
 
 ## Before spec 01
 
 You set up the repository yourself. The specs assume it already has:
 
-- a `main` branch and a `development` branch, both protected so changes arrive through pull requests
+- a `main` branch for production, protected so changes arrive only through pull requests from `development`
+- a `development` branch, where the work happens
 - a root `.gitignore` that excludes `.env*` files, except `.env.example`
-- these documents committed: `AGENTS.md`, `DESIGN.md`, `Roadmap.md`, `project-overview.md`, `docker-compose.yml`, `specs/`, and `design/`
+- these documents committed: `AGENTS.md`, `context/DESIGN.md`, `context/Roadmap.md`, `context/project-overview.md`, `context/specs/`, `docker-compose.yml`, and `design/`
 
 ## v1: first clients (about 3–4 months)
 
@@ -134,7 +135,7 @@ Build from [`specs/later/`](specs/later/README.md), in its priority order, start
 | Validation | No separate validation phase; the paid pilot is the real test | Start building right away |
 | Set-up | Official generators: create-next-app, shadcn/ui, uv, and Alembic | Generated code is accurate; boilerplate written from memory often isn't |
 | Spec size | Short specs, one piece each, built in dependency order | Small changes are easier to get right and to review |
-| Workflow | A `development` branch, with one git worktree per spec | Specs whose dependencies are done can be built at the same time |
+| Workflow | Work on the `development` branch; `main` is production only | One branch keeps the work simple; `main` changes only for a release |
 | Tech stack | Next.js, FastAPI, and PostgreSQL | Python's data libraries for the forecast, and Next.js for the web app |
 | Hosting | Railway, in its US East region | Simple and cheap while the idea is being proven. Railway has no Canadian region |
 | Data location | Stored in the United States, and disclosed in the privacy policy | Canadian privacy law allows this when customers are told and the data is protected; the lawyer confirms it |

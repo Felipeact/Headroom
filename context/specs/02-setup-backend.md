@@ -11,7 +11,7 @@ Create the FastAPI project with uv, using only official packages, plus a single 
 ## Steps
 
 ```bash
-# From the repository root, on branch spec/02-setup-backend
+# From the repository root, on branch development
 uv init --app --python 3.12 services/core
 cd services/core
 uv add "fastapi[standard]" sqlalchemy "psycopg[binary]" alembic pydantic-settings
