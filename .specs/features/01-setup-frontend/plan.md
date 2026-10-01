@@ -18,7 +18,7 @@ generated `frontend/AGENTS.md`.
 
 0. hand edit - root `.gitignore` excluding `.env*` except `.env.example`, the missing "Before spec 01" prerequisite (user: "generate all files necessary")
 1. `npx create-next-app@16.3.8 frontend --yes --tailwind --eslint --app --no-src-dir --use-npm` (door 1) - creates `frontend/` with `app/`, `package.json`, `package-lock.json`, `.gitignore`, `AGENTS.md`, `CLAUDE.md`; skips `git init` because the root is already a repository
-2. `npx shadcn@4.21.1 init` in `frontend/` (door 2) - writes `components.json`, `lib/utils.ts`, `components/ui/button.tsx`, the theme variables in `app/globals.css`, the preset font in `app/layout.tsx`, and its dependencies
+2. `npx shadcn@4.21.1 init` in `frontend/` (door 2) - writes `components.json`, `lib/utils.ts`, `components/ui/button.tsx`, the theme variables in `app/globals.css`, and its dependencies (`app/layout.tsx` is left as create-next-app wrote it)
 3. hand edit - prepend one line to `frontend/AGENTS.md` (created by door 1)
 4. out: `npm run dev` serves the starter page on `http://localhost:3000`; `npm run build` produces `.next/`
 
