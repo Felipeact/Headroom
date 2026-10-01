@@ -1,7 +1,7 @@
 # Spec 02: Backend scaffold
 
 - **Milestone:** 1, set-up
-- **Status:** Not started
+- **Status:** Done
 - **Depends on:** nothing. The repository is already set up (can run alongside 01)
 
 ## Goal
@@ -31,5 +31,5 @@ uv run pytest
 
 ## Done when
 
-- [ ] `uv run pytest`, `uv run ruff check .`, and `uv run mypy app` all pass.
-- [ ] `/docs` shows the health endpoint.
+- [x] `uv run pytest`, `uv run ruff check .`, and `uv run mypy app` all pass.
+- [x] `/docs` shows the health endpoint.
