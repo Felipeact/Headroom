@@ -1,7 +1,7 @@
 # Spec 01: Frontend scaffold
 
 - **Milestone:** 1, set-up
-- **Status:** Not started
+- **Status:** In progress
 - **Depends on:** nothing. The repository is already set up (can run alongside 02)
 
 ## Goal
