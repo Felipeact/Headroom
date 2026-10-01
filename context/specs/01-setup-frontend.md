@@ -1,7 +1,7 @@
 # Spec 01: Frontend scaffold
 
 - **Milestone:** 1, set-up
-- **Status:** In progress
+- **Status:** Done
 - **Depends on:** nothing. The repository is already set up (can run alongside 02)
 
 ## Goal
@@ -25,5 +25,5 @@ npm run dev        # http://localhost:3000 shows the starter page
 
 ## Done when
 
-- [ ] `npm run dev` serves the starter page, and `npm run build` succeeds.
-- [ ] `components.json` exists, and no generated file was edited except `frontend/AGENTS.md`.
+- [x] `npm run dev` serves the starter page, and `npm run build` succeeds.
+- [x] `components.json` exists, and no generated file was edited except `frontend/AGENTS.md`.

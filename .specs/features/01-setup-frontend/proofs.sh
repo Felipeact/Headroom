@@ -46,7 +46,11 @@ c6() {
     || fail "components.json or radix base wrong"
 }
 
-c7() { grep -Eq '^export function cn\(' "$FE/lib/utils.ts" || fail "lib/utils.ts does not export cn"; }
+c7() {
+  grep -Eq '^export (function cn\(|\{ cn \} from )' "$FE/lib/utils.ts" || fail "lib/utils.ts does not export cn"
+  node -e 'const p=require(process.argv[1]); if(!p.dependencies.cn) process.exit(1)' "$FE/package.json" \
+    || fail "package.json does not depend on cn"
+}
 
 c8() {
   local first

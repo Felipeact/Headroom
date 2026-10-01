@@ -32,7 +32,7 @@ Proof: `bash .specs/features/01-setup-frontend/proofs.sh c5`
 **C6** - `frontend/components.json` has `rsc` `true`, `tsx` `true`, `tailwind.cssVariables` `true`, `style` `radix-nova`, and `frontend/package.json` depends on `radix-ui` (AC 6, door 2)
 Proof: `bash .specs/features/01-setup-frontend/proofs.sh c6`
 
-**C7** - `frontend/lib/utils.ts` contains `export function cn(` (AC 7)
+**C7** - `frontend/lib/utils.ts` exports `cn` and `frontend/package.json` depends on `cn` (AC 7; revised with user approval 2026-10-01 - shadcn 4.21.1 generates `export { cn } from "cn"`, not `export function cn(`)
 Proof: `bash .specs/features/01-setup-frontend/proofs.sh c7`
 
 ### S3 - Generated output stays unedited · 2 hand-edited files · ~1k
