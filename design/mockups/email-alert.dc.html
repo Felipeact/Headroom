@@ -1,0 +1,47 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Alert email</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<style>
+body{margin:0;background:#F5F3EE;color:#16202B;font-family:-apple-system,'Segoe UI',Helvetica,sans-serif}
+a{color:#1D4E89}a:hover{color:#133A68}
+</style>
+</helmet>
+<div style="width: 600px; height: 1000px; box-sizing: border-box; padding: 24px; background: #F5F3EE; color: #16202B; font-family: -apple-system, 'Segoe UI', Helvetica, sans-serif; display: flex; flex-direction: column">
+<div style="background: #FFFFFF; border: 1px solid #E2DDD3; border-radius: 12px; padding: 32px; display: flex; flex-direction: column; gap: 20px">
+<div style="font-family: Georgia, serif; font-size: 22px; font-weight: 700">Headroom</div>
+<div style="font-size: 12px; font-weight: 700; letter-spacing: 0.06em; text-transform: uppercase; color: #7A4300">Cash gap</div>
+<h1 style="margin: 0; font-family: Georgia, serif; font-size: 26px; font-weight: 700; line-height: 1.3">Cash falls below your $5,000 minimum the week of Nov 9</h1>
+<p style="margin: 0; font-size: 16px; line-height: 1.55">Hi Dana, the forecast for Harbor Street Plumbing shows cash dropping to <strong>$3,150</strong> in the week of Nov 9.</p>
+<div style="display: flex; flex-direction: column; gap: 6px">
+<div style="font-size: 15px; font-weight: 700">What's causing it</div>
+<ul style="margin: 0; padding-left: 20px; font-size: 15px; line-height: 1.7">
+<li>Coastal Supply Co, $14,500, on Thu, Nov 12</li>
+<li>Payroll, $11,200, on Fri, Nov 13</li>
+</ul>
+</div>
+<div style="background: #FFF4E2; border: 1px solid #F0D3A4; border-radius: 10px; padding: 16px; font-size: 15px; line-height: 1.5; color: #3D2E1C"><strong>Top fix:</strong> ask Birch &amp; Co to pay their $9,600 invoice a week early. That keeps you above your minimum.</div>
+<a href="#" style="align-self: flex-start; padding: 14px 22px; border-radius: 10px; background: {{accent}}; color: #FFFFFF; font-size: 16px; font-weight: 700; text-decoration: none">See all 3 fixes</a>
+</div>
+<footer style="padding: 20px 8px 0; font-size: 13px; line-height: 1.6; color: #5A6370">
+<p style="margin: 0 0 8px">You're getting this email because you're an owner of Harbor Street Plumbing on Headroom.</p>
+<p style="margin: 0 0 8px"><a href="#">Email preferences</a> · <a href="#">Unsubscribe</a></p>
+<p style="margin: 0">Headroom · [MAILING ADDRESS]</p>
+</footer>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"accent":{"editor":"color","default":"#1D4E89","options":["#1D4E89","#0F5C5A","#4B3A8C","#16202B"]},"$preview":{"width":600,"height":1000}}'>
+class Component extends DCLogic {
+  renderVals() {
+    return { accent: this.props.accent ?? '#1D4E89' };
+  }
+}
+</script>
+</body>
+</html>

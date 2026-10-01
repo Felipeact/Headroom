@@ -1,0 +1,192 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Headroom components and states</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,500;9..144,600&amp;family=IBM+Plex+Sans:wght@400;500;600&amp;display=swap">
+<style>
+body{margin:0;background:#F5F3EE;color:#16202B;font-family:'IBM Plex Sans','Segoe UI',system-ui,sans-serif}
+a{color:#1D4E89}a:hover{color:#133A68}
+button,input,select{font-family:inherit}
+button{cursor:pointer}
+</style>
+</helmet>
+<div style="width: 1440px; height: 2250px; box-sizing: border-box; padding: 48px; background: #F5F3EE; color: #16202B; font-family: 'IBM Plex Sans', 'Segoe UI', system-ui, sans-serif; display: flex; flex-direction: column; gap: 40px">
+
+<div style="display: flex; flex-direction: column; gap: 6px">
+<h1 style="margin: 0; font-family: Fraunces, Georgia, serif; font-size: 40px; font-weight: 600; letter-spacing: -0.02em">Components and states</h1>
+<p style="margin: 0; font-size: 15px; color: #454F5C">Build every screen from these. The tokens and rules are in DESIGN.md.</p>
+</div>
+
+<section aria-labelledby="c-colors" style="display: flex; flex-direction: column; gap: 16px">
+<h2 id="c-colors" style="margin: 0; font-size: 20px; font-weight: 600">Colors</h2>
+<div style="display: grid; grid-template-columns: repeat(7, minmax(0, 1fr)); gap: 20px 16px">
+<div style="display: flex; flex-direction: column; gap: 6px"><div style="height: 64px; border-radius: 10px; background: #F5F3EE; border: 1px solid #E2DDD3"></div><div style="font-size: 14px; font-weight: 600">Background</div><div style="font-size: 13px; color: #5A6370">--bg · #F5F3EE</div></div>
+<div style="display: flex; flex-direction: column; gap: 6px"><div style="height: 64px; border-radius: 10px; background: #FFFFFF; border: 1px solid #E2DDD3"></div><div style="font-size: 14px; font-weight: 600">Surface</div><div style="font-size: 13px; color: #5A6370">--surface · #FFFFFF</div></div>
+<div style="display: flex; flex-direction: column; gap: 6px"><div style="height: 64px; border-radius: 10px; background: #F1EEE7; border: 1px solid #E2DDD3"></div><div style="font-size: 14px; font-weight: 600">Surface muted</div><div style="font-size: 13px; color: #5A6370">--surface-muted · #F1EEE7</div></div>
+<div style="display: flex; flex-direction: column; gap: 6px"><div style="height: 64px; border-radius: 10px; background: #E2DDD3"></div><div style="font-size: 14px; font-weight: 600">Border</div><div style="font-size: 13px; color: #5A6370">--border · #E2DDD3</div></div>
+<div style="display: flex; flex-direction: column; gap: 6px"><div style="height: 64px; border-radius: 10px; background: #16202B"></div><div style="font-size: 14px; font-weight: 600">Ink</div><div style="font-size: 13px; color: #5A6370">--ink · #16202B</div></div>
+<div style="display: flex; flex-direction: column; gap: 6px"><div style="height: 64px; border-radius: 10px; background: #454F5C"></div><div style="font-size: 14px; font-weight: 600">Ink 2</div><div style="font-size: 13px; color: #5A6370">--ink-2 · #454F5C</div></div>
+<div style="display: flex; flex-direction: column; gap: 6px"><div style="height: 64px; border-radius: 10px; background: #5A6370"></div><div style="font-size: 14px; font-weight: 600">Ink 3</div><div style="font-size: 13px; color: #5A6370">--ink-3 · #5A6370</div></div>
+<div style="display: flex; flex-direction: column; gap: 6px"><div style="height: 64px; border-radius: 10px; background: #1D4E89"></div><div style="font-size: 14px; font-weight: 600">Accent</div><div style="font-size: 13px; color: #5A6370">--accent · #1D4E89</div></div>
+<div style="display: flex; flex-direction: column; gap: 6px"><div style="height: 64px; border-radius: 10px; background: #1E6B45"></div><div style="font-size: 14px; font-weight: 600">Positive</div><div style="font-size: 13px; color: #5A6370">--positive · #1E6B45</div></div>
+<div style="display: flex; flex-direction: column; gap: 6px"><div style="height: 64px; border-radius: 10px; background: #FFF4E2; border: 1px solid #F0D3A4"></div><div style="font-size: 14px; font-weight: 600">Warning background</div><div style="font-size: 13px; color: #5A6370">--warning-bg · #FFF4E2</div></div>
+<div style="display: flex; flex-direction: column; gap: 6px"><div style="height: 64px; border-radius: 10px; background: #7A4300"></div><div style="font-size: 14px; font-weight: 600">Warning text</div><div style="font-size: 13px; color: #5A6370">--warning-text · #7A4300</div></div>
+<div style="display: flex; flex-direction: column; gap: 6px"><div style="height: 64px; border-radius: 10px; background: #B26B00"></div><div style="font-size: 14px; font-weight: 600">Warning line</div><div style="font-size: 13px; color: #5A6370">--warning-line · #B26B00</div></div>
+<div style="display: flex; flex-direction: column; gap: 6px"><div style="height: 64px; border-radius: 10px; background: #FCEDEB; border: 1px solid #EFC7C2"></div><div style="font-size: 14px; font-weight: 600">Danger background</div><div style="font-size: 13px; color: #5A6370">--danger-bg · #FCEDEB</div></div>
+<div style="display: flex; flex-direction: column; gap: 6px"><div style="height: 64px; border-radius: 10px; background: #8E1B1B"></div><div style="font-size: 14px; font-weight: 600">Danger text</div><div style="font-size: 13px; color: #5A6370">--danger-text · #8E1B1B</div></div>
+</div>
+</section>
+
+<section aria-labelledby="c-type" style="display: flex; flex-direction: column; gap: 16px">
+<h2 id="c-type" style="margin: 0; font-size: 20px; font-weight: 600">Type</h2>
+<div style="background: #FFFFFF; border: 1px solid #E2DDD3; border-radius: 14px; padding: 8px 24px; display: flex; flex-direction: column">
+<div style="display: flex; align-items: baseline; gap: 24px; padding: 14px 0; border-bottom: 1px solid #F1EEE7"><div style="width: 220px; flex-shrink: 0; font-size: 13px; color: #5A6370">Display · Fraunces 40 / 600</div><div style="font-family: Fraunces, Georgia, serif; font-size: 40px; font-weight: 600; letter-spacing: -0.02em">Cash flow</div></div>
+<div style="display: flex; align-items: baseline; gap: 24px; padding: 14px 0; border-bottom: 1px solid #F1EEE7"><div style="width: 220px; flex-shrink: 0; font-size: 13px; color: #5A6370">Figure · Fraunces 36 / 600</div><div style="font-family: Fraunces, Georgia, serif; font-size: 36px; font-weight: 600; letter-spacing: -0.02em; font-variant-numeric: lining-nums tabular-nums">$42,300</div></div>
+<div style="display: flex; align-items: baseline; gap: 24px; padding: 14px 0; border-bottom: 1px solid #F1EEE7"><div style="width: 220px; flex-shrink: 0; font-size: 13px; color: #5A6370">Title · Plex Sans 19 / 600</div><div style="font-size: 19px; font-weight: 600">Cash falls below your $5,000 minimum the week of Nov 9</div></div>
+<div style="display: flex; align-items: baseline; gap: 24px; padding: 14px 0; border-bottom: 1px solid #F1EEE7"><div style="width: 220px; flex-shrink: 0; font-size: 13px; color: #5A6370">Section · Plex Sans 18 / 600</div><div style="font-size: 18px; font-weight: 600">13-week forecast</div></div>
+<div style="display: flex; align-items: baseline; gap: 24px; padding: 14px 0; border-bottom: 1px solid #F1EEE7"><div style="width: 220px; flex-shrink: 0; font-size: 13px; color: #5A6370">Body · Plex Sans 15 / 400</div><div style="font-size: 15px">Payroll of $11,200 leaves Operating checking on Friday, Oct 2.</div></div>
+<div style="display: flex; align-items: baseline; gap: 24px; padding: 14px 0; border-bottom: 1px solid #F1EEE7"><div style="width: 220px; flex-shrink: 0; font-size: 13px; color: #5A6370">Caption · Plex Sans 13 / 400</div><div style="font-size: 13px; color: #5A6370">Updated today at 6:02 AM</div></div>
+<div style="display: flex; align-items: baseline; gap: 24px; padding: 14px 0"><div style="width: 220px; flex-shrink: 0; font-size: 13px; color: #5A6370">Eyebrow · Plex Sans 12 / 600</div><div style="font-size: 12px; font-weight: 600; letter-spacing: 0.06em; text-transform: uppercase; color: #7A4300">Cash gap</div></div>
+</div>
+</section>
+
+<section aria-labelledby="c-buttons" style="display: flex; flex-direction: column; gap: 16px">
+<h2 id="c-buttons" style="margin: 0; font-size: 20px; font-weight: 600">Buttons</h2>
+<div style="display: flex; flex-wrap: wrap; align-items: center; gap: 12px">
+<button type="button" style="min-height: 44px; padding: 0 18px; border: none; border-radius: 10px; background: {{accent}}; color: #FFFFFF; font-size: 15px; font-weight: 600">Primary: Add expected payment</button>
+<button type="button" style="min-height: 44px; padding: 0 18px; border: 1px solid #D9CFC8; border-radius: 10px; background: #FFFFFF; color: #16202B; font-size: 15px; font-weight: 500">Secondary: Dismiss</button>
+<button type="button" style="min-height: 44px; padding: 0 18px; border: 1px solid #16202B; border-radius: 10px; background: #FFFFFF; color: #16202B; font-size: 15px; font-weight: 600">Outline: See all fixes</button>
+<a href="#" style="display: flex; align-items: center; min-height: 44px; padding: 0 6px; font-size: 15px; font-weight: 500">Text link: Manage</a>
+<button type="button" style="min-height: 44px; padding: 0 18px; border: 1px solid #EFC7C2; border-radius: 10px; background: #FFFFFF; color: #8E1B1B; font-size: 15px; font-weight: 500">Destructive: Disconnect</button>
+<button type="button" aria-disabled="true" style="min-height: 44px; padding: 0 18px; border: none; border-radius: 10px; background: #E9E5DC; color: #5A6370; font-size: 15px; font-weight: 600; cursor: not-allowed">Disabled: Continue</button>
+</div>
+</section>
+
+<section aria-labelledby="c-forms" style="display: flex; flex-direction: column; gap: 16px">
+<h2 id="c-forms" style="margin: 0; font-size: 20px; font-weight: 600">Form controls</h2>
+<div style="display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 24px; background: #FFFFFF; border: 1px solid #E2DDD3; border-radius: 14px; padding: 24px">
+<div style="display: flex; flex-direction: column; gap: 6px">
+<label for="f-name" style="font-size: 14px; font-weight: 600">Business name</label>
+<input id="f-name" type="text" value="Harbor Street Plumbing" style="box-sizing: border-box; width: 100%; height: 48px; padding: 0 14px; border: 1px solid #D6D0C4; border-radius: 10px; background: #FFFFFF; color: #16202B; font-size: 16px">
+<div style="font-size: 13px; color: #5A6370">Hint text sits under the field.</div>
+</div>
+<div style="display: flex; flex-direction: column; gap: 6px">
+<label for="f-amount" style="font-size: 14px; font-weight: 600">Amount</label>
+<div style="position: relative">
+<span aria-hidden="true" style="position: absolute; left: 14px; top: 13px; font-size: 16px; font-weight: 600; color: #454F5C">$</span>
+<input id="f-amount" type="text" value="0" aria-invalid="true" aria-describedby="f-amount-error" style="box-sizing: border-box; width: 100%; height: 48px; padding: 0 14px 0 28px; border: 2px solid #8E1B1B; border-radius: 10px; background: #FFFFFF; color: #16202B; font-size: 16px">
+</div>
+<div id="f-amount-error" style="display: flex; align-items: center; gap: 6px; font-size: 13px; color: #8E1B1B">
+<svg width="14" height="14" viewBox="0 0 24 24" aria-hidden="true" style="fill: none; stroke: #8E1B1B; stroke-width: 2.2px; stroke-linecap: round"><circle cx="12" cy="12" r="9"></circle><path d="M12 7.5v5.5"></path><path d="M12 16.5h.01"></path></svg>
+Enter an amount greater than $0.
+</div>
+</div>
+<div style="display: flex; flex-direction: column; gap: 6px">
+<label for="f-province" style="font-size: 14px; font-weight: 600">Province or territory</label>
+<select id="f-province" style="box-sizing: border-box; width: 100%; height: 48px; padding: 0 12px; border: 1px solid #D6D0C4; border-radius: 10px; background: #FFFFFF; color: #16202B; font-size: 16px"><option>Ontario</option></select>
+</div>
+<div style="display: flex; flex-direction: column; gap: 4px">
+<div style="font-size: 14px; font-weight: 600">Switch</div>
+<div style="display: flex; align-items: center; justify-content: space-between; min-height: 44px">
+<span style="font-size: 14px">Counts as cash (on)</span>
+<button type="button" role="switch" aria-checked="true" aria-label="Counts as cash" style="display: flex; align-items: center; justify-content: flex-end; width: 56px; height: 44px; padding: 0; border: none; background: transparent"><span style="position: relative; display: block; width: 46px; height: 26px; border-radius: 13px; background: {{accent}}"><span style="position: absolute; top: 3px; left: 23px; width: 20px; height: 20px; border-radius: 10px; background: #FFFFFF"></span></span></button>
+</div>
+<div style="display: flex; align-items: center; justify-content: space-between; min-height: 44px">
+<span style="font-size: 14px">Counts as cash (off)</span>
+<button type="button" role="switch" aria-checked="false" aria-label="Counts as cash" style="display: flex; align-items: center; justify-content: flex-end; width: 56px; height: 44px; padding: 0; border: none; background: transparent"><span style="position: relative; display: block; width: 46px; height: 26px; border-radius: 13px; background: #C9C2B5"><span style="position: absolute; top: 3px; left: 3px; width: 20px; height: 20px; border-radius: 10px; background: #FFFFFF"></span></span></button>
+</div>
+</div>
+<div style="display: flex; flex-direction: column; gap: 4px">
+<div style="font-size: 14px; font-weight: 600">Radio</div>
+<label style="display: flex; align-items: center; gap: 10px; min-height: 44px; font-size: 14px"><input type="radio" name="c-primary" checked="checked" style="width: 20px; height: 20px; margin: 0; accent-color: {{accent}}">Primary account</label>
+<label style="display: flex; align-items: center; gap: 10px; min-height: 44px; font-size: 14px"><input type="radio" name="c-primary" style="width: 20px; height: 20px; margin: 0; accent-color: {{accent}}">Make primary</label>
+</div>
+<div style="display: flex; flex-direction: column; gap: 6px">
+<div style="font-size: 14px; font-weight: 600">Segmented control</div>
+<div role="group" aria-label="Direction" style="display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 4px; padding: 4px; background: #F1EEE7; border-radius: 12px">
+<button type="button" aria-pressed="true" style="min-height: 44px; border: none; border-radius: 9px; background: #FFFFFF; color: #16202B; font-size: 14px; font-weight: 600; box-shadow: 0 1px 2px rgba(22, 32, 43, 0.14)">Money out</button>
+<button type="button" aria-pressed="false" style="min-height: 44px; border: none; border-radius: 9px; background: transparent; color: #454F5C; font-size: 14px; font-weight: 500">Money in</button>
+</div>
+</div>
+</div>
+</section>
+
+<section aria-labelledby="c-badges" style="display: flex; flex-direction: column; gap: 16px">
+<h2 id="c-badges" style="margin: 0; font-size: 20px; font-weight: 600">Badges</h2>
+<div style="display: flex; flex-wrap: wrap; align-items: center; gap: 12px">
+<span style="font-size: 11px; font-weight: 600; letter-spacing: 0.04em; text-transform: uppercase; padding: 3px 8px; border-radius: 6px; background: #FFFFFF; border: 1px solid #E2DDD3; color: #454F5C">Primary</span>
+<span style="font-size: 12px; font-weight: 500; padding: 3px 8px; border-radius: 6px; background: #F1EEE7; color: #454F5C">Recurring</span>
+<span style="font-size: 12px; font-weight: 500; padding: 3px 8px; border-radius: 6px; background: #F1EEE7; color: #454F5C">Expected</span>
+<span style="font-size: 12px; font-weight: 500; padding: 3px 8px; border-radius: 6px; background: #EAF4EE; color: #1E6B45">Synced</span>
+<span style="font-size: 12px; font-weight: 500; padding: 3px 8px; border-radius: 6px; background: #FFF4E2; color: #7A4300">Needs attention</span>
+<span style="font-size: 12px; font-weight: 600; padding: 3px 8px; border-radius: 6px; background: #8E1B1B; color: #FFFFFF">Overdraws Operating</span>
+</div>
+</section>
+
+<section aria-labelledby="c-alerts" style="display: flex; flex-direction: column; gap: 16px">
+<h2 id="c-alerts" style="margin: 0; font-size: 20px; font-weight: 600">Alert cards</h2>
+<div style="display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 20px">
+<div style="background: #FFF4E2; border: 1px solid #F0D3A4; border-radius: 14px; padding: 20px 22px; display: flex; flex-direction: column; gap: 8px">
+<div style="font-size: 12px; font-weight: 600; letter-spacing: 0.06em; text-transform: uppercase; color: #7A4300">Cash gap · warning</div>
+<div style="font-size: 17px; font-weight: 600; color: #4F2C00">Cash falls below your $5,000 minimum the week of Nov 9</div>
+<div style="font-size: 14px; line-height: 1.5; color: #3D2E1C">Used when the combined balance is forecast to drop below the minimum.</div>
+</div>
+<div style="background: #FCEDEB; border: 1px solid #EFC7C2; border-radius: 14px; padding: 20px 22px; display: flex; flex-direction: column; gap: 8px">
+<div style="font-size: 12px; font-weight: 600; letter-spacing: 0.06em; text-transform: uppercase; color: #8E1B1B">Account shortfall · danger (later)</div>
+<div style="font-size: 17px; font-weight: 600; color: #5E1111">Operating checking will be overdrawn on Friday, Oct 2</div>
+<div style="font-size: 14px; line-height: 1.5; color: #3F2A2A">Used when one account runs short while the total is fine.</div>
+</div>
+</div>
+</section>
+
+<section aria-labelledby="c-states" style="display: flex; flex-direction: column; gap: 16px">
+<h2 id="c-states" style="margin: 0; font-size: 20px; font-weight: 600">States</h2>
+<div style="display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 20px">
+<div style="background: #FFFFFF; border: 1px solid #E2DDD3; border-radius: 14px; padding: 22px; display: flex; flex-direction: column; gap: 12px">
+<div style="font-size: 12px; font-weight: 600; letter-spacing: 0.06em; text-transform: uppercase; color: #5A6370">Loading</div>
+<div aria-hidden="true" style="width: 40%; height: 14px; border-radius: 6px; background: #ECE8E0"></div>
+<div aria-hidden="true" style="width: 70%; height: 32px; border-radius: 8px; background: #ECE8E0"></div>
+<div aria-hidden="true" style="width: 55%; height: 12px; border-radius: 6px; background: #ECE8E0"></div>
+<div aria-hidden="true" style="width: 100%; height: 90px; border-radius: 10px; background: #F1EEE7"></div>
+</div>
+<div style="background: #FFFFFF; border: 1px solid #E2DDD3; border-radius: 14px; padding: 22px; display: flex; flex-direction: column; align-items: flex-start; gap: 12px">
+<div style="font-size: 12px; font-weight: 600; letter-spacing: 0.06em; text-transform: uppercase; color: #5A6370">Empty</div>
+<svg width="28" height="28" viewBox="0 0 24 24" aria-hidden="true" style="fill: none; stroke: #454F5C; stroke-width: 1.6px; stroke-linecap: round; stroke-linejoin: round"><path d="M3 10h18"></path><path d="M12 3.5 20 8H4z"></path><path d="M6 10v7"></path><path d="M10 10v7"></path><path d="M14 10v7"></path><path d="M18 10v7"></path><path d="M4 20h16"></path></svg>
+<div style="font-size: 17px; font-weight: 600">No bank connected yet</div>
+<div style="font-size: 14px; line-height: 1.5; color: #454F5C">Connect your bank to see your 13-week forecast.</div>
+<button type="button" style="min-height: 44px; padding: 0 18px; border: none; border-radius: 10px; background: {{accent}}; color: #FFFFFF; font-size: 15px; font-weight: 600">Connect your bank</button>
+</div>
+<div style="background: #FFFFFF; border: 1px solid #E2DDD3; border-radius: 14px; padding: 22px; display: flex; flex-direction: column; align-items: flex-start; gap: 12px">
+<div style="font-size: 12px; font-weight: 600; letter-spacing: 0.06em; text-transform: uppercase; color: #5A6370">Error</div>
+<svg width="28" height="28" viewBox="0 0 24 24" aria-hidden="true" style="fill: none; stroke: #8E1B1B; stroke-width: 1.6px; stroke-linecap: round"><circle cx="12" cy="12" r="9"></circle><path d="M12 7.5v5.5"></path><path d="M12 16.5h.01"></path></svg>
+<div style="font-size: 17px; font-weight: 600">We couldn't load your forecast</div>
+<div style="font-size: 14px; line-height: 1.5; color: #454F5C">Check your connection and try again.</div>
+<button type="button" style="min-height: 44px; padding: 0 18px; border: 1px solid #D9CFC8; border-radius: 10px; background: #FFFFFF; color: #16202B; font-size: 15px; font-weight: 500">Try again</button>
+</div>
+</div>
+<div style="display: flex; align-items: center; justify-content: space-between; gap: 16px; background: #FFF4E2; border: 1px solid #F0D3A4; border-radius: 12px; padding: 12px 16px">
+<div style="display: flex; align-items: center; gap: 10px; font-size: 14px; color: #4F2C00">
+<svg width="20" height="20" viewBox="0 0 24 24" aria-hidden="true" style="flex-shrink: 0; fill: none; stroke: #8A4B00; stroke-width: 1.8px; stroke-linecap: round; stroke-linejoin: round"><path d="M10.3 4.2 2.8 17.3A2 2 0 0 0 4.5 20.3h15a2 2 0 0 0 1.7-3L13.7 4.2a2 2 0 0 0-3.4 0z"></path><path d="M12 9.5v4"></path><path d="M12 17h.01"></path></svg>
+<span><strong style="font-weight: 600">Partial:</strong> Summit Federal needs attention, so your forecast is missing its latest data.</span>
+</div>
+<button type="button" style="flex-shrink: 0; min-height: 44px; padding: 0 16px; border: 1px solid #16202B; border-radius: 10px; background: #FFFFFF; color: #16202B; font-size: 14px; font-weight: 600">Reconnect</button>
+</div>
+</section>
+
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"accent":{"editor":"color","default":"#1D4E89","options":["#1D4E89","#0F5C5A","#4B3A8C","#16202B"]},"$preview":{"width":1440,"height":2250}}'>
+class Component extends DCLogic {
+  renderVals() {
+    return { accent: this.props.accent ?? '#1D4E89' };
+  }
+}
+</script>
+</body>
+</html>

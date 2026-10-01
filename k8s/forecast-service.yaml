@@ -1,0 +1,225 @@
+# ──────────────────────────────────────────────────────────────
+# forecast-service on Kubernetes
+#
+#   ConfigMap       non-secret settings
+#   Deployment      forecast-api     (FastAPI: dashboard reads, scenarios)
+#   Service         stable internal address: http://forecast-api
+#   Deployment      forecast-worker  (same image, consumes queue events)
+#   HPA             scales workers 2 -> 20 under the nightly load
+#   HTTPRoute       exposes /forecast through the public Gateway
+#   NetworkPolicy   only the gateway and alerts engine may call the API
+#
+# Deliberately NOT in this file:
+#   - The Secret "forecast-secrets". External Secrets Operator syncs it
+#     from AWS Secrets Manager / Vault. A plain Kubernetes Secret is only
+#     base64-encoded, so secret values never go in git.
+#   - Postgres / RabbitMQ / Redis. They run as managed services outside
+#     the cluster.
+# ──────────────────────────────────────────────────────────────
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: forecast-config
+  namespace: headroom
+data:
+  FORECAST_WEEKS: "13"
+  # Selects the ForecastStrategy class at startup: the SOLID composition
+  # root, driven by config. Switching strategies = change this + redeploy.
+  FORECAST_STRATEGY: "recurring_pattern"
+  EVENTS_EXCHANGE: "headroom.events"
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: forecast-api
+  namespace: headroom
+  labels:
+    app: forecast-api
+spec:
+  replicas: 2                          # two copies, so one can fail without downtime
+  selector:
+    matchLabels:
+      app: forecast-api
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxUnavailable: 0                # never drop below 2 healthy pods during a deploy
+      maxSurge: 1
+  template:
+    metadata:
+      labels:
+        app: forecast-api
+    spec:
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 10001               # matches USER 10001 in the Dockerfile
+      containers:
+        - name: api
+          image: ghcr.io/your-org/forecast-service:1.4.2   # pinned tag, never :latest
+          ports:
+            - containerPort: 8000
+          envFrom:
+            - configMapRef:
+                name: forecast-config
+            - secretRef:
+                name: forecast-secrets
+          resources:
+            requests:                  # what the scheduler reserves for this pod
+              cpu: 250m
+              memory: 256Mi
+            limits:                    # memory cap only; CPU limits often cause throttling
+              memory: 512Mi
+          readinessProbe:              # no traffic until the app reports ready
+            httpGet:
+              path: /healthz/ready
+              port: 8000
+            periodSeconds: 5
+          livenessProbe:               # restart the container if it hangs
+            httpGet:
+              path: /healthz/live
+              port: 8000
+            initialDelaySeconds: 10
+            periodSeconds: 10
+          securityContext:
+            allowPrivilegeEscalation: false
+            readOnlyRootFilesystem: true
+          volumeMounts:
+            - name: tmp
+              mountPath: /tmp          # the one writable path (scenario runs use temp files)
+      volumes:
+        - name: tmp
+          emptyDir: {}
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: forecast-api
+  namespace: headroom
+spec:
+  selector:
+    app: forecast-api
+  ports:
+    - port: 80
+      targetPort: 8000
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: forecast-worker
+  namespace: headroom
+  labels:
+    app: forecast-worker
+spec:
+  # No "replicas" field on purpose: the HPA below owns the pod count.
+  # Setting both makes every deploy reset the scale back to this number.
+  selector:
+    matchLabels:
+      app: forecast-worker
+  template:
+    metadata:
+      labels:
+        app: forecast-worker
+    spec:
+      # On scale-down or deploy, give an in-flight forecast time to finish.
+      # The worker should stop taking new messages on SIGTERM, then exit.
+      terminationGracePeriodSeconds: 120
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 10001
+      containers:
+        - name: worker
+          image: ghcr.io/your-org/forecast-service:1.4.2   # SAME image as the API
+          command: ["python", "-m", "app.worker"]          # different process
+          envFrom:
+            - configMapRef:
+                name: forecast-config
+            - secretRef:
+                name: forecast-secrets
+          resources:
+            requests:
+              cpu: "1"                 # model fitting is CPU-heavy
+              memory: 1Gi
+            limits:
+              memory: 2Gi
+          securityContext:
+            allowPrivilegeEscalation: false
+            readOnlyRootFilesystem: true
+          volumeMounts:
+            - name: tmp
+              mountPath: /tmp          # Prophet / cmdstanpy write temp files while fitting
+      volumes:
+        - name: tmp
+          emptyDir: {}
+---
+# Scales workers on CPU: when the nightly sync floods the queue, workers
+# get busy, CPU rises, and more pods start. They drain back down after.
+# Upgrade path: KEDA's RabbitMQ scaler scales on queue length instead,
+# a more direct signal for workers, and can scale to zero when idle.
+apiVersion: autoscaling/v2
+kind: HorizontalPodAutoscaler
+metadata:
+  name: forecast-worker
+  namespace: headroom
+spec:
+  scaleTargetRef:
+    apiVersion: apps/v1
+    kind: Deployment
+    name: forecast-worker
+  minReplicas: 2
+  maxReplicas: 20
+  metrics:
+    - type: Resource
+      resource:
+        name: cpu
+        target:
+          type: Utilization
+          averageUtilization: 70
+---
+# Public routing via Gateway API (the retired ingress-nginx controller's
+# successor). The Gateway itself is defined once, in the gateway-system
+# namespace, and must allow routes from the headroom namespace.
+# The FastAPI app includes its router with prefix="/forecast".
+apiVersion: gateway.networking.k8s.io/v1
+kind: HTTPRoute
+metadata:
+  name: forecast-api
+  namespace: headroom
+spec:
+  parentRefs:
+    - name: public-gateway
+      namespace: gateway-system
+  hostnames:
+    - api.yourproduct.com
+  rules:
+    - matches:
+        - path:
+            type: PathPrefix
+            value: /forecast
+      backendRefs:
+        - name: forecast-api
+          port: 80
+---
+# Zero-trust networking: only the callers listed here can reach the API.
+# Enforced only if the cluster's network plugin supports it (Cilium, Calico).
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: forecast-api-callers
+  namespace: headroom
+spec:
+  podSelector:
+    matchLabels:
+      app: forecast-api
+  policyTypes:
+    - Ingress
+  ingress:
+    - from:
+        - namespaceSelector:           # the Gateway's proxy pods
+            matchLabels:
+              kubernetes.io/metadata.name: gateway-system
+        - podSelector:                 # the alerts engine (requests scenario forecasts)
+            matchLabels:
+              app: alerts
+      ports:
+        - protocol: TCP
+          port: 8000

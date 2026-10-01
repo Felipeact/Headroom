@@ -1,0 +1,61 @@
+# ──────────────────────────────────────────────────────────────
+# Nightly bank sync as a Kubernetes CronJob.
+#
+# This is the job serverless platforms struggle with: it can run for
+# an hour across thousands of accounts, and a CronJob has no timeout
+# ceiling. Kubernetes starts a pod on schedule; the pod syncs every
+# connected account and exits.
+#
+# For each account, the job:
+#   1. calls Plaid's cursor-based /transactions/sync (only what changed
+#      since the last cursor)
+#   2. upserts new transactions into the bank-sync database, keyed by
+#      Plaid's transaction ID, so a retried run never creates duplicates
+#   3. publishes "transactions.synced". Forecast workers consume it,
+#      the queue fills, and the worker HPA scales out.
+#
+# During the day, a separate always-on Deployment (bank-sync-webhooks)
+# receives Plaid's "new data available" webhooks, so most updates land
+# within minutes. This nightly run is the safety net that catches
+# anything a webhook missed.
+# ──────────────────────────────────────────────────────────────
+apiVersion: batch/v1
+kind: CronJob
+metadata:
+  name: nightly-bank-sync
+  namespace: headroom
+spec:
+  schedule: "0 2 * * *"                # 02:00 every day
+  timeZone: "Etc/UTC"                  # set to where most of your customers are
+  concurrencyPolicy: Forbid            # never overlap with a run that's still going
+  startingDeadlineSeconds: 3600        # if a run was missed (outage), still start within an hour
+  successfulJobsHistoryLimit: 3
+  failedJobsHistoryLimit: 5            # keep failed runs around for debugging
+  jobTemplate:
+    spec:
+      backoffLimit: 2                  # retry a failed run up to twice
+      activeDeadlineSeconds: 7200      # stop a run that hangs past 2 hours
+      template:
+        spec:
+          restartPolicy: Never         # each retry is a fresh pod with its own logs
+          securityContext:
+            runAsNonRoot: true
+            runAsUser: 10001
+          containers:
+            - name: sync
+              image: ghcr.io/your-org/bank-sync:2.1.0
+              command: ["python", "-m", "app.jobs.sync_all_accounts"]
+              envFrom:
+                - configMapRef:
+                    name: bank-sync-config
+                - secretRef:
+                    name: bank-sync-secrets    # Plaid keys, synced by External Secrets Operator
+              resources:
+                requests:
+                  cpu: 500m
+                  memory: 512Mi
+                limits:
+                  memory: 1Gi
+              securityContext:
+                allowPrivilegeEscalation: false
+                readOnlyRootFilesystem: true

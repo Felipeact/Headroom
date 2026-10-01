@@ -1,0 +1,291 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Cash flow dashboard, desktop</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,500;9..144,600&amp;family=IBM+Plex+Sans:wght@400;500;600&amp;display=swap">
+<style>
+body{margin:0;background:#F5F3EE;color:#16202B;font-family:'IBM Plex Sans','Segoe UI',system-ui,sans-serif}
+a{color:#1D4E89}a:hover{color:#133A68}
+button{font-family:inherit;cursor:pointer}
+</style>
+</helmet>
+<div style="width: 1440px; height: 1720px; box-sizing: border-box; padding: 28px 48px 48px; background: #F5F3EE; color: #16202B; font-family: 'IBM Plex Sans', 'Segoe UI', system-ui, sans-serif; display: flex; flex-direction: column; gap: 28px">
+
+<header style="display: flex; align-items: center; justify-content: space-between; gap: 24px; padding-bottom: 20px; border-bottom: 1px solid #E2DDD3">
+<div style="display: flex; align-items: center; gap: 20px">
+<div style="font-family: Fraunces, Georgia, serif; font-size: 22px; font-weight: 600; letter-spacing: -0.01em">Headroom</div>
+<div style="width: 1px; height: 32px; background: #D6D0C4"></div>
+<div style="display: flex; flex-direction: column; gap: 2px">
+<div style="font-size: 12px; color: #5A6370">Business</div>
+<div style="font-size: 15px; font-weight: 600">Harbor Street Plumbing</div>
+</div>
+</div>
+<nav aria-label="Main" style="display: flex; align-items: center; gap: 4px">
+<a href="#" aria-current="page" style="display: flex; align-items: center; min-height: 44px; padding: 0 14px; border-radius: 10px; background: #E9E5DC; color: #16202B; font-size: 15px; font-weight: 600; text-decoration: none">Dashboard</a>
+<a href="#" style="display: flex; align-items: center; min-height: 44px; padding: 0 14px; border-radius: 10px; color: #454F5C; font-size: 15px; font-weight: 500; text-decoration: none">Expected payments</a>
+<a href="#" style="display: flex; align-items: center; min-height: 44px; padding: 0 14px; border-radius: 10px; color: #454F5C; font-size: 15px; font-weight: 500; text-decoration: none">Alerts (2)</a>
+<a href="#" style="display: flex; align-items: center; min-height: 44px; padding: 0 14px; border-radius: 10px; color: #454F5C; font-size: 15px; font-weight: 500; text-decoration: none">Settings</a>
+</nav>
+<div style="display: flex; align-items: center; gap: 8px; font-size: 14px; color: #454F5C">
+<svg width="18" height="18" viewBox="0 0 24 24" aria-hidden="true" style="flex-shrink: 0; fill: none; stroke: #1E6B45; stroke-width: 2px; stroke-linecap: round; stroke-linejoin: round"><circle cx="12" cy="12" r="9"></circle><path d="M8.5 12.5l2.5 2.5 4.5-5"></path></svg>
+<span>Updated today at 6:02 AM · 2 banks synced</span>
+</div>
+</header>
+
+<div style="display: flex; align-items: flex-end; justify-content: space-between; gap: 24px">
+<div style="display: flex; flex-direction: column; gap: 6px">
+<h1 style="margin: 0; font-family: Fraunces, Georgia, serif; font-size: 40px; font-weight: 600; letter-spacing: -0.02em; line-height: 1.1">Cash flow</h1>
+<p style="margin: 0; font-size: 15px; color: #454F5C">Saturday, September 26 · Forecast through December 27</p>
+</div>
+<button type="button" style="display: flex; align-items: center; gap: 8px; min-height: 44px; padding: 0 18px; border: none; border-radius: 10px; background: {{accent}}; color: #FFFFFF; font-size: 15px; font-weight: 600">
+<svg width="18" height="18" viewBox="0 0 24 24" aria-hidden="true" style="fill: none; stroke: #FFFFFF; stroke-width: 2px; stroke-linecap: round"><path d="M12 5v14"></path><path d="M5 12h14"></path></svg>
+Add expected payment
+</button>
+</div>
+
+<div style="display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 20px">
+<div style="background: #FFFFFF; border: 1px solid #E2DDD3; border-radius: 14px; padding: 20px 22px; display: flex; flex-direction: column; gap: 8px">
+<div style="font-size: 14px; font-weight: 500; color: #454F5C">Cash on hand</div>
+<div style="font-family: Fraunces, Georgia, serif; font-size: 36px; font-weight: 600; letter-spacing: -0.02em; font-variant-numeric: lining-nums tabular-nums">$42,300</div>
+<div style="font-size: 13px; color: #5A6370">Operating + Reserve · 2 accounts</div>
+</div>
+<div style="background: #FFF4E2; border: 1px solid #F0D3A4; border-radius: 14px; padding: 20px 22px; display: flex; flex-direction: column; gap: 8px">
+<div style="display: flex; align-items: center; gap: 6px; font-size: 14px; font-weight: 500; color: #7A4300">
+<svg width="16" height="16" viewBox="0 0 24 24" aria-hidden="true" style="flex-shrink: 0; fill: none; stroke: #8A4B00; stroke-width: 2px; stroke-linecap: round; stroke-linejoin: round"><path d="M10.3 4.2 2.8 17.3A2 2 0 0 0 4.5 20.3h15a2 2 0 0 0 1.7-3L13.7 4.2a2 2 0 0 0-3.4 0z"></path><path d="M12 9.5v4"></path><path d="M12 17h.01"></path></svg>
+Projected low
+</div>
+<div style="font-family: Fraunces, Georgia, serif; font-size: 36px; font-weight: 600; letter-spacing: -0.02em; color: #5C3300; font-variant-numeric: lining-nums tabular-nums">$3,150</div>
+<div style="font-size: 13px; color: #7A4300">Week of Nov 9 · $1,850 below your minimum</div>
+</div>
+<div style="background: #FFFFFF; border: 1px solid #E2DDD3; border-radius: 14px; padding: 20px 22px; display: flex; flex-direction: column; gap: 8px">
+<div style="font-size: 14px; font-weight: 500; color: #454F5C">Available credit</div>
+<div style="font-family: Fraunces, Georgia, serif; font-size: 36px; font-weight: 600; letter-spacing: -0.02em; font-variant-numeric: lining-nums tabular-nums">$20,000</div>
+<div style="font-size: 13px; color: #5A6370">Line of credit · not counted as cash</div>
+</div>
+<div style="background: #FFFFFF; border: 1px solid #E2DDD3; border-radius: 14px; padding: 20px 22px; display: flex; flex-direction: column; gap: 8px">
+<div style="font-size: 14px; font-weight: 500; color: #454F5C">Next card payment</div>
+<div style="font-family: Fraunces, Georgia, serif; font-size: 36px; font-weight: 600; letter-spacing: -0.02em; font-variant-numeric: lining-nums tabular-nums">$2,450</div>
+<div style="font-size: 13px; color: #5A6370">Business Visa · due Thu, Oct 8</div>
+</div>
+</div>
+
+<div style="display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 20px">
+<section aria-labelledby="alert-shortfall" style="background: #FCEDEB; border: 1px solid #EFC7C2; border-radius: 14px; padding: 22px 24px; display: flex; flex-direction: column; gap: 14px">
+<div style="display: flex; align-items: flex-start; gap: 12px">
+<svg width="24" height="24" viewBox="0 0 24 24" aria-hidden="true" style="flex-shrink: 0; fill: none; stroke: #8E1B1B; stroke-width: 1.8px; stroke-linecap: round; stroke-linejoin: round"><circle cx="12" cy="12" r="9"></circle><path d="M12 7.5v5.5"></path><path d="M12 16.5h.01"></path></svg>
+<div style="display: flex; flex-direction: column; gap: 6px">
+<div style="font-size: 12px; font-weight: 600; letter-spacing: 0.06em; text-transform: uppercase; color: #8E1B1B">Account shortfall</div>
+<h2 id="alert-shortfall" style="margin: 0; font-size: 19px; font-weight: 600; line-height: 1.3; color: #5E1111">Operating checking will be overdrawn on Friday, Oct 2</h2>
+<p style="margin: 0; font-size: 15px; line-height: 1.5; color: #3F2A2A">Payroll of $11,200 leaves this account, which will hold $8,000. Your combined cash is fine; the money is just in the wrong account.</p>
+</div>
+</div>
+<div style="display: flex; align-items: center; gap: 12px; background: #FFFFFF; border: 1px solid #EFC7C2; border-radius: 10px; padding: 14px 16px">
+<svg width="22" height="22" viewBox="0 0 24 24" aria-hidden="true" style="flex-shrink: 0; fill: none; stroke: #16202B; stroke-width: 1.8px; stroke-linecap: round; stroke-linejoin: round"><path d="M4 8h15"></path><path d="M16 4.5 19.5 8 16 11.5"></path><path d="M20 16H5"></path><path d="M8 12.5 4.5 16 8 19.5"></path></svg>
+<div style="font-size: 15px; line-height: 1.45"><strong style="font-weight: 600">Suggested fix:</strong> move $5,000 from Reserve savings to Operating checking by Thursday, Oct 1.</div>
+</div>
+<div style="display: flex; gap: 10px">
+<button type="button" style="min-height: 44px; padding: 0 18px; border: none; border-radius: 10px; background: {{accent}}; color: #FFFFFF; font-size: 15px; font-weight: 600">Review transfer</button>
+<button type="button" style="min-height: 44px; padding: 0 18px; border: 1px solid #D9CFC8; border-radius: 10px; background: #FFFFFF; color: #16202B; font-size: 15px; font-weight: 500">Dismiss</button>
+</div>
+</section>
+
+<section aria-labelledby="alert-gap" style="background: #FFF4E2; border: 1px solid #F0D3A4; border-radius: 14px; padding: 22px 24px; display: flex; flex-direction: column; gap: 14px">
+<div style="display: flex; align-items: flex-start; gap: 12px">
+<svg width="24" height="24" viewBox="0 0 24 24" aria-hidden="true" style="flex-shrink: 0; fill: none; stroke: #8A4B00; stroke-width: 1.8px; stroke-linecap: round; stroke-linejoin: round"><path d="M10.3 4.2 2.8 17.3A2 2 0 0 0 4.5 20.3h15a2 2 0 0 0 1.7-3L13.7 4.2a2 2 0 0 0-3.4 0z"></path><path d="M12 9.5v4"></path><path d="M12 17h.01"></path></svg>
+<div style="display: flex; flex-direction: column; gap: 6px">
+<div style="font-size: 12px; font-weight: 600; letter-spacing: 0.06em; text-transform: uppercase; color: #7A4300">Cash gap</div>
+<h2 id="alert-gap" style="margin: 0; font-size: 19px; font-weight: 600; line-height: 1.3; color: #4F2C00">Cash falls below your $5,000 minimum the week of Nov 9</h2>
+<p style="margin: 0; font-size: 15px; line-height: 1.5; color: #3D2E1C">A $14,500 supplier payment and $11,200 of payroll land in the same week, taking cash down to $3,150.</p>
+</div>
+</div>
+<div style="display: flex; align-items: center; gap: 12px; background: #FFFFFF; border: 1px solid #F0D3A4; border-radius: 10px; padding: 14px 16px">
+<svg width="22" height="22" viewBox="0 0 24 24" aria-hidden="true" style="flex-shrink: 0; fill: none; stroke: #16202B; stroke-width: 1.8px; stroke-linecap: round; stroke-linejoin: round"><path d="M5 12h14"></path><path d="M13 6l6 6-6 6"></path></svg>
+<div style="font-size: 15px; line-height: 1.45"><strong style="font-weight: 600">Top fix:</strong> ask Birch &amp; Co to pay their $9,600 invoice a week early. That keeps you above your minimum.</div>
+</div>
+<div style="display: flex; gap: 10px">
+<button type="button" style="min-height: 44px; padding: 0 18px; border: 1px solid #16202B; border-radius: 10px; background: #FFFFFF; color: #16202B; font-size: 15px; font-weight: 600">See all 3 fixes</button>
+<button type="button" style="min-height: 44px; padding: 0 18px; border: 1px solid #E3D3B8; border-radius: 10px; background: #FFFFFF; color: #16202B; font-size: 15px; font-weight: 500">Dismiss</button>
+</div>
+</section>
+</div>
+
+<div style="display: flex; align-items: flex-start; gap: 24px">
+<section aria-labelledby="forecast-title" style="flex: 2 1 0; min-width: 0; background: #FFFFFF; border: 1px solid #E2DDD3; border-radius: 14px; padding: 22px 24px; display: flex; flex-direction: column; gap: 16px">
+<div style="display: flex; align-items: center; justify-content: space-between; gap: 16px">
+<div style="display: flex; flex-direction: column; gap: 4px">
+<h2 id="forecast-title" style="margin: 0; font-size: 18px; font-weight: 600">13-week forecast</h2>
+<p style="margin: 0; font-size: 14px; color: #5A6370">Projected balance at the end of each week</p>
+</div>
+<div role="group" aria-label="Show the forecast for" style="display: flex; gap: 4px; padding: 4px; background: #F1EEE7; border-radius: 12px">
+<button type="button" aria-pressed="true" style="min-height: 44px; padding: 0 16px; border: none; border-radius: 9px; background: #FFFFFF; color: #16202B; font-size: 14px; font-weight: 600; box-shadow: 0 1px 2px rgba(22, 32, 43, 0.14)">All accounts</button>
+<button type="button" aria-pressed="false" style="min-height: 44px; padding: 0 16px; border: none; border-radius: 9px; background: transparent; color: #454F5C; font-size: 14px; font-weight: 500">Operating</button>
+<button type="button" aria-pressed="false" style="min-height: 44px; padding: 0 16px; border: none; border-radius: 9px; background: transparent; color: #454F5C; font-size: 14px; font-weight: 500">Reserve</button>
+</div>
+</div>
+<svg viewBox="0 0 832 300" role="img" aria-label="Line chart of the 13-week forecast. Cash starts at $42,300 today, falls to a low of $3,150 in the week of November 9, below the $5,000 minimum, then recovers to about $19,600 by late December." style="display: block; width: 100%; height: auto">
+<line x1="56" y1="44.4" x2="812" y2="44.4" style="stroke: #ECE8E0; stroke-width: 1px"></line>
+<line x1="56" y1="93.2" x2="812" y2="93.2" style="stroke: #ECE8E0; stroke-width: 1px"></line>
+<line x1="56" y1="142" x2="812" y2="142" style="stroke: #ECE8E0; stroke-width: 1px"></line>
+<line x1="56" y1="190.8" x2="812" y2="190.8" style="stroke: #ECE8E0; stroke-width: 1px"></line>
+<line x1="56" y1="239.6" x2="812" y2="239.6" style="stroke: #C9C2B5; stroke-width: 1px"></line>
+<text x="48" y="48.4" style="font-size: 12px; fill: #5A6370; text-anchor: end">$40k</text>
+<text x="48" y="97.2" style="font-size: 12px; fill: #5A6370; text-anchor: end">$30k</text>
+<text x="48" y="146" style="font-size: 12px; fill: #5A6370; text-anchor: end">$20k</text>
+<text x="48" y="194.8" style="font-size: 12px; fill: #5A6370; text-anchor: end">$10k</text>
+<text x="48" y="243.6" style="font-size: 12px; fill: #5A6370; text-anchor: end">$0</text>
+<path d="M56.0 33.2 L114.2 81.7 L172.3 55.6 L230.5 85.6 L288.6 52.2 L346.8 103.2 L404.9 81.7 L463.1 205.0 L521.2 148.8 L579.4 164.0 L637.5 129.3 L695.7 143.7 L753.8 104.9 L812.0 111.5 L812.0 176.4 L753.8 165.4 L695.7 199.8 L637.5 181.0 L579.4 211.3 L521.2 191.8 L463.1 243.5 L404.9 115.9 L346.8 133.0 L288.6 77.6 L230.5 106.6 L172.3 72.2 L114.2 93.9 L56.0 33.2 Z" style="fill: {{accent}}; fill-opacity: 0.13; stroke: none"></path>
+<line x1="56" y1="215.2" x2="812" y2="215.2" style="stroke: #B26B00; stroke-width: 1.5px; stroke-dasharray: 6 5"></line>
+<text x="812" y="231" style="font-size: 12px; font-weight: 500; fill: #7A4300; text-anchor: end">Your $5,000 minimum</text>
+<path d="M56.0 33.2 L114.2 87.8 L172.3 63.9 L230.5 96.1 L288.6 64.9 L346.8 118.1 L404.9 98.8 L463.1 224.2 L521.2 170.3 L579.4 187.6 L637.5 155.2 L695.7 171.8 L753.8 135.2 L812.0 144.0" style="fill: none; stroke: {{accent}}; stroke-width: 2.5px; stroke-linejoin: round; stroke-linecap: round"></path>
+<circle cx="56" cy="33.2" r="4.5" style="fill: {{accent}}"></circle>
+<circle cx="463.1" cy="224.2" r="5.5" style="fill: #FFFFFF; stroke: #B26B00; stroke-width: 2.5px"></circle>
+<text x="476" y="229" style="font-size: 12px; font-weight: 600; fill: #7A4300">Low $3,150</text>
+<text x="56" y="286" style="font-size: 12px; fill: #5A6370; text-anchor: middle">Today</text>
+<text x="114.2" y="286" style="font-size: 12px; fill: #5A6370; text-anchor: middle">Sep 28</text>
+<text x="230.5" y="286" style="font-size: 12px; fill: #5A6370; text-anchor: middle">Oct 12</text>
+<text x="346.8" y="286" style="font-size: 12px; fill: #5A6370; text-anchor: middle">Oct 26</text>
+<text x="463.1" y="286" style="font-size: 12px; font-weight: 600; fill: #7A4300; text-anchor: middle">Nov 9</text>
+<text x="579.4" y="286" style="font-size: 12px; fill: #5A6370; text-anchor: middle">Nov 23</text>
+<text x="695.7" y="286" style="font-size: 12px; fill: #5A6370; text-anchor: middle">Dec 7</text>
+<text x="812" y="286" style="font-size: 12px; fill: #5A6370; text-anchor: end">Dec 21</text>
+</svg>
+<div style="display: flex; flex-wrap: wrap; gap: 24px; font-size: 13px; color: #454F5C">
+<div style="display: flex; align-items: center; gap: 8px"><span style="display: inline-block; width: 22px; height: 3px; border-radius: 2px; background: {{accent}}"></span>Projected balance</div>
+<div style="display: flex; align-items: center; gap: 8px"><span style="display: inline-block; width: 22px; height: 12px; border-radius: 3px; background: {{accent}}; opacity: 0.2"></span>Likely range</div>
+<div style="display: flex; align-items: center; gap: 8px"><span style="display: inline-block; width: 22px; height: 0; border-top: 2px dashed #B26B00"></span>Your $5,000 minimum</div>
+</div>
+</section>
+
+<section aria-labelledby="accounts-title" style="flex: 1 1 0; min-width: 0; background: #FFFFFF; border: 1px solid #E2DDD3; border-radius: 14px; padding: 22px 24px; display: flex; flex-direction: column; gap: 18px">
+<div style="display: flex; align-items: center; justify-content: space-between">
+<h2 id="accounts-title" style="margin: 0; font-size: 18px; font-weight: 600">Accounts</h2>
+<a href="#" style="font-size: 14px; font-weight: 500">Manage</a>
+</div>
+<div style="display: flex; flex-direction: column; gap: 10px">
+<div style="font-size: 12px; font-weight: 600; letter-spacing: 0.06em; text-transform: uppercase; color: #5A6370">Counted as cash</div>
+<div style="display: flex; flex-direction: column; gap: 8px; padding: 14px 16px; background: #FCEDEB; border: 1px solid #EFC7C2; border-radius: 12px">
+<div style="display: flex; align-items: flex-start; justify-content: space-between; gap: 12px">
+<div style="display: flex; flex-direction: column; gap: 2px">
+<div style="display: flex; align-items: center; gap: 8px; font-size: 15px; font-weight: 600">Operating checking <span style="font-size: 11px; font-weight: 600; letter-spacing: 0.04em; text-transform: uppercase; padding: 2px 6px; border-radius: 6px; background: #FFFFFF; border: 1px solid #E2DDD3; color: #454F5C">Primary</span></div>
+<div style="font-size: 13px; color: #5A6370">Harbor Community Bank ••2381</div>
+</div>
+<div style="font-size: 16px; font-weight: 600; font-variant-numeric: tabular-nums">$8,000</div>
+</div>
+<div style="display: flex; align-items: center; gap: 6px; font-size: 13px; font-weight: 500; color: #8E1B1B">
+<svg width="16" height="16" viewBox="0 0 24 24" aria-hidden="true" style="flex-shrink: 0; fill: none; stroke: #8E1B1B; stroke-width: 2px; stroke-linecap: round; stroke-linejoin: round"><circle cx="12" cy="12" r="9"></circle><path d="M12 7.5v5.5"></path><path d="M12 16.5h.01"></path></svg>
+Lowest: −$3,200 on Fri, Oct 2
+</div>
+</div>
+<div style="display: flex; flex-direction: column; gap: 8px; padding: 14px 16px; background: #FFFFFF; border: 1px solid #E2DDD3; border-radius: 12px">
+<div style="display: flex; align-items: flex-start; justify-content: space-between; gap: 12px">
+<div style="display: flex; flex-direction: column; gap: 2px">
+<div style="font-size: 15px; font-weight: 600">Reserve savings</div>
+<div style="font-size: 13px; color: #5A6370">Harbor Community Bank ••9025</div>
+</div>
+<div style="font-size: 16px; font-weight: 600; font-variant-numeric: tabular-nums">$34,300</div>
+</div>
+<div style="display: flex; align-items: center; gap: 6px; font-size: 13px; font-weight: 500; color: #1E6B45">
+<svg width="16" height="16" viewBox="0 0 24 24" aria-hidden="true" style="flex-shrink: 0; fill: none; stroke: #1E6B45; stroke-width: 2px; stroke-linecap: round; stroke-linejoin: round"><circle cx="12" cy="12" r="9"></circle><path d="M8.5 12.5l2.5 2.5 4.5-5"></path></svg>
+No shortfall expected
+</div>
+</div>
+<div style="display: flex; align-items: center; justify-content: space-between; padding: 4px 4px 0; font-size: 15px; font-weight: 600"><span>Cash on hand</span><span style="font-variant-numeric: tabular-nums">$42,300</span></div>
+</div>
+<div style="height: 1px; background: #E2DDD3"></div>
+<div style="display: flex; flex-direction: column; gap: 14px">
+<div style="font-size: 12px; font-weight: 600; letter-spacing: 0.06em; text-transform: uppercase; color: #5A6370">Credit · not counted as cash</div>
+<div style="display: flex; align-items: center; justify-content: space-between; gap: 12px">
+<div style="display: flex; align-items: center; gap: 12px">
+<svg width="22" height="22" viewBox="0 0 24 24" aria-hidden="true" style="flex-shrink: 0; fill: none; stroke: #454F5C; stroke-width: 1.8px; stroke-linecap: round; stroke-linejoin: round"><rect x="3" y="5.5" width="18" height="13" rx="2"></rect><path d="M3 10h18"></path><path d="M7 15h3"></path></svg>
+<div style="display: flex; flex-direction: column; gap: 2px">
+<div style="font-size: 15px; font-weight: 600">Business Visa</div>
+<div style="font-size: 13px; color: #5A6370">Summit Federal ••5530</div>
+</div>
+</div>
+<div style="display: flex; flex-direction: column; gap: 2px; align-items: flex-end">
+<div style="font-size: 15px; font-weight: 600; font-variant-numeric: tabular-nums">$2,450</div>
+<div style="font-size: 13px; color: #5A6370">Payment due Oct 8</div>
+</div>
+</div>
+<div style="display: flex; align-items: center; justify-content: space-between; gap: 12px">
+<div style="display: flex; align-items: center; gap: 12px">
+<svg width="22" height="22" viewBox="0 0 24 24" aria-hidden="true" style="flex-shrink: 0; fill: none; stroke: #454F5C; stroke-width: 1.8px; stroke-linecap: round; stroke-linejoin: round"><path d="M3 10h18"></path><path d="M12 3.5 20 8H4z"></path><path d="M6 10v7"></path><path d="M10 10v7"></path><path d="M14 10v7"></path><path d="M18 10v7"></path><path d="M4 20h16"></path></svg>
+<div style="display: flex; flex-direction: column; gap: 2px">
+<div style="font-size: 15px; font-weight: 600">Line of credit</div>
+<div style="font-size: 13px; color: #5A6370">Harbor Community Bank ••7702</div>
+</div>
+</div>
+<div style="display: flex; flex-direction: column; gap: 2px; align-items: flex-end">
+<div style="font-size: 15px; font-weight: 600; font-variant-numeric: tabular-nums">$20,000</div>
+<div style="font-size: 13px; color: #5A6370">Available</div>
+</div>
+</div>
+</div>
+</section>
+</div>
+
+<section aria-labelledby="upcoming-title" style="background: #FFFFFF; border: 1px solid #E2DDD3; border-radius: 14px; padding: 22px 24px; display: flex; flex-direction: column; gap: 12px">
+<div style="display: flex; align-items: center; justify-content: space-between">
+<h2 id="upcoming-title" style="margin: 0; font-size: 18px; font-weight: 600">Next 14 days</h2>
+<a href="#" style="font-size: 14px; font-weight: 500">See all upcoming</a>
+</div>
+<table style="width: 100%; border-collapse: collapse; font-size: 15px">
+<thead>
+<tr>
+<th scope="col" style="text-align: left; padding: 10px 12px; font-size: 12px; font-weight: 600; letter-spacing: 0.06em; text-transform: uppercase; color: #5A6370; border-bottom: 1px solid #E2DDD3">Date</th>
+<th scope="col" style="text-align: left; padding: 10px 12px; font-size: 12px; font-weight: 600; letter-spacing: 0.06em; text-transform: uppercase; color: #5A6370; border-bottom: 1px solid #E2DDD3">Description</th>
+<th scope="col" style="text-align: left; padding: 10px 12px; font-size: 12px; font-weight: 600; letter-spacing: 0.06em; text-transform: uppercase; color: #5A6370; border-bottom: 1px solid #E2DDD3">Account</th>
+<th scope="col" style="text-align: left; padding: 10px 12px; font-size: 12px; font-weight: 600; letter-spacing: 0.06em; text-transform: uppercase; color: #5A6370; border-bottom: 1px solid #E2DDD3">Type</th>
+<th scope="col" style="text-align: right; padding: 10px 12px; font-size: 12px; font-weight: 600; letter-spacing: 0.06em; text-transform: uppercase; color: #5A6370; border-bottom: 1px solid #E2DDD3">Amount</th>
+</tr>
+</thead>
+<tbody>
+<tr style="background: #FCEDEB">
+<td style="padding: 14px 12px; border-bottom: 1px solid #F1EEE7; white-space: nowrap">Fri, Oct 2</td>
+<td style="padding: 14px 12px; border-bottom: 1px solid #F1EEE7"><div style="display: flex; align-items: center; gap: 10px">Payroll <span style="font-size: 12px; font-weight: 600; padding: 3px 8px; border-radius: 6px; background: #8E1B1B; color: #FFFFFF">Overdraws Operating</span></div></td>
+<td style="padding: 14px 12px; border-bottom: 1px solid #F1EEE7">Operating checking</td>
+<td style="padding: 14px 12px; border-bottom: 1px solid #F1EEE7; color: #454F5C">Recurring, every 2 weeks</td>
+<td style="padding: 14px 12px; border-bottom: 1px solid #F1EEE7; text-align: right; font-weight: 600; font-variant-numeric: tabular-nums">−$11,200</td>
+</tr>
+<tr>
+<td style="padding: 14px 12px; border-bottom: 1px solid #F1EEE7; white-space: nowrap">Tue, Oct 6</td>
+<td style="padding: 14px 12px; border-bottom: 1px solid #F1EEE7">Acme Co, invoice 1042</td>
+<td style="padding: 14px 12px; border-bottom: 1px solid #F1EEE7">Operating checking</td>
+<td style="padding: 14px 12px; border-bottom: 1px solid #F1EEE7; color: #454F5C">Expected</td>
+<td style="padding: 14px 12px; border-bottom: 1px solid #F1EEE7; text-align: right; font-weight: 600; color: #1E6B45; font-variant-numeric: tabular-nums">+$8,000</td>
+</tr>
+<tr>
+<td style="padding: 14px 12px; border-bottom: 1px solid #F1EEE7; white-space: nowrap">Wed, Oct 7</td>
+<td style="padding: 14px 12px; border-bottom: 1px solid #F1EEE7">Software subscriptions</td>
+<td style="padding: 14px 12px; border-bottom: 1px solid #F1EEE7">Operating checking</td>
+<td style="padding: 14px 12px; border-bottom: 1px solid #F1EEE7; color: #454F5C">Recurring, monthly</td>
+<td style="padding: 14px 12px; border-bottom: 1px solid #F1EEE7; text-align: right; font-weight: 600; font-variant-numeric: tabular-nums">−$640</td>
+</tr>
+<tr>
+<td style="padding: 14px 12px; white-space: nowrap">Thu, Oct 8</td>
+<td style="padding: 14px 12px">Business Visa payment</td>
+<td style="padding: 14px 12px">Operating checking</td>
+<td style="padding: 14px 12px; color: #454F5C">Card payment</td>
+<td style="padding: 14px 12px; text-align: right; font-weight: 600; font-variant-numeric: tabular-nums">−$2,450</td>
+</tr>
+</tbody>
+</table>
+</section>
+
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"accent":{"editor":"color","default":"#1D4E89","options":["#1D4E89","#0F5C5A","#4B3A8C","#16202B"]},"$preview":{"width":1440,"height":1720}}'>
+class Component extends DCLogic {
+  renderVals() {
+    return { accent: this.props.accent ?? '#1D4E89' };
+  }
+}
+</script>
+</body>
+</html>

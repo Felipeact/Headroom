@@ -1,0 +1,71 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Onboarding step 5: building your forecast</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,500;9..144,600&amp;family=IBM+Plex+Sans:wght@400;500;600&amp;display=swap">
+<style>
+body{margin:0;background:#F5F3EE;color:#16202B;font-family:'IBM Plex Sans','Segoe UI',system-ui,sans-serif}
+a{color:#1D4E89}a:hover{color:#133A68}
+button,input,select{font-family:inherit}
+button{cursor:pointer}
+</style>
+</helmet>
+<div style="width: 390px; height: 844px; box-sizing: border-box; padding: 16px 20px 28px; background: #F5F3EE; color: #16202B; font-family: 'IBM Plex Sans', 'Segoe UI', system-ui, sans-serif; display: flex; flex-direction: column; gap: 24px">
+<header style="display: flex; flex-direction: column; gap: 12px">
+<div style="display: flex; align-items: center; justify-content: space-between; min-height: 44px">
+<div style="font-family: Fraunces, Georgia, serif; font-size: 20px; font-weight: 600; letter-spacing: -0.01em">Headroom</div>
+<div style="font-size: 13px; color: #454F5C">Step 5 of 5</div>
+</div>
+<div aria-hidden="true" style="display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); gap: 4px">
+<div style="height: 4px; border-radius: 2px; background: {{accent}}"></div>
+<div style="height: 4px; border-radius: 2px; background: {{accent}}"></div>
+<div style="height: 4px; border-radius: 2px; background: {{accent}}"></div>
+<div style="height: 4px; border-radius: 2px; background: {{accent}}"></div>
+<div style="height: 4px; border-radius: 2px; background: {{accent}}"></div>
+</div>
+</header>
+<div style="flex-grow: 1; display: flex; flex-direction: column; justify-content: center; gap: 24px">
+<div style="display: flex; flex-direction: column; gap: 8px">
+<h1 style="margin: 0; font-family: Fraunces, Georgia, serif; font-size: 28px; font-weight: 600; letter-spacing: -0.02em; line-height: 1.2">Building your forecast</h1>
+<p style="margin: 0; font-size: 15px; line-height: 1.5; color: #454F5C">This usually takes a minute or two.</p>
+</div>
+<div role="status" aria-live="polite" style="background: #FFFFFF; border: 1px solid #E2DDD3; border-radius: 14px; padding: 4px 16px; display: flex; flex-direction: column">
+<div style="display: flex; align-items: center; gap: 12px; min-height: 52px; border-bottom: 1px solid #F1EEE7">
+<svg width="22" height="22" viewBox="0 0 24 24" aria-hidden="true" style="flex-shrink: 0; fill: none; stroke: #1E6B45; stroke-width: 2px; stroke-linecap: round; stroke-linejoin: round"><circle cx="12" cy="12" r="9"></circle><path d="M8.5 12.5l2.5 2.5 4.5-5"></path></svg>
+<div style="font-size: 15px">Connected Harbor Community Bank</div>
+</div>
+<div style="display: flex; align-items: center; gap: 12px; min-height: 52px; border-bottom: 1px solid #F1EEE7">
+<svg width="22" height="22" viewBox="0 0 24 24" aria-hidden="true" style="flex-shrink: 0; fill: none; stroke: #1E6B45; stroke-width: 2px; stroke-linecap: round; stroke-linejoin: round"><circle cx="12" cy="12" r="9"></circle><path d="M8.5 12.5l2.5 2.5 4.5-5"></path></svg>
+<div style="font-size: 15px">Read 24 months of transactions</div>
+</div>
+<div style="display: flex; align-items: center; gap: 12px; min-height: 60px; border-bottom: 1px solid #F1EEE7">
+<svg width="22" height="22" viewBox="0 0 24 24" aria-hidden="true" style="flex-shrink: 0; fill: none; stroke-width: 2px; stroke-linecap: round"><circle cx="12" cy="12" r="9" style="stroke: #E2DDD3"></circle><path d="M12 3a9 9 0 0 1 9 9" style="stroke: {{accent}}"></path></svg>
+<div style="display: flex; flex-direction: column; gap: 2px">
+<div style="font-size: 15px; font-weight: 600">Finding recurring payments</div>
+<div style="font-size: 13px; color: #5A6370">Payroll, rent, and 9 others so far</div>
+</div>
+</div>
+<div style="display: flex; align-items: center; gap: 12px; min-height: 52px">
+<svg width="22" height="22" viewBox="0 0 24 24" aria-hidden="true" style="flex-shrink: 0; fill: none; stroke: #C9C2B5; stroke-width: 2px"><circle cx="12" cy="12" r="9"></circle></svg>
+<div style="font-size: 15px; color: #5A6370">Building your 13-week forecast</div>
+</div>
+</div>
+<p style="margin: 0; font-size: 14px; line-height: 1.5; color: #454F5C">You'll go to your dashboard as soon as it's ready.</p>
+</div>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"accent":{"editor":"color","default":"#1D4E89","options":["#1D4E89","#0F5C5A","#4B3A8C","#16202B"]},"$preview":{"width":390,"height":844}}'>
+class Component extends DCLogic {
+  renderVals() {
+    return { accent: this.props.accent ?? '#1D4E89' };
+  }
+}
+</script>
+</body>
+</html>

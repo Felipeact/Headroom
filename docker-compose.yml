@@ -1,0 +1,27 @@
+# Local PostgreSQL for development, shared by every worktree.
+# The apps themselves run natively. See AGENTS.md > Setup.
+#
+#   docker compose up -d postgres
+#
+# The fixed project name means every worktree uses this same container.
+# Each worktree creates its own database inside it (see AGENTS.md).
+name: headroom-dev
+
+services:
+  postgres:
+    image: postgres:17
+    environment:
+      POSTGRES_USER: headroom
+      POSTGRES_PASSWORD: localdev   # local-only password, never used anywhere else
+      POSTGRES_DB: headroom
+    ports:
+      - "5432:5432"
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U headroom"]
+      interval: 5s
+      retries: 10
+
+volumes:
+  pgdata:
