@@ -1,7 +1,7 @@
 # Spec 03: Local database and migrations
 
 - **Milestone:** 1, set-up
-- **Status:** Not started
+- **Status:** In progress
 - **Depends on:** 02
 
 ## Goal
