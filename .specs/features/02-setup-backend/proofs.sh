@@ -93,13 +93,14 @@ c7() {
 }
 
 c8() {
-  local dir
+  local dir out
   dir="$(scratch_copy)"
   printf 'def untyped(x: int):\n    return x\n' > "$dir/app/untyped.py"
-  if (cd "$dir" && uv run --project "$CORE" mypy app); then
+  if out="$(cd "$dir" && uv run --project "$CORE" mypy app 2>&1)"; then
     rm -rf "$dir"; fail "mypy accepted a function with no return annotation"
   fi
   rm -rf "$dir"
+  echo "$out" | grep -q 'no-untyped-def' || { echo "$out" >&2; fail "failure was not no-untyped-def"; }
 }
 
 c9() {
