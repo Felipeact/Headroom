@@ -28,4 +28,5 @@
 **Blockers**: Sentry DSN and API token (user); go-ahead to push and change staging
 **Uncommitted**: none
 **Also done**: 06-web-design-system - independent Verifier PASS 37/37 over `f1bbdd2..2a08ab3` (profile light), merged into `development`; its decisions are AD-012 to AD-014. Spec 07 is now unblocked. npm 12 on this machine rejects the user-level `allow-scripts` in `~/.npmrc` for project installs: run `npm install` / `npx shadcn add` with `npm_config_userconfig=<empty file>`. Playwright reuses any server on port 3000, so stop other dev servers first
+**Also in progress**: 07-web-app-shell - C1-C36 and C39-C43 green at `bb7d02a`; independent Verifier round 2 FAIL 41/43, only C37/C38 open (blocked: create the `headroom-web` Sentry project, put `NEXT_PUBLIC_SENTRY_DSN` in `frontend/.env.local`, export `SENTRY_AUTH_TOKEN`/`SENTRY_ORG`/`SENTRY_PROJECT=headroom-web`, run `bash .specs/features/07-web-app-shell/proofs.sh c37 c38`, then a scoped round 3). Staging Sentry variables on Railway `web` need the push go-ahead
 **Branch**: development

@@ -27,3 +27,6 @@ Context used per request, measured against a context window of about 250,000 tok
 | Spec 06: design system in the web app (plan) | ~75,000 (~30%) | High (smart zone) |
 | Spec 06: design system in the web app (checks, build, verify) | ~135,000 (~54%) | Medium (attention degrades) |
 | Spec 06: verifier sub-agent (separate context) | ~108,000 (~43%) | Medium (attention degrades) |
+| Spec 07: app shell, translations, and formatting (plan) | ~95,000 (~38%) | High (smart zone) |
+| Spec 07: app shell, translations, and formatting (checks, build S1-S6, round 1 fixes) | ~150,000 (~60%) | Medium (attention degrades) |
+| Spec 07: verifier sub-agent, rounds 1 and 2 (separate context) | ~151,000 (~60%) | Medium (attention degrades) |

@@ -38,6 +38,18 @@ Seen once or not yet corroborated. Tracked, not trusted.
 - evidence: C20 - proofs.sh:251-252; plan.md:128 (deploy)
 - last seen: 2026-10-02T03:37:24Z
 
+### L-005 - When a screen renders the same control in two places (desktop nav and a phone menu Dialog), assert the per-control metric in both placements, and read sizes only after the Dialog's open animation settles.
+- signal: `ac_gap` · recurrence: 1 feature(s) · scope: `frontend/e2e` · harmful: 0
+- features: 07-web-app-shell
+- evidence: checks.md C5 / e2e/shell.spec.ts (frontend/e2e)
+- last seen: 2026-10-02T16:06:57Z
+
+### L-006 - A 'no secret in source' check must name the file set its proof scans (git-tracked or would-track), because the ignored .env.local is where the secret is meant to live.
+- signal: `spec_precision_gap` · recurrence: 1 feature(s) · scope: `frontend/tests` · harmful: 0
+- features: 07-web-app-shell
+- evidence: checks.md C41 (frontend/tests)
+- last seen: 2026-10-02T16:06:57Z
+
 ## Quarantined (failed when applied - ignore)
 
 A confirmed lesson that recurred alongside failure. Kept for the maintainer to review.

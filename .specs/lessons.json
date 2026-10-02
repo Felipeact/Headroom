@@ -3,7 +3,7 @@
   "promote_threshold": 2,
   "window_days": 45,
   "quarantine_threshold": 2,
-  "next_id": 5,
+  "next_id": 7,
   "lessons": [
     {
       "id": "L-001",
@@ -76,6 +76,42 @@
       ],
       "created": "2026-10-02T03:37:24Z",
       "last_seen": "2026-10-02T03:37:24Z"
+    },
+    {
+      "id": "L-005",
+      "key": "ac_gap::when a screen renders the same control in two places desktop nav and a phone menu dialog assert the per control metric in both placements and read sizes only after the dialog s open animation settles",
+      "text": "When a screen renders the same control in two places (desktop nav and a phone menu Dialog), assert the per-control metric in both placements, and read sizes only after the Dialog's open animation settles.",
+      "signal": "ac_gap",
+      "scope": "frontend/e2e",
+      "status": "candidate",
+      "features": [
+        "07-web-app-shell"
+      ],
+      "recurrence": 1,
+      "harmful": 0,
+      "evidence": [
+        "checks.md C5 / e2e/shell.spec.ts (frontend/e2e)"
+      ],
+      "created": "2026-10-02T16:06:57Z",
+      "last_seen": "2026-10-02T16:06:57Z"
+    },
+    {
+      "id": "L-006",
+      "key": "spec_precision_gap::a no secret in source check must name the file set its proof scans git tracked or would track because the ignored env local is where the secret is meant to live",
+      "text": "A 'no secret in source' check must name the file set its proof scans (git-tracked or would-track), because the ignored .env.local is where the secret is meant to live.",
+      "signal": "spec_precision_gap",
+      "scope": "frontend/tests",
+      "status": "candidate",
+      "features": [
+        "07-web-app-shell"
+      ],
+      "recurrence": 1,
+      "harmful": 0,
+      "evidence": [
+        "checks.md C41 (frontend/tests)"
+      ],
+      "created": "2026-10-02T16:06:57Z",
+      "last_seen": "2026-10-02T16:06:57Z"
     }
   ]
 }
