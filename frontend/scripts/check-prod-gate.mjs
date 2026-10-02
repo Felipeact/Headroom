@@ -1,5 +1,5 @@
-// C33 boundary proof: a production build must answer 404 for /dev/components.
-// Run after `npm run build`. Exits 0 only when / is 200 and /dev/components is 404.
+// Boundary proof for spec 06 C33 and spec 07 C39: a production build must answer 404 for the
+// development-only pages and 200 for the shell pages. Run after `npm run build`.
 import { spawn } from 'node:child_process'
 import { fileURLToPath } from 'node:url'
 
@@ -29,10 +29,22 @@ async function waitForServer() {
 
 let failed = false
 try {
-  const home = await waitForServer()
-  const dev = await status('/dev/components')
-  console.log(`GET / -> ${home}; GET /dev/components -> ${dev}`)
-  failed = home !== 200 || dev !== 404
+  await waitForServer()
+  const expected = {
+    '/': 200,
+    '/expected-payments': 200,
+    '/alerts': 200,
+    '/settings': 200,
+    '/dev/components': 404,
+    '/dev/sentry-check': 404,
+  }
+  const lines = []
+  for (const [path, want] of Object.entries(expected)) {
+    const got = await status(path)
+    lines.push(`GET ${path} -> ${got}`)
+    if (got !== want) failed = true
+  }
+  console.log(lines.join('; '))
 } catch (error) {
   console.error(error)
   failed = true
