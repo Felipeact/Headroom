@@ -47,7 +47,7 @@ class ReadyStatus(BaseModel):
     status: Literal["ok", "unavailable"]
 
 
-@app.get("/healthz/live", response_model=LiveStatus)
+@app.get("/healthz/live", response_model=LiveStatus, summary="Liveness probe")
 def live() -> LiveStatus:
     return LiveStatus(status="ok")
 
