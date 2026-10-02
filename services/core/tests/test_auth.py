@@ -18,6 +18,9 @@ from tests.tokens import bearer, token
 
 client = TestClient(app)
 
+# Accepted requests create users rows, so the app needs a migrated database.
+pytestmark = pytest.mark.usefixtures("migrated_database")
+
 
 @pytest.fixture(autouse=True)
 def fresh_settings() -> Iterator[None]:
