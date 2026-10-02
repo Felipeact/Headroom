@@ -1,0 +1,45 @@
+{
+  "schema": 1,
+  "promote_threshold": 2,
+  "window_days": 45,
+  "quarantine_threshold": 2,
+  "next_id": 3,
+  "lessons": [
+    {
+      "id": "L-001",
+      "key": "spec_precision_gap::github computes a pull request s mergestatestatus lazily and can answer unknown right after a push a proof reading it must retry until it settles",
+      "text": "GitHub computes a pull request's mergeStateStatus lazily and can answer UNKNOWN right after a push; a proof reading it must retry until it settles.",
+      "signal": "spec_precision_gap",
+      "scope": "ci",
+      "status": "candidate",
+      "features": [
+        "04-setup-tests-and-ci"
+      ],
+      "recurrence": 1,
+      "harmful": 0,
+      "evidence": [
+        ".specs/features/04-setup-tests-and-ci/proofs.sh:169 (ci)"
+      ],
+      "created": "2026-10-02T02:53:30Z",
+      "last_seen": "2026-10-02T02:53:30Z"
+    },
+    {
+      "id": "L-002",
+      "key": "spec_precision_gap::when a criterion names several file kinds ts and tsx the proof must exercise each kind not just one",
+      "text": "When a criterion names several file kinds (.ts and .tsx), the proof must exercise each kind, not just one.",
+      "signal": "spec_precision_gap",
+      "scope": "frontend",
+      "status": "candidate",
+      "features": [
+        "04-setup-tests-and-ci"
+      ],
+      "recurrence": 1,
+      "harmful": 0,
+      "evidence": [
+        "AC 2 (frontend)"
+      ],
+      "created": "2026-10-02T02:53:31Z",
+      "last_seen": "2026-10-02T02:53:31Z"
+    }
+  ]
+}

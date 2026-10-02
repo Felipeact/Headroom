@@ -12,9 +12,9 @@
 ## Handoff
 
 **Feature**: 04-setup-tests-and-ci
-**Where**: C1-C17 green; independent Verifier pending over `7b9f969..HEAD`
+**Where**: done; independent Verifier PASS 17/17 over `7b9f969..1e25913`, `validate_verification.py` exit 0; throwaway pull request #1 closed and `ci/spec-04-proof` deleted
 **In progress**: none
-**Next step**: Verifier report, then close throwaway pull request #1 and delete `ci/spec-04-proof`
+**Next step**: spec 05 (another session has started it)
 **Blockers**: none (Docker Desktop must be running for the local database-backed tests)
-**Uncommitted**: none from spec 04 (`.specs/features/05-setup-railway-staging/` is not part of this feature)
+**Uncommitted**: none from spec 04
 **Branch**: development
