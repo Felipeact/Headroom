@@ -1,7 +1,7 @@
 # Spec 04: Tests and CI
 
 - **Milestone:** 1, set-up
-- **Status:** Not started
+- **Status:** In progress
 - **Depends on:** 01, 03 (can run alongside 05)
 
 ## Goal
