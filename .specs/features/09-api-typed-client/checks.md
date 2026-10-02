@@ -5,7 +5,7 @@ Plan: `.specs/features/09-api-typed-client/plan.md`
 
 19 checks in 4 slices · 4 one-way doors · 1 open, of which 0 block (C16-C18 need the push go-ahead; it blocks go-live, not the build)
 
-Commands run from `services/core/` (`uv run pytest ...`) or `frontend/` (`npx vitest run <file> -t "<name>"`, `npx playwright test <file> -g "<name>"`, `npm run ...`). `bash .specs/features/09-api-typed-client/proofs.sh <cNN>` runs from anywhere in the repo. Playwright starts `npm run dev` on port 3000 and the API on port 8000, and reuses a server already on either port locally, so stop other servers first.
+Commands run from `services/core/` (`uv run pytest ...`) or `frontend/` (`npx vitest run <file> -t "<name>"`, `npx playwright test <file> -g "<name>"`, `npm run ...`). `bash .specs/features/09-api-typed-client/proofs.sh <cNN>` runs from anywhere in the repo. Playwright starts `npm run dev` on port 3000 and the API on port 8100 (8000 is often taken), and reuses a server already on either port locally, so stop other servers first.
 
 ## Checks
 
