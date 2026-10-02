@@ -3,7 +3,7 @@
   "promote_threshold": 2,
   "window_days": 45,
   "quarantine_threshold": 2,
-  "next_id": 7,
+  "next_id": 11,
   "lessons": [
     {
       "id": "L-001",
@@ -112,6 +112,78 @@
       ],
       "created": "2026-10-02T16:06:57Z",
       "last_seen": "2026-10-02T16:06:57Z"
+    },
+    {
+      "id": "L-007",
+      "key": "gate_fail::pin generated files to lf in gitattributes because git for windows defaults core autocrlf true and a regenerated output is clean check then fails on identical bytes",
+      "text": "Pin generated files to LF in .gitattributes, because Git for Windows defaults core.autocrlf=true and a 'regenerated output is clean' check then fails on identical bytes.",
+      "signal": "gate_fail",
+      "scope": "git",
+      "status": "candidate",
+      "features": [
+        "09-api-typed-client"
+      ],
+      "recurrence": 1,
+      "harmful": 0,
+      "evidence": [
+        "C5 - proofs.sh:28-29 (git)"
+      ],
+      "created": "2026-10-02T20:51:47Z",
+      "last_seen": "2026-10-02T20:51:47Z"
+    },
+    {
+      "id": "L-008",
+      "key": "gate_fail::write tr d r as an escape never a literal control character editors and scripted edits turn a raw cr into an lf",
+      "text": "Write tr -d '\\r' as an escape, never a literal control character: editors and scripted edits turn a raw CR into an LF.",
+      "signal": "gate_fail",
+      "scope": "proofs",
+      "status": "candidate",
+      "features": [
+        "09-api-typed-client"
+      ],
+      "recurrence": 1,
+      "harmful": 0,
+      "evidence": [
+        "C16-C18 - proofs.sh:90-101 (proofs)"
+      ],
+      "created": "2026-10-02T20:51:47Z",
+      "last_seen": "2026-10-02T20:51:47Z"
+    },
+    {
+      "id": "L-009",
+      "key": "spec_precision_gap::a proof that a build fails must grep the expected error in the output not only check the exit code",
+      "text": "A proof that a build fails must grep the expected error in the output, not only check the exit code.",
+      "signal": "spec_precision_gap",
+      "scope": "proofs",
+      "status": "candidate",
+      "features": [
+        "09-api-typed-client"
+      ],
+      "recurrence": 1,
+      "harmful": 0,
+      "evidence": [
+        "C9 - proofs.sh:50 (proofs)"
+      ],
+      "created": "2026-10-02T20:51:47Z",
+      "last_seen": "2026-10-02T20:51:47Z"
+    },
+    {
+      "id": "L-010",
+      "key": "spec_precision_gap::a no focus trap assertion must check where focus ends up body or back to the first element not just that focus took more than one value",
+      "text": "A no-focus-trap assertion must check where focus ends up (body or back to the first element), not just that focus took more than one value.",
+      "signal": "spec_precision_gap",
+      "scope": "frontend/e2e",
+      "status": "candidate",
+      "features": [
+        "09-api-typed-client"
+      ],
+      "recurrence": 1,
+      "harmful": 0,
+      "evidence": [
+        "C15 - e2e/api-check.spec.ts:40 (frontend/e2e)"
+      ],
+      "created": "2026-10-02T20:51:47Z",
+      "last_seen": "2026-10-02T20:51:47Z"
     }
   ]
 }

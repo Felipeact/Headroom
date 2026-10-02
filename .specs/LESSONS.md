@@ -50,6 +50,30 @@ Seen once or not yet corroborated. Tracked, not trusted.
 - evidence: checks.md C41 (frontend/tests)
 - last seen: 2026-10-02T16:06:57Z
 
+### L-007 - Pin generated files to LF in .gitattributes, because Git for Windows defaults core.autocrlf=true and a 'regenerated output is clean' check then fails on identical bytes.
+- signal: `gate_fail` · recurrence: 1 feature(s) · scope: `git` · harmful: 0
+- features: 09-api-typed-client
+- evidence: C5 - proofs.sh:28-29 (git)
+- last seen: 2026-10-02T20:51:47Z
+
+### L-008 - Write tr -d '\r' as an escape, never a literal control character: editors and scripted edits turn a raw CR into an LF.
+- signal: `gate_fail` · recurrence: 1 feature(s) · scope: `proofs` · harmful: 0
+- features: 09-api-typed-client
+- evidence: C16-C18 - proofs.sh:90-101 (proofs)
+- last seen: 2026-10-02T20:51:47Z
+
+### L-009 - A proof that a build fails must grep the expected error in the output, not only check the exit code.
+- signal: `spec_precision_gap` · recurrence: 1 feature(s) · scope: `proofs` · harmful: 0
+- features: 09-api-typed-client
+- evidence: C9 - proofs.sh:50 (proofs)
+- last seen: 2026-10-02T20:51:47Z
+
+### L-010 - A no-focus-trap assertion must check where focus ends up (body or back to the first element), not just that focus took more than one value.
+- signal: `spec_precision_gap` · recurrence: 1 feature(s) · scope: `frontend/e2e` · harmful: 0
+- features: 09-api-typed-client
+- evidence: C15 - e2e/api-check.spec.ts:40 (frontend/e2e)
+- last seen: 2026-10-02T20:51:47Z
+
 ## Quarantined (failed when applied - ignore)
 
 A confirmed lesson that recurred alongside failure. Kept for the maintainer to review.

@@ -26,12 +26,14 @@
 
 ## Handoff
 
-**Feature**: 08-api-errors-logging-monitoring
-**Where**: C1-C32 all green. C21 (event `edd595c7b8b04ea6855d401e1ddead02`, local) and C22 (event `4f6b45f52221471e9b57ea4412592252`, staging) need `SENTRY_API_URL=https://us.sentry.io` and a personal `sntryu_` token; C32 green at `f68233f`
-**In progress**: none - waiting on the Sentry project and the push go-ahead
-**Next step**: none for spec 08 - independent Verifier PASS 32/32 over `ec63c5f..1fa01d5` (profile light), gate exit 0; spec marked Done. Verifier note: CI pytest is quiet, so DB tests are matched by position; `-rA` in CI would name them. `railway ssh` needs a registered SSH key: the temporary one used for C22 was removed from Railway and `~/.ssh` deleted at the user's request, so C22 cannot be re-run without a new key. `railway config` needs CLI >= 5.42.1 (`npx @railway/cli@5.63.1`); `railway ssh` works with the global 5.15.0
+**Feature**: 09-api-typed-client
+**Where**: C1-C19 all green; independent Verifier PASS 19/19 at round 3 over `63eab27..7cd50c4` (profile light), gate exit 0; spec Done
+**In progress**: none
+**Next step**: spec 10 (login with Clerk) is unblocked once 07, 08 and 09 are Done - they are. Staging `web` still has no `API_URL` (plan assumption: set it in spec 10 with the private-network address, after proving the port and IPv4/IPv6 binding). Commits after `fc0a97b` (the round fixes, lessons, Done marks) are not pushed yet
 **Blockers**: none
 **Uncommitted**: none
+**Also done**: 08-api-errors-logging-monitoring - independent Verifier PASS 32/32 over `ec63c5f..1fa01d5` (profile light). `railway ssh` needs a registered SSH key (the temporary one for C22 was removed). `railway config` needs CLI >= 5.42.1 (`npx @railway/cli@5.63.1`)
 **Also done**: 06-web-design-system - independent Verifier PASS 37/37 over `f1bbdd2..2a08ab3` (profile light), merged into `development`; its decisions are AD-012 to AD-014. Spec 07 is now unblocked. npm 12 on this machine rejects the user-level `allow-scripts` in `~/.npmrc` for project installs: run `npm install` / `npx shadcn add` with `npm_config_userconfig=<empty file>`. Playwright reuses any server on port 3000, so stop other dev servers first
 **Also done**: 07-web-app-shell - independent Verifier PASS 43/43 at round 3 over `61cfae8..313bfd5` (profile light); spec Done. Sentry proofs read `frontend/.env.local` (`set -a; . frontend/.env.local; set +a`) with a personal `SENTRY_READ_TOKEN` and `SENTRY_API_URL=https://us.sentry.io`. Staging Sentry variables for `web` were not set: the auto-mode classifier denied `railway config plan` as an IaC action, so the user sets them (`railway variable set ... --stdin --service web --environment staging`)
+**Also done**: 09 notes - port 8000 on this machine is held by a system process (`Manager`), so Playwright runs the API on 8100. No local Postgres or Docker here: DB pytest tests hang locally, CI runs them. `gh` lives at `/c/Program Files/GitHub CLI`; no `jq`. C16/C17 proof used scratch PR #2 (closed, branch deleted)
 **Branch**: development

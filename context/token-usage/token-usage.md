@@ -33,3 +33,5 @@ Context used per request, measured against a context window of about 250,000 tok
 | Spec 08: API errors, logging, and monitoring (external proofs C21, C22, C32, Railway apply, done) | ~80,000 (~32%) | High (smart zone) |
 | Spec 08: verifier sub-agent (separate context) | ~110,000 (~44%) | Medium (attention degrades) |
 | Spec 09: typed API client (plan) | ~65,000 (~26%) | High (smart zone) |
+| Spec 09: typed API client (checks, build, CI proofs, verify rounds 1-3 fixes) | ~150,000 (~60%) | Medium (attention degrades) |
+| Spec 09: verifier sub-agent, rounds 1-3 (separate context) | ~146,000 (~58%) | Medium (attention degrades) |
