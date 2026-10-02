@@ -93,7 +93,7 @@ Proof: `npx vitest run app/\(app\)/states.test.tsx -t "loading state"`
 **C24** - `app/(app)/error.tsx` exists beside `app/(app)/layout.tsx` (so Next renders it inside the shell), and renders the title "We couldn't load this page", one `svg[aria-hidden="true"]` and a button "Try again" (AC 24)
 Proof: `npx vitest run app/\(app\)/states.test.tsx -t "error state"`
 
-**C25** - Clicking "Try again" calls the `reset` prop exactly once (AC 25)
+**C25** - Clicking "Try again" calls the `retry` prop exactly once (AC 25)
 Proof: `npx vitest run app/\(app\)/states.test.tsx -t "try again resets"`
 
 **C26** - Rendering the error state with an `Error` calls `Sentry.captureException` exactly once, with that error (AC 26)
@@ -146,7 +146,7 @@ Proof: `npm run build && node scripts/check-prod-gate.mjs`
 **C40** - No path under `frontend/app/` contains `sentry-example-page` or `sentry-example-api` (AC 40)
 Proof: `npx vitest run tests/sentry-config.test.ts -t "no example routes"`
 
-**C41** - Each of `instrumentation-client.ts`, `sentry.server.config.ts` and `sentry.edge.config.ts` passes `dsn: process.env.NEXT_PUBLIC_SENTRY_DSN` and `sendDefaultPii: false`, and contains none of `tracesSampleRate`, `replayIntegration`, `enableLogs: true`. No file under `frontend/` outside `node_modules` and `.next` contains a Sentry DSN literal (`https://<key>@...ingest...sentry.io/<id>`) (AC 41)
+**C41** - Each of `instrumentation-client.ts`, `sentry.server.config.ts` and `sentry.edge.config.ts` passes `dsn: process.env.NEXT_PUBLIC_SENTRY_DSN` and the shared `sentryOptions` from `lib/sentry-options.ts`, and contains none of `tracesSampleRate`, `tracesSampler`, `replayIntegration`, `enableLogs: true`. `sentryOptions.dataCollection` sets `userInfo`, `cookies`, `httpHeaders`, `urlQueryParams` and `stackFrameVariables` to `false` and `httpBodies` to `[]`. No file under `frontend/` outside `node_modules` and `.next` contains a Sentry DSN literal (`https://<key>@...ingest...sentry.io/<id>`) (AC 41)
 Proof: `npx vitest run tests/sentry-config.test.ts -t "init options"`
 Proof: `npx vitest run tests/sentry-config.test.ts -t "no dsn in source"`
 
@@ -175,7 +175,8 @@ Proof: `env -u SENTRY_AUTH_TOKEN npm run build`
 | date styles (2) | `short` C34 · `weekday` C34 | - |
 | bad date inputs (4) | impossible day C36 · numeric order C36 · empty C36 · unpadded C36 | - |
 | Sentry runtimes (2) | client C37 · server C38 | - |
-| startup config: Sentry init (3 assemblies) | `instrumentation-client.ts` C41 · `sentry.server.config.ts` C41 · `sentry.edge.config.ts` C41 | - |
+| startup config: Sentry init, one shared options object (3) | `instrumentation-client.ts` C41 · `sentry.server.config.ts` C41 · `sentry.edge.config.ts` C41 | - |
+| `dataCollection` categories off (6) | `userInfo` C41 · `cookies` C41 · `httpHeaders` C41 · `urlQueryParams` C41 · `stackFrameVariables` C41 · `httpBodies` C41 | - |
 | startup config: next-intl (2 assemblies) | `next.config.ts` plugin C19 (Playwright boots it) · `app/layout.tsx` provider C20 | - |
 | Landing doors (5) | 1 routes C1 · 2 format API C27 · 3 messages layout C19 · 4 Sentry config C41 · 5 test page C39 | - |
 
@@ -200,3 +201,6 @@ Proof: `env -u SENTRY_AUTH_TOKEN npm run build`
 
 - Read once: plan + checks (~40 KB), the next-intl and Sentry setup docs and installed types (~40 KB), the dashboard mockup headers (~4 KB), the spec 06 Dialog and Skeleton (~8 KB) = ~90 KB. Write: S1 30 KB, S2 8 KB, S3 8 KB, S4 6 KB, S5 5 KB, S6 20 KB = ~77 KB. Total ≈ 167 KB / 4 ≈ 42k, plus tool output from npm, the Sentry setup, build and Playwright (~50k) ≈ 92k, under the 150k budget, so one builder
 - Mechanism: one builder (no ask, under budget)
+
+- **Settled mid-build (before any code):** C25 and AC 25 say `retry`, not `reset`. The installed Next 16.3 docs (`node_modules/next/dist/docs/01-app/03-api-reference/03-file-conventions/error.md`) make `retry` the stable prop that re-fetches; `reset` only clears the error state. C41 and AC 41 name Sentry 11's `dataCollection` categories: `@sentry/nextjs` 11.3.0 has no `sendDefaultPii`, and `dataCollection` collects user info, cookies, headers and bodies by default (`@sentry/core` `types/datacollection.d.ts`). Plan door 4 already allowed "the installed SDK's equivalent". `npx @sentry/wizard -i nextjs --non-interactive` stops at a Sentry login prompt (`ERR_TTY_INIT_FAILED` in `askHasSentryAccount`), so the files follow Sentry's official manual setup guide instead
+

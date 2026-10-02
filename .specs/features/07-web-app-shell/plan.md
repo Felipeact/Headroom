@@ -131,7 +131,7 @@ Pages in the shell inherit one loading state and one error state, so the screens
 
 23. WHILE a shell page is loading, the `(app)` loading state SHALL render inside the shell with Skeleton blocks and `aria-busy="true"`
 24. IF a shell page throws while rendering THEN the `(app)` error state SHALL render inside the shell, keeping the header and nav, with the title "We couldn't load this page", a danger icon marked `aria-hidden`, and a "Try again" button
-25. WHEN "Try again" is activated THEN the error state SHALL call Next's `reset` to re-render the page
+25. WHEN "Try again" is activated THEN the error state SHALL call Next's `retry` (stable since Next 16.3) to re-fetch and re-render the page
 26. IF a shell page throws while rendering THEN the error state SHALL report the error with `Sentry.captureException` once
 
 **Independent test:** Vitest renders `loading.tsx` and `error.tsx` directly.
@@ -161,7 +161,7 @@ Pages in the shell inherit one loading state and one error state, so the screens
 38. WHERE `NEXT_PUBLIC_SENTRY_DSN` is set, WHEN the "Throw a server error" button on `/dev/sentry-check` is clicked THEN an error event with the message `Headroom web Sentry check (server)` SHALL appear in the `headroom-web` Sentry project
 39. IF `/dev/sentry-check` is requested from a production build THEN the app SHALL respond `404`
 40. The repository SHALL contain no `sentry-example-page` and no `sentry-example-api` route
-41. The web app SHALL make every `Sentry.init` call take its DSN from `process.env.NEXT_PUBLIC_SENTRY_DSN`, set no `tracesSampleRate`, add no Replay integration, enable no logs, and turn PII collection off. No DSN is written in source
+41. The web app SHALL make every `Sentry.init` call take its DSN from `process.env.NEXT_PUBLIC_SENTRY_DSN`, set no `tracesSampleRate`, add no Replay integration, enable no logs, and turn PII collection off (Sentry 11 removed `sendDefaultPii`; its `dataCollection` option is turned off category by category). No DSN is written in source
 42. WHERE `NEXT_PUBLIC_SENTRY_DSN` is not set, the app SHALL render every shell page without error and send nothing to Sentry
 43. WHERE `SENTRY_AUTH_TOKEN` is not set, `npm run build` SHALL exit 0
 
