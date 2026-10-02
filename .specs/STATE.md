@@ -22,10 +22,10 @@
 ## Handoff
 
 **Feature**: 08-api-errors-logging-monitoring
-**Where**: C1-C20, C23-C31 green at `23f9ed6`; C21, C22, C32 open (external)
+**Where**: C1-C20, C23-C31 green at `23f9ed6`; C21 PASS 2026-10-02 (`proofs.sh c21`, event `edd595c7b8b04ea6855d401e1ddead02`, needs `SENTRY_API_URL=https://us.sentry.io` and a personal `sntryu_` token: org `sntrys_` tokens get 403 on events); C22, C32 open (external)
 **In progress**: none - waiting on the Sentry project and the push go-ahead
-**Next step**: `SENTRY_DSN` is in `services/core/.env.local` (2026-10-02; `app.sentry_check` exited 0, event `eea9cb04ef654649ae8f28e23605f700`). User exports `SENTRY_AUTH_TOKEN` (scope `project:read`)/`SENTRY_ORG`/`SENTRY_PROJECT` (US region: `SENTRY_API_URL=https://us.sentry.io` if `sentry.io` 404s); run `proofs.sh c21`. With the push go-ahead: add `SENTRY_ENVIRONMENT: "staging"` to `api.env` in `.railway/railway.ts`, `railway variables` for `SENTRY_DSN` (first confirm `railway config plan` does not drop non-IaC variables), apply, push, then `proofs.sh c22 c32`; then the Verifier over `ec63c5f..HEAD`
-**Blockers**: Sentry DSN and API token (user); go-ahead to push and change staging
+**Next step**: user sets `SENTRY_DSN` on Railway `api` staging (agent reading Railway variables was denied as credential exploration); then add `SENTRY_ENVIRONMENT: "staging"` to `api.env` in `.railway/railway.ts`, plan (confirm no non-IaC variable is dropped), apply, `proofs.sh c22`. C32: `development` pushed at `8ebfaa1`; CI result unreadable here (`gh` not logged in, repo private); local DB tests need Postgres on 5432 (none running, no Docker). Then the Verifier over `ec63c5f..HEAD`
+**Blockers**: Railway `SENTRY_DSN` and variable visibility (user); `gh auth login`; local Postgres
 **Uncommitted**: none
 **Also done**: 06-web-design-system - independent Verifier PASS 37/37 over `f1bbdd2..2a08ab3` (profile light), merged into `development`; its decisions are AD-012 to AD-014. Spec 07 is now unblocked. npm 12 on this machine rejects the user-level `allow-scripts` in `~/.npmrc` for project installs: run `npm install` / `npx shadcn add` with `npm_config_userconfig=<empty file>`. Playwright reuses any server on port 3000, so stop other dev servers first
 **Also in progress**: 07-web-app-shell - C1-C36 and C39-C43 green at `bb7d02a`; independent Verifier round 2 FAIL 41/43, only C37/C38 open (blocked: create the `headroom-web` Sentry project, put `NEXT_PUBLIC_SENTRY_DSN` in `frontend/.env.local`, export `SENTRY_AUTH_TOKEN`/`SENTRY_ORG`/`SENTRY_PROJECT=headroom-web`, run `bash .specs/features/07-web-app-shell/proofs.sh c37 c38`, then a scoped round 3). Staging Sentry variables on Railway `web` need the push go-ahead
