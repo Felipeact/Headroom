@@ -1,7 +1,7 @@
 # Spec 08: API errors, logging, and monitoring
 
 - **Milestone:** 2, foundations
-- **Status:** Not started
+- **Status:** In progress
 - **Depends on:** 03 (can run alongside 06 and 07)
 
 ## Goal
