@@ -26,6 +26,18 @@ Seen once or not yet corroborated. Tracked, not trusted.
 - evidence: AC 2 (frontend)
 - last seen: 2026-10-02T02:53:31Z
 
+### L-003 - Prove a table exists by querying the schema, not by a command that exits 0 when the table is absent
+- signal: `spec_precision_gap` · recurrence: 1 feature(s) · scope: `migrations` · harmful: 0
+- features: 05-setup-railway-staging
+- evidence: C3 - proofs.sh:81 (migrations)
+- last seen: 2026-10-02T03:37:24Z
+
+### L-004 - Get user confirmation before a check asserts a command or name different from the literal the binding spec gives
+- signal: `spec_deviation` · recurrence: 1 feature(s) · scope: `deploy` · harmful: 0
+- features: 05-setup-railway-staging
+- evidence: C20 - proofs.sh:251-252; plan.md:128 (deploy)
+- last seen: 2026-10-02T03:37:24Z
+
 ## Quarantined (failed when applied - ignore)
 
 A confirmed lesson that recurred alongside failure. Kept for the maintainer to review.

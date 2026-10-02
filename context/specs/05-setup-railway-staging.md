@@ -19,6 +19,8 @@ Deploy `development` to a staging environment automatically.
 - Set watch paths, so each service redeploys only when its own folder changes.
 - Keep all variables in Railway, never in the repository.
 
+**As built (confirmed with the user on 2026-10-01):** the database service is named `Postgres`, Railway's default. The API starts with `fastapi run app/main.py` (fastapi-cli reads `PORT`) and migrates with `alembic upgrade head`, both from the built virtual environment; `uv run` would install the dev tools at every start. Service settings live in `.railway/railway.ts` (Railway Infrastructure as Code), because Railway stops reading `railway.json` on 2026-12-01.
+
 **Docs:** [Railway monorepos](https://docs.railway.com/guides/monorepo), [uv with Docker](https://docs.astral.sh/uv/guides/integration/docker/)
 
 ## Done when

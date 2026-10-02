@@ -17,7 +17,7 @@ Proof: `bash .specs/features/05-setup-railway-staging/proofs.sh c1`
 **C2** - `curl` on `https://<api staging domain>/healthz/live` returns HTTP `200` with body exactly `{"status":"ok"}` (AC 2)
 Proof: `bash .specs/features/05-setup-railway-staging/proofs.sh c2`
 
-**C3** - The deploy logs of the latest `SUCCESS` `api` deployment contain Alembic's `Context impl PostgresqlImpl` line, and `railway ssh --service api --environment staging -- alembic current` exits 0, which needs the `alembic_version` table in the staging database (AC 3, door 3)
+**C3** - The deploy logs of the latest `SUCCESS` `api` deployment contain Alembic's `Context impl PostgresqlImpl` line, and inside the running `api` container (`railway ssh --service api --environment staging`) `sqlalchemy.inspect(app.db.get_engine()).has_table('alembic_version')` prints `True` (AC 3, door 3)
 Proof: `bash .specs/features/05-setup-railway-staging/proofs.sh c3`
 
 **C4** - Fault injection: `railway up <export>/services/core --path-as-root --service api --environment staging --ci`, on a `git archive HEAD` export in the scratchpad whose `migrations/env.py` raises at import, produces an `api` deployment with status `FAILED`; afterwards the latest `SUCCESS` deployment id is unchanged and C1 still passes (AC 4)
@@ -67,10 +67,10 @@ Proof: `bash .specs/features/05-setup-railway-staging/proofs.sh c15`
 **C16** - The raw (unrendered) `DATABASE_URL` of `api` in `staging`, read from `railway environment config --environment staging --json`, equals exactly `postgresql+psycopg://${{Postgres.PGUSER}}:${{Postgres.PGPASSWORD}}@${{Postgres.PGHOST}}:${{Postgres.PGPORT}}/${{Postgres.PGDATABASE}}`; the proof prints only `match` or `mismatch` (AC 16, door 3)
 Proof: `bash .specs/features/05-setup-railway-staging/proofs.sh c16`
 
-**C17** - `railway environment config --environment staging --json` places each of `Postgres`, `api` and `web` in a region whose id starts with `us-east` (AC 17, door 1)
+**C17** - `railway service list --environment staging --json` lists, for each of `Postgres`, `api` and `web`, only regions whose name starts with `us-east` (AC 17, door 1)
 Proof: `bash .specs/features/05-setup-railway-staging/proofs.sh c17`
 
-**C18** - For every environment other than `staging` listed by `railway environment list --json`, `railway deployment list --service api` and `--service web` with that environment return zero deployments (AC 18, door 1)
+**C18** - In `railway status --json`, every environment other than `staging` has zero service instances, so no `api` or `web` deployment can exist there (AC 18, door 1)
 Proof: `bash .specs/features/05-setup-railway-staging/proofs.sh c18`
 
 **C19** - `railway service list --environment staging --json` names exactly `Postgres`, `api` and `web`; the staging config gives `api` root directory `/services/core` and `web` root directory `/frontend`, both with repo `Felipeact/Headroom`, branch `development` and `checkSuites` `true` (door 1, door 4)
@@ -121,3 +121,4 @@ Proof: `bash .specs/features/05-setup-railway-staging/proofs.sh c21`
 - **Settled mid-build:** door 2 superseded by door 4 (IaC), the user's choice after Railway rejected Config as Code. C4/C5 inject the fault in the code, not in a config file. C14, C19, C20 rewritten for door 4; C22 added for AC 19; C9/C10 wait for CI (user answered yes)
 - **Settled mid-build (2):** Railway writes a `SKIPPED` deployment record for a push that matches no watch pattern, seen for commit N on 2026-10-01; C11/C12 now name it explicitly and C9/C10 require `SUCCESS` (stricter). C3's `railway ssh` needed an SSH key: the user approved creating `~/.ssh/id_ed25519`, registered with Railway as `headroom-dev`; the `ssh.railway.com` ED25519 host key was trusted on first use
 - **Abandoned:** `railway up <export>` without `--path-as-root` fails with `prefix not found` when the export is outside the linked directory
+- **Verifier round 1 (FAIL) fixes:** C3's proof asserted `alembic current` exit 0, which Alembic returns even with no version table; the proof now queries `has_table('alembic_version')`. C17/C18 text aligned with the commands their proofs read

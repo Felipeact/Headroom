@@ -78,8 +78,11 @@ c3() {
   id="$(latest_success_id)"; [ -n "$id" ] || fail c3 "no SUCCESS api deployment"
   railway logs "$id" --service api --environment "$ENV" --deployment --lines 1000 | grep -q 'Context impl PostgresqlImpl' \
     || fail c3 "deploy logs of $id do not show alembic running"
-  railway ssh --service api --environment "$ENV" -- alembic current >/dev/null \
-    || fail c3 "alembic current failed in the running api container"
+  # `alembic current` exits 0 even with no version table, so ask the schema directly.
+  local has_table
+  has_table="$(railway ssh --service api --environment "$ENV" -- python -c \
+    "from sqlalchemy import inspect; from app.db import get_engine; print(inspect(get_engine()).has_table('alembic_version'))" 2>/dev/null | tr -d '\r' | tail -1)"
+  [ "$has_table" = "True" ] || fail c3 "alembic_version is missing from the staging database (got '$has_table')"
   echo "PASS c3"
 }
 

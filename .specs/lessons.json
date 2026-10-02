@@ -3,7 +3,7 @@
   "promote_threshold": 2,
   "window_days": 45,
   "quarantine_threshold": 2,
-  "next_id": 3,
+  "next_id": 5,
   "lessons": [
     {
       "id": "L-001",
@@ -40,6 +40,42 @@
       ],
       "created": "2026-10-02T02:53:31Z",
       "last_seen": "2026-10-02T02:53:31Z"
+    },
+    {
+      "id": "L-003",
+      "key": "spec_precision_gap::prove a table exists by querying the schema not by a command that exits 0 when the table is absent",
+      "text": "Prove a table exists by querying the schema, not by a command that exits 0 when the table is absent",
+      "signal": "spec_precision_gap",
+      "scope": "migrations",
+      "status": "candidate",
+      "features": [
+        "05-setup-railway-staging"
+      ],
+      "recurrence": 1,
+      "harmful": 0,
+      "evidence": [
+        "C3 - proofs.sh:81 (migrations)"
+      ],
+      "created": "2026-10-02T03:37:24Z",
+      "last_seen": "2026-10-02T03:37:24Z"
+    },
+    {
+      "id": "L-004",
+      "key": "spec_deviation::get user confirmation before a check asserts a command or name different from the literal the binding spec gives",
+      "text": "Get user confirmation before a check asserts a command or name different from the literal the binding spec gives",
+      "signal": "spec_deviation",
+      "scope": "deploy",
+      "status": "candidate",
+      "features": [
+        "05-setup-railway-staging"
+      ],
+      "recurrence": 1,
+      "harmful": 0,
+      "evidence": [
+        "C20 - proofs.sh:251-252; plan.md:128 (deploy)"
+      ],
+      "created": "2026-10-02T03:37:24Z",
+      "last_seen": "2026-10-02T03:37:24Z"
     }
   ]
 }
