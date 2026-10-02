@@ -111,6 +111,8 @@ test.describe('signed out', () => {
 
       await tabTo(page, input(page))
       await tabTo(page, continueButton(page))
+      // Leaving a field fades in Clerk's field error; check contrast once it has settled.
+      await settle(page)
 
       const axe = await new AxeBuilder({ page }).analyze()
       expect(axe.violations, path).toEqual([])

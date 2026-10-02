@@ -217,6 +217,7 @@ def foreign_azp_token() -> str:
 REJECTIONS = [
     ("no_header", None, "missing"),
     ("basic", lambda: "Basic dXNlcjpwdw==", "missing"),
+    ("bearer_empty", lambda: "Bearer", "missing"),
     ("no_prefix", lambda: token(new_sub()), "missing"),
     ("expired", lambda: "Bearer " + expired_token(), "expired"),
     ("other_key", lambda: "Bearer " + other_key_token(), "invalid"),
