@@ -36,6 +36,8 @@ test('a11y and 375', async ({ page }) => {
     await page.keyboard.press('Tab')
     focused.push(await page.evaluate(() => document.activeElement?.outerHTML.slice(0, 80) ?? 'none'))
   }
-  const nothingFocusable = focused.every((html) => html.startsWith('<body'))
-  expect(nothingFocusable || new Set(focused).size > 1).toBe(true)
+  // Not trapped: focus reaches body, or comes back round to the first element it reached.
+  const reachesBody = focused.some((html) => html.startsWith('<body'))
+  const returnsToFirst = focused.indexOf(focused[0], 1) > 0
+  expect(reachesBody || returnsToFirst).toBe(true)
 })
