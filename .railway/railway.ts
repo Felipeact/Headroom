@@ -32,6 +32,10 @@ export default defineRailway((ctx) => {
       // The DSN is set with `railway variable set`; preserve() keeps it out of this file.
       SENTRY_DSN: preserve(),
       SENTRY_ENVIRONMENT: "staging",
+      // Clerk (spec 10), set with `railway variable set`: the PEM public key, and the web
+      // origin allowed in a token's azp claim.
+      CLERK_JWT_KEY: preserve(),
+      CLERK_AUTHORIZED_PARTIES: preserve(),
     },
   });
 
@@ -41,6 +45,14 @@ export default defineRailway((ctx) => {
     // Public and dependency-free: every page requires login, so "/" answers 307 (spec 10).
     healthcheck: "/healthz",
     replicas: { [US_EAST]: 1 },
+    env: {
+      // Set with `railway variable set` (spec 10): the Clerk keys and the API's address.
+      API_URL: preserve(),
+      CLERK_SECRET_KEY: preserve(),
+      NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY: preserve(),
+      NEXT_PUBLIC_CLERK_SIGN_IN_URL: "/sign-in",
+      NEXT_PUBLIC_CLERK_SIGN_UP_URL: "/sign-up",
+    },
   });
 
   return project("headroom", {
