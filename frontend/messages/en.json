@@ -1,0 +1,29 @@
+{
+  "Metadata": {
+    "title": "Headroom"
+  },
+  "Shell": {
+    "wordmark": "Headroom",
+    "businessLabel": "Business",
+    "skipToContent": "Skip to main content",
+    "mainNav": "Main",
+    "openMenu": "Open menu",
+    "menuTitle": "Menu",
+    "closeMenu": "Close menu"
+  },
+  "Nav": {
+    "dashboard": "Dashboard",
+    "expectedPayments": "Expected payments",
+    "alerts": "Alerts",
+    "settings": "Settings"
+  },
+  "Pages": {
+    "comingSoon": "This page is coming soon."
+  },
+  "States": {
+    "loading": "Loading",
+    "errorTitle": "We couldn't load this page",
+    "errorBody": "Check your connection and try again.",
+    "tryAgain": "Try again"
+  }
+}
