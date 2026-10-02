@@ -74,6 +74,12 @@ Seen once or not yet corroborated. Tracked, not trusted.
 - evidence: C15 - e2e/api-check.spec.ts:40 (frontend/e2e)
 - last seen: 2026-10-02T20:51:47Z
 
+### L-011 - A test that checks an export by reading its output file must delete or alter that file first, or an already-committed current output lets a wrong path pass.
+- signal: `spec_precision_gap` · recurrence: 1 feature(s) · scope: `tests` · harmful: 0
+- features: 09-api-typed-client
+- evidence: C1 - tests/test_export_openapi.py:42 (tests)
+- last seen: 2026-10-02T21:02:46Z
+
 ## Quarantined (failed when applied - ignore)
 
 A confirmed lesson that recurred alongside failure. Kept for the maintainer to review.

@@ -3,7 +3,7 @@
   "promote_threshold": 2,
   "window_days": 45,
   "quarantine_threshold": 2,
-  "next_id": 11,
+  "next_id": 12,
   "lessons": [
     {
       "id": "L-001",
@@ -184,6 +184,24 @@
       ],
       "created": "2026-10-02T20:51:47Z",
       "last_seen": "2026-10-02T20:51:47Z"
+    },
+    {
+      "id": "L-011",
+      "key": "spec_precision_gap::a test that checks an export by reading its output file must delete or alter that file first or an already committed current output lets a wrong path pass",
+      "text": "A test that checks an export by reading its output file must delete or alter that file first, or an already-committed current output lets a wrong path pass.",
+      "signal": "spec_precision_gap",
+      "scope": "tests",
+      "status": "candidate",
+      "features": [
+        "09-api-typed-client"
+      ],
+      "recurrence": 1,
+      "harmful": 0,
+      "evidence": [
+        "C1 - tests/test_export_openapi.py:42 (tests)"
+      ],
+      "created": "2026-10-02T21:02:46Z",
+      "last_seen": "2026-10-02T21:02:46Z"
     }
   ]
 }

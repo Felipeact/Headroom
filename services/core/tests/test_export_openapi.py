@@ -35,6 +35,8 @@ def run_export(cwd: Path) -> subprocess.CompletedProcess[str]:
 
 
 def test_writes_contract_from_any_cwd(tmp_path: Path) -> None:
+    CONTRACT.unlink()  # so only this export can make it exist again
+
     result = run_export(tmp_path)
 
     assert result.returncode == 0, result.stderr
