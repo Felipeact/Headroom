@@ -100,6 +100,24 @@ inject_fault() { # name python-snippet-that-breaks-the-export
   after="$(latest_success_id)"
   [ "$before" = "$after" ] || fail "$name" "the latest SUCCESS deployment changed from $before to $after"
   c1 >/dev/null || fail "$name" "staging stopped answering after the fault"
+  restore_latest_api
+}
+
+# `railway service redeploy` without --from-source rebuilds the newest deployment, which is now the
+# broken upload; redeploy from the configured source so the newest deployment is a good one again.
+restore_latest_api() {
+  railway service redeploy --service api --environment "$ENV" --from-source --yes >/dev/null \
+    || fail restore "could not redeploy api from source"
+  local i status
+  for i in $(seq 1 60); do
+    status="$(deployments api | json "print(d[0]['status'])")"
+    case "$status" in
+      SUCCESS) return 0 ;;
+      FAILED|CRASHED|REMOVED) fail restore "redeploy from source ended $status" ;;
+    esac
+    sleep 15
+  done
+  fail restore "redeploy from source did not finish within 15 minutes"
 }
 
 c4() {
