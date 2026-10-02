@@ -16,10 +16,10 @@ into `development`; its number is recorded under `## Handoff` once it exists.
 
 ### S1 - The frontend checks run locally · ~8 files · ~6k
 
-**C1** - In `frontend/`, the `typecheck` script is exactly `tsc --noEmit`, and `npm run typecheck` exits 0 on the committed code (AC 1)
+**C1** - In `frontend/`, the `typecheck` script is exactly `next typegen && tsc --noEmit`, and `npm run typecheck` exits 0 on the committed code with no `.next/` folder and no `next-env.d.ts` present, as on a fresh clone (AC 1; amended with the user on 2026-10-01 - plain `tsc --noEmit` fails on a fresh clone because Next generates `LayoutProps` and `next-env.d.ts`)
 Proof: `bash .specs/features/04-setup-tests-and-ci/proofs.sh c1`
 
-**C2** - With a temporary file `frontend/app/zz-type-error.tsx` containing `const n: number = "not a number"`, `npm run typecheck` exits non-zero; the file is removed afterwards (AC 2)
+**C2** - With a temporary file `frontend/app/zz-type-error.tsx` containing `const n: number = "not a number"`, `npm run typecheck` exits non-zero and reports an error in `zz-type-error.tsx`; the file is removed afterwards (AC 2)
 Proof: `bash .specs/features/04-setup-tests-and-ci/proofs.sh c2`
 
 **C3** - With `CI` unset, `npm test` in `frontend/` exits 0 on its own within 120 seconds (no watch mode), uses the `jsdom` environment, and its output reports `app/page.test.tsx` passing, a test that renders `app/page.tsx` with `@testing-library/react` (AC 3)
