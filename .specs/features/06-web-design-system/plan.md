@@ -25,7 +25,7 @@ re-themes generated files and never hand-writes a component the CLI provides.
 2. `frontend/app/globals.css` (exists): DESIGN.md tokens in `:root` (door 1), mapped into `@theme inline` and aliased by the shadcn semantic variables. The starter `oklch` values and the `.dark` block are removed.
 3. `frontend/app/layout.tsx` (exists): `next/font/google` Fraunces and IBM Plex Sans replace Geist and feed `--font-sans` / `--font-heading`.
 4. `frontend/components/ui/*` (exists after hop 1): re-themed through the tokens. Button and badge variants are renamed to DESIGN.md's names (doors 2, 3).
-5. `frontend/app/dev/components/page.tsx` (new, gated by door 5): renders the mockup's sections from hop 4's components. Returns 404 in a production build.
+5. `frontend/app/dev/components/page.tsx` (new, gated by door 5): renders the mockup's sections from hop 4's components. Returns 404 in a production build. Three client components sit beside it: the swatch reads each caption's hex from its CSS variable, so `globals.css` stays the only place a hex value is written; then the segmented control and the dialog-and-toast demo.
 6. out: `npm run dev` serves `/dev/components`. The Playwright run (`@axe-core/playwright`, door 4) and a Vitest guard over source files prove the result.
 
 ## Impact
@@ -37,7 +37,7 @@ re-themes generated files and never hand-writes a component the CLI provides.
 | domain | existing term: Button `variant="default"` and `variant="outline"` change meaning (door 2). Nothing outside `components/ui/` imports Button yet. |
 | theme | the `.dark` palette is deleted. `@custom-variant dark (&:is(.dark *))` stays, so the `dark:` classes inside generated components never fire. Without that line, Tailwind v4 would apply them under the OS dark setting. |
 | starter page | `app/page.tsx` stays until spec 07, but its three hex classes (`hover:bg-[#383838]`, `dark:hover:bg-[#ccc]`, `dark:hover:bg-[#1a1a1a]`) are swapped for tokens so the no-hex guard covers all of `app/` |
-| dependencies | new runtime dependencies come from `shadcn add` (including `sonner` and `next-themes`, which the generated `sonner.tsx` imports). One new dev dependency: `@axe-core/playwright` (door 4) |
+| dependencies | new runtime dependency `sonner` from `shadcn add`. `shadcn add` also installed `next-themes` for the generated `sonner.tsx`'s theme switching; the themed `sonner.tsx` pins `theme="light"`, so `next-themes` was uninstalled. One new dev dependency: `@axe-core/playwright` (door 4) |
 | CI | none - CI runs lint, typecheck, Vitest and build (AD-004). The new Vitest guard runs there. Playwright stays local, as in spec 04 |
 | stored data | nothing to migrate |
 

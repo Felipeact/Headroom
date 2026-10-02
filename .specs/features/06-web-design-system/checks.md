@@ -167,3 +167,7 @@ Proof: `npx playwright test e2e/dev-components.spec.ts -g "keyboard order"`
 
 - Read once: plan + checks (~30 KB), DESIGN.md (13 KB), the Components mockup (22 KB) = 65 KB. Write: S1 18 KB, S2 60 KB of mostly generated components, S3 40 KB (page + spec file), S4 12 KB = 130 KB. Total ≈ 195 KB / 4 ≈ 49k, plus tool output from npm, shadcn and Playwright (~40k) ≈ 90k, under the 150k budget, so one builder
 - Mechanism: one builder (no ask, under budget)
+
+- **Boundary:** C1-C37 closed at the `feat(frontend): theme the web app with the design system (spec 06)` commit. Vitest 74/74, Playwright `e2e/` 40/40 (123/123 with `--repeat-each=3`), and `npm run build && node scripts/check-prod-gate.mjs` printing `GET / -> 200; GET /dev/components -> 404`
+- **Settled mid-build:** C25 corrected from 13 to the mockup's 14 swatches (commit `ae33dc5`). Three Playwright proofs now wait for running CSS transitions and open animations to finish before reading styles (`settle()`); the values asserted are unchanged. The axe scan excludes `nextjs-portal`, the Next.js dev tools overlay, which isn't part of the page
+- **Abandoned:** reading the swatch caption straight from the CSS variable, because the CSS compiler shortens six-digit hex to three digits where it can; the caption expands it back
