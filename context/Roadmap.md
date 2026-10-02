@@ -23,7 +23,9 @@ You set up the repository yourself. The specs assume it already has:
 
 ## v1: first clients (about 3–4 months)
 
-### Milestone 1: Set-up (about 1 week)
+### Milestone 1: Set-up (about 1 week): done October 1, 2026
+
+Specs 01–05 are done. Staging runs on Railway, and its service settings live in `.railway/railway.ts`.
 
 | Spec | What it does | Depends on |
 |---|---|---|
