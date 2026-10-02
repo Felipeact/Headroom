@@ -61,6 +61,8 @@ One new entity, `users`, owned by `accounts`. One-way constraints: `clerk_user_i
 
 | 8. Clerk colours are copies of the token values (found while building: with `var(--accent)` Clerk's primary button computed `rgba(0, 0, 0, 0)` and its error text a 2.96 contrast shade) | `frontend/lib/clerk-appearance.ts` exports `CLERK_TOKENS`, the hex values of `--accent`, `--surface`, `--surface-muted`, `--border-input`, `--ink`, `--ink-3`, `--positive`, `--danger-text` as declared in `app/globals.css`, and `appearance.variables` reads only from it; `tests/clerk-appearance.test.ts` fails when any value differs from `globals.css`. Font stays `var(--font-plex-sans)`, which Clerk passes through untouched | CSS variables in `appearance.variables`, as door 5 implied: Clerk derives shades with its own colour math, which cannot resolve `var()`. `@clerk/themes`: a second palette outside AD-012 |
 
+| 9. Web health check (found on staging after the push: Railway's check on `/` got `307` to `/sign-in`, so the `990e12a` deploy never went live) | `frontend/app/healthz/route.ts` answers `GET /healthz` with `200` `{"status":"ok"}`, no auth and no API or Clerk call; `.railway/railway.ts` `web.healthcheck` becomes `/healthz` (was `/`, spec 05 door 4) | `/sign-in` as the check path: depends on Clerk being up, so a Clerk outage would fail web deploys. Making `/` public again: undoes AC 12 |
+
 - Doors 1 to 6 reach past this feature and become AD-020 to AD-025; door 7 becomes AD-026 and supersedes AD-024's route matcher; door 8 becomes AD-027 in `.specs/STATE.md` `## Decisions` once the plan is approved.
 - Header layout details, the sign-in page's surrounding layout, test helpers and file split inside `app/auth.py` are reversible and settled in the diff.
 

@@ -38,7 +38,8 @@ export default defineRailway((ctx) => {
   const web = service("web", {
     source: github(REPO, { branch: "development", rootDirectory: "/frontend", checkSuites: true }),
     build: { builder: "RAILPACK", watchPatterns: ["/frontend/**"] },
-    healthcheck: "/",
+    // Public and dependency-free: every page requires login, so "/" answers 307 (spec 10).
+    healthcheck: "/healthz",
     replicas: { [US_EAST]: 1 },
   });
 
