@@ -35,3 +35,4 @@ Context used per request, measured against a context window of about 250,000 tok
 | Spec 09: typed API client (plan) | ~65,000 (~26%) | High (smart zone) |
 | Spec 09: typed API client (checks, build, CI proofs, verify rounds 1-3 fixes) | ~150,000 (~60%) | Medium (attention degrades) |
 | Spec 09: verifier sub-agent, rounds 1-3 (separate context) | ~146,000 (~58%) | Medium (attention degrades) |
+| Spec 09: typed API client (the-judge review, F1/F2 fixes, verify round 4) | ~70,000 (~28%) | High (smart zone) |
