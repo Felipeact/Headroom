@@ -201,6 +201,21 @@ test.describe('phone', () => {
     await expect(page.getByRole('dialog')).toHaveCount(0)
   })
 
+  test('link metrics in the menu (C5)', async ({ page }) => {
+    await page.goto('/')
+    await page.getByRole('button', { name: 'Open menu' }).click()
+    const links = page.getByRole('dialog', { name: 'Menu' }).getByRole('link')
+    await expect(links).toHaveCount(4)
+    // The Dialog opens with a zoom from 95%; measure once it has finished.
+    await settle(page)
+    for (let i = 0; i < 4; i += 1) {
+      const link = links.nth(i)
+      expect((await link.boundingBox())!.height).toBeGreaterThanOrEqual(44)
+      expect(await css(link, 'border-radius')).toBe('10px')
+      expect(await css(link, 'font-size')).toBe('15px')
+    }
+  })
+
   test('menu focus (C17)', async ({ page }) => {
     await page.goto('/')
     const button = page.getByRole('button', { name: 'Open menu' })

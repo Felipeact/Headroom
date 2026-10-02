@@ -23,7 +23,7 @@ Proof: `npx playwright test e2e/shell.spec.ts -g "nav links"`
 **C4** - On each of the 4 pages, the link for that page has `aria-current="page"`, background `rgb(233, 229, 220)` and weight `600`, and the other 3 have no `aria-current`, background `rgba(0, 0, 0, 0)`, colour `rgb(69, 79, 92)` and weight `500` (AC 4)
 Proof: `npx playwright test e2e/shell.spec.ts -g "current link"`
 
-**C5** - Each nav link is at least 44px tall, with `border-radius` `10px` and `font-size` `15px` (AC 5)
+**C5** - Each nav link, the 4 in the desktop nav at 1440px and the 4 in the open menu Dialog at 375px, is at least 44px tall, with `border-radius` `10px` and `font-size` `15px` (AC 5)
 Proof: `npx playwright test e2e/shell.spec.ts -g "link metrics"`
 
 **C6** - At 1440px and at 1024px wide, the 4 nav links are visible and no button named "Open menu" is rendered (AC 6)
@@ -146,7 +146,7 @@ Proof: `npm run build && node scripts/check-prod-gate.mjs`
 **C40** - No path under `frontend/app/` contains `sentry-example-page` or `sentry-example-api` (AC 40)
 Proof: `npx vitest run tests/sentry-config.test.ts -t "no example routes"`
 
-**C41** - Each of `instrumentation-client.ts`, `sentry.server.config.ts` and `sentry.edge.config.ts` passes `dsn: process.env.NEXT_PUBLIC_SENTRY_DSN` and the shared `sentryOptions` from `lib/sentry-options.ts`, and contains none of `tracesSampleRate`, `tracesSampler`, `replayIntegration`, `enableLogs: true`. `sentryOptions.dataCollection` sets `userInfo`, `cookies`, `httpHeaders`, `urlQueryParams` and `stackFrameVariables` to `false` and `httpBodies` to `[]`. No file under `frontend/` outside `node_modules` and `.next` contains a Sentry DSN literal (`https://<key>@...ingest...sentry.io/<id>`) (AC 41)
+**C41** - Each of `instrumentation-client.ts`, `sentry.server.config.ts` and `sentry.edge.config.ts` passes `dsn: process.env.NEXT_PUBLIC_SENTRY_DSN` and the shared `sentryOptions` from `lib/sentry-options.ts`, and contains none of `tracesSampleRate`, `tracesSampler`, `replayIntegration`, `enableLogs: true`. `sentryOptions.dataCollection` sets `userInfo`, `cookies`, `httpHeaders`, `urlQueryParams` and `stackFrameVariables` to `false` and `httpBodies` to `[]`. No file under `frontend/` that git tracks or would track (`git ls-files --cached --others --exclude-standard`, so not the ignored `.env.local`, `node_modules` or `.next`) contains a Sentry DSN literal (`https://<key>@...ingest...sentry.io/<id>`) (AC 41)
 Proof: `npx vitest run tests/sentry-config.test.ts -t "init options"`
 Proof: `npx vitest run tests/sentry-config.test.ts -t "no dsn in source"`
 
@@ -163,6 +163,7 @@ Proof: `env -u SENTRY_AUTH_TOKEN npm run build`
 | shell pages (4) | `/` C1 · `/expected-payments` C1 · `/alerts` C1 · `/settings` C1 | - |
 | `GET /`, `/expected-payments`, `/alerts`, `/settings` statuses (1 each) | 200 C1, C39 | - |
 | `GET /dev/sentry-check` statuses (2) | 200 C39 · 404 C39 | - |
+| nav link placements for metrics (2) | desktop nav C5 · menu Dialog C5 | - |
 | nav link states (2) | current C4 · not current C4 | - |
 | header widths (4 edges) | 1440 C6 · 1024 C6 · 1023 C7 · 375 C7 | - |
 | business name present (2) | given C10 · absent C11 | - |
@@ -207,3 +208,4 @@ Proof: `env -u SENTRY_AUTH_TOKEN npm run build`
 - **Settled mid-build:** C41's "no DSN in source" walks the files git tracks or would track (`git ls-files --cached --others --exclude-standard`), because the ignored `frontend/.env.local` is where open question 1 puts the DSN. `withSentryConfig` comes from `@sentry/nextjs/config` in SDK 11; the root export no longer has it. Build telemetry to Sentry is off (`telemetry: false`). C22's first test passed without `global.ts` (`createTranslator` infers keys from its argument), so its type-level half goes through `useTranslations`, and was checked to fail with `global.ts` removed. `frontend/.env.example` is new, with `!.env.example` added to `frontend/.gitignore`
 - **Boundary:** C1-C36 and C39-C43 green at the `feat(frontend): report web errors to sentry (spec 07)` commit. Vitest 96/96, Playwright `e2e/` 68/68 with `NEXT_PUBLIC_SENTRY_DSN` empty (twice, once from a cold `.next/dev`; one earlier run right after `npm run build` timed out on 6 cold page loads and passed on rerun), `env -u SENTRY_AUTH_TOKEN npm run build` exit 0, `node scripts/check-prod-gate.mjs` printing 200 for the four shell pages and 404 for both `/dev` pages. C37 and C38 open: `proofs.sh` stops at "SENTRY_AUTH_TOKEN is not set" until the `headroom-web` project exists (open question 1)
 - **Abandoned:** `npx @sentry/wizard -i nextjs --non-interactive` - it stops at the Sentry login prompt. The files follow Sentry's manual setup guide, minus `onRouterTransitionStart` (navigation tracing, which door 4 leaves off)
+- **Round 1 fixes (Verifier FAIL 41/43):** C41's text now names the git-tracked scope its proof already used (recorded above as settled mid-build). C5 gains `link metrics in the menu (C5)` for the menu Dialog's links, which AC 5 covers and round 1 found unsampled. Plan `Impact` corrected: `e2e/home.spec.ts` stays as it was (it asserts an `h1` and still passes) and `app/page.test.tsx` was deleted, not rewritten
