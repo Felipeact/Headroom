@@ -10,6 +10,8 @@ class Settings(BaseSettings):
     model_config = SettingsConfigDict(env_file=".env.local")
 
     database_url: str
+    sentry_dsn: str | None = None
+    sentry_environment: str = "local"
 
     @field_validator("database_url")
     @classmethod

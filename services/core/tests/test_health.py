@@ -81,3 +81,12 @@ def test_unavailable_body_leaks_nothing() -> None:
         assert secret not in body
     for word in ("Error", "Exception", "Traceback"):
         assert word not in body
+
+
+@pytest.mark.usefixtures("refusing_database")
+def test_ready_503_stays_plain_json() -> None:
+    response = client.get("/healthz/ready")
+
+    assert response.status_code == 503
+    assert response.headers["content-type"] == "application/json"
+    assert response.json() == {"status": "unavailable"}
