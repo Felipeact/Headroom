@@ -121,7 +121,7 @@ Done when: "Changing an endpoint without regenerating the files makes CI fail."
 
 | Assumption | Chosen default | Rationale | Confirmed? |
 | --- | --- | --- | --- |
-| when staging's `web` gets `API_URL` | spec 10, as `http://${{api.RAILWAY_PRIVATE_DOMAIN}}:<port>` once the private-network port is confirmed | no staging page calls the API in this spec, and the private-network address needs its own proof (IPv4/IPv6 binding, port) that belongs with the first real call | n |
+| when staging's `web` gets `API_URL` | spec 10, as `http://${{api.RAILWAY_PRIVATE_DOMAIN}}:<port>` once the private-network port is confirmed | no staging page calls the API in this spec, and the private-network address needs its own proof (IPv4/IPv6 bind address, port) that belongs with the first real call | n |
 | how AC 16-18 are proved | a scratch pull request into `development` that changes an endpoint without regenerating, showing the red check, then closed and its branch deleted; plus the green run on `development` after the feature is pushed | the Done-when names CI itself; a local rerun of the steps proves the commands, not the workflow. Needs a branch and a push, which AGENTS.md says to ask for | n |
 | `noUncheckedIndexedAccess`, recommended by openapi-ts | not enabled | it changes type checking across existing code, which this spec does not need; a separate change can turn it on | n |
 | copy on `/dev/api-check` | English literals in the page, not `messages/en.json` | developer-only page, same precedent as `/dev/sentry-check` (spec 07) | n |
