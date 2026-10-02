@@ -14,10 +14,10 @@
 
 ## Handoff
 
-**Feature**: 04-setup-tests-and-ci
-**Where**: done; independent Verifier PASS 17/17 over `7b9f969..1e25913`, `validate_verification.py` exit 0; throwaway pull request #1 closed and `ci/spec-04-proof` deleted
+**Feature**: 05-setup-railway-staging
+**Where**: done; independent Verifier PASS 22/22 at round 2 over `4a3f716..ebb410e`, `validate_verification.py` exit 0. Staging: api `https://api-staging-e068.up.railway.app`, web `https://web-staging-4398.up.railway.app`
 **In progress**: none
-**Next step**: spec 05 (another session has started it)
-**Blockers**: none (Docker Desktop must be running for the local database-backed tests)
-**Uncommitted**: none from spec 04
+**Next step**: spec 06, 08 or 09 (all unblocked); milestone 1 (set-up) is complete
+**Blockers**: none. `railway config` under Git Bash on Windows needs `env _=<railway.exe>` (AD-007). The C3 proof uses the SSH key `~/.ssh/id_ed25519`, registered with Railway as `headroom-dev`
+**Uncommitted**: none
 **Branch**: development

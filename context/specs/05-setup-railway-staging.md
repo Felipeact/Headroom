@@ -1,7 +1,7 @@
 # Spec 05: Staging on Railway
 
 - **Milestone:** 1, set-up
-- **Status:** In progress
+- **Status:** Done
 - **Depends on:** 01, 03 (can run alongside 04)
 
 ## Goal
@@ -25,5 +25,5 @@ Deploy `development` to a staging environment automatically.
 
 ## Done when
 
-- [ ] Merging into `development` deploys both apps to staging.
-- [ ] Staging's `/healthz/ready` returns 200, and the web app loads.
+- [x] Merging into `development` deploys both apps to staging.
+- [x] Staging's `/healthz/ready` returns 200, and the web app loads.

@@ -19,3 +19,6 @@ Context used per request, measured against a context window of about 250,000 tok
 | Spec 04: tests and CI (checks, build) | ~95,000 (~38%) | High (smart zone) |
 | Spec 04: tests and CI (verify, the-judge review, cleanup fix) | ~140,000 (~56%) | Medium (attention degrades) |
 | Spec 04: verifier sub-agent (separate context) | ~93,000 (~37%) | High (smart zone) |
+| Spec 05: staging on Railway (plan) | ~70,000 (~28%) | High (smart zone) |
+| Spec 05: staging on Railway (checks, provisioning, IaC switch, build, verify rounds) | ~140,000 (~56%) | Medium (attention degrades) |
+| Spec 05: verifier sub-agent, rounds 1 and 2 (separate context) | ~123,000 (~49%) | Medium (attention degrades) |
