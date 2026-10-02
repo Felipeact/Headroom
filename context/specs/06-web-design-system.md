@@ -1,7 +1,7 @@
 # Spec 06: Design system in the web app
 
 - **Milestone:** 2, foundations
-- **Status:** Not started
+- **Status:** In progress
 - **Depends on:** 01
 
 ## Goal
