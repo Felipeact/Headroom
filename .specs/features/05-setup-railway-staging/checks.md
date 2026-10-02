@@ -41,16 +41,16 @@ Proof: `bash .specs/features/05-setup-railway-staging/proofs.sh c8`
 
 The build pushes three commits to `development`, one at a time and each with the user's go-ahead: commit N changes only files outside both app folders (`.railway/`, `.specs/`, `context/`), commit W changes only `frontend/README.md`, and commit A changes only `services/core/README.md`. The proofs read their SHAs from `git log` by commit subject.
 
-**C9** - After the `web` and `api` checks for commit A succeed, `railway deployment list --service api --environment staging --json` contains a deployment whose commit SHA is commit A's (AC 9)
+**C9** - After the `web` and `api` checks for commit A succeed, `railway deployment list --service api --environment staging --json` contains a deployment with status `SUCCESS` whose commit SHA is commit A's (AC 9)
 Proof: `bash .specs/features/05-setup-railway-staging/proofs.sh c9`
 
-**C10** - After the `web` and `api` checks for commit W succeed, `railway deployment list --service web --environment staging --json` contains a deployment whose commit SHA is commit W's (AC 10)
+**C10** - After the `web` and `api` checks for commit W succeed, `railway deployment list --service web --environment staging --json` contains a deployment with status `SUCCESS` whose commit SHA is commit W's (AC 10)
 Proof: `bash .specs/features/05-setup-railway-staging/proofs.sh c10`
 
-**C11** - The `api` deployment list contains no deployment for commit W's SHA nor for commit N's SHA, checked at least 5 minutes after commit N was pushed (AC 11)
+**C11** - The `api` deployment list holds, for commit W's SHA and for commit N's SHA, either nothing or only records with status `SKIPPED` (Railway's record of a commit whose files match no watch pattern; it never builds), checked at least 5 minutes after commit N was pushed (AC 11)
 Proof: `bash .specs/features/05-setup-railway-staging/proofs.sh c11`
 
-**C12** - The `web` deployment list contains no deployment for commit A's SHA nor for commit N's SHA, checked at least 5 minutes after commit N was pushed (AC 12)
+**C12** - The `web` deployment list holds, for commit A's SHA and for commit N's SHA, either nothing or only records with status `SKIPPED`, checked at least 5 minutes after commit N was pushed (AC 12)
 Proof: `bash .specs/features/05-setup-railway-staging/proofs.sh c12`
 
 **C13** - `railway environment config --environment staging --json` gives the source branch `development` for both `api` and `web`, and every commit SHA in both services' deployment lists passes `git merge-base --is-ancestor <sha> origin/development`, so nothing from `ci/spec-04-proof` or any other branch reached staging (AC 13)
@@ -119,3 +119,5 @@ Proof: `bash .specs/features/05-setup-railway-staging/proofs.sh c21`
 - Mechanism: one builder (no ask, under budget)
 - Preconditions met on 2026-10-01: `railway login` done, tree on `development` with spec 04 Done, wait-for-CI answered yes
 - **Settled mid-build:** door 2 superseded by door 4 (IaC), the user's choice after Railway rejected Config as Code. C4/C5 inject the fault in the code, not in a config file. C14, C19, C20 rewritten for door 4; C22 added for AC 19; C9/C10 wait for CI (user answered yes)
+- **Settled mid-build (2):** Railway writes a `SKIPPED` deployment record for a push that matches no watch pattern, seen for commit N on 2026-10-01; C11/C12 now name it explicitly and C9/C10 require `SUCCESS` (stricter). C3's `railway ssh` needed an SSH key: the user approved creating `~/.ssh/id_ed25519`, registered with Railway as `headroom-dev`; the `ssh.railway.com` ED25519 host key was trusted on first use
+- **Abandoned:** `railway up <export>` without `--path-as-root` fails with `prefix not found` when the export is outside the linked directory

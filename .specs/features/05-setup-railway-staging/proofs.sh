@@ -24,7 +24,8 @@ railway_iac() {
 }
 
 # json CODE [ARGS...]: run CODE with the parsed stdin bound to d; ARGS land in sys.argv[1:].
-json() { python3 -c "import json,sys; d=json.load(sys.stdin); $1" "${@:2}"; }
+# Windows Python prints \r\n, so strip \r before the output reaches shell variables.
+json() { python3 -c "import json,sys; d=json.load(sys.stdin); $1" "${@:2}" | tr -d '\r'; }
 
 domain_of() {
   railway domain list --service "$1" --environment "$ENV" --json | json "print(d['domains'][0]['domain'])"
@@ -49,8 +50,11 @@ sha_of() {
   echo "$sha"
 }
 
-has_deployment_for() { # service sha -> prints yes/no
-  deployments "$1" | json "print('yes' if any((x.get('meta') or {}).get('commitHash')=='$2' for x in d) else 'no')"
+# Railway records a commit whose files match no watch pattern as a SKIPPED deployment that never builds.
+has_deployment_for() { # service sha -> yes (reached SUCCESS) / no (absent or only SKIPPED) / other
+  deployments "$1" | json "
+s={x['status'] for x in d if (x.get('meta') or {}).get('commitHash')=='$2'}
+print('yes' if 'SUCCESS' in s else 'no' if s<={'SKIPPED'} else 'other:'+','.join(sorted(s)))"
 }
 
 ci_succeeded() { # sha -> exit 0 when the CI run for that commit concluded success
