@@ -1,7 +1,7 @@
 # Spec 07: App shell, translations, and formatting
 
 - **Milestone:** 2, foundations
-- **Status:** Not started
+- **Status:** In progress
 - **Depends on:** 06
 
 ## Goal
