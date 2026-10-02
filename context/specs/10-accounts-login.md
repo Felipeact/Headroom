@@ -1,7 +1,7 @@
 # Spec 10: Login with Clerk
 
 - **Milestone:** 2, foundations
-- **Status:** Not started
+- **Status:** In progress
 - **Depends on:** 07, 08, 09
 
 ## Goal
