@@ -22,10 +22,10 @@
 ## Handoff
 
 **Feature**: 08-api-errors-logging-monitoring
-**Where**: C1-C20, C23-C31 green at `23f9ed6`; C21 PASS 2026-10-02 (`proofs.sh c21`, event `edd595c7b8b04ea6855d401e1ddead02`, needs `SENTRY_API_URL=https://us.sentry.io` and a personal `sntryu_` token: org `sntrys_` tokens get 403 on events); C32 PASS at `f68233f` (CI `api` success); C22 open
+**Where**: C1-C32 all green. C21 (event `edd595c7b8b04ea6855d401e1ddead02`, local) and C22 (event `4f6b45f52221471e9b57ea4412592252`, staging) need `SENTRY_API_URL=https://us.sentry.io` and a personal `sntryu_` token; C32 green at `f68233f`
 **In progress**: none - waiting on the Sentry project and the push go-ahead
-**Next step**: user runs `railway config apply` (agent apply denied as blind apply). Use CLI >= 5.42.1: the global one here is 5.15.0, so run `npx @railway/cli@5.63.1` and `npm ci` in `.railway/` first; plan at `f68233f` is "1 to change (api.SENTRY_ENVIRONMENT), 0 to destroy" because `SENTRY_DSN: preserve()`. After the redeploy: `proofs.sh c22` with the personal Sentry token, then the Verifier over `ec63c5f..HEAD`
-**Blockers**: `railway config apply` on staging (user)
+**Next step**: independent Verifier over `ec63c5f..HEAD` (profile light); then mark spec 08 Done. `railway ssh` needs a registered SSH key: the temporary one used for C22 was removed from Railway and `~/.ssh` deleted at the user's request, so C22 cannot be re-run without a new key. `railway config` needs CLI >= 5.42.1 (`npx @railway/cli@5.63.1`); `railway ssh` works with the global 5.15.0
+**Blockers**: none
 **Uncommitted**: none
 **Also done**: 06-web-design-system - independent Verifier PASS 37/37 over `f1bbdd2..2a08ab3` (profile light), merged into `development`; its decisions are AD-012 to AD-014. Spec 07 is now unblocked. npm 12 on this machine rejects the user-level `allow-scripts` in `~/.npmrc` for project installs: run `npm install` / `npx shadcn add` with `npm_config_userconfig=<empty file>`. Playwright reuses any server on port 3000, so stop other dev servers first
 **Also done**: 07-web-app-shell - independent Verifier PASS 43/43 at round 3 over `61cfae8..313bfd5` (profile light); spec Done. Sentry proofs read `frontend/.env.local` (`set -a; . frontend/.env.local; set +a`) with a personal `SENTRY_READ_TOKEN` and `SENTRY_API_URL=https://us.sentry.io`. Staging Sentry variables for `web` were not set: the auto-mode classifier denied `railway config plan` as an IaC action, so the user sets them (`railway variable set ... --stdin --service web --environment staging`)
