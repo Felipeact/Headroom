@@ -1,3 +1,4 @@
+from collections.abc import Iterator
 from functools import lru_cache
 
 from sqlalchemy import Engine, MetaData, create_engine
@@ -36,3 +37,8 @@ def get_engine() -> Engine:
 @lru_cache
 def get_sessionmaker() -> sessionmaker[Session]:
     return sessionmaker(bind=get_engine())
+
+
+def get_session() -> Iterator[Session]:
+    with get_sessionmaker()() as session:
+        yield session

@@ -5,6 +5,42 @@
     "version": "0.1.0"
   },
   "paths": {
+    "/v1/me": {
+      "get": {
+        "tags": [
+          "accounts"
+        ],
+        "summary": "Read Me",
+        "operationId": "read_me_v1_me_get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Me"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ]
+      }
+    },
     "/healthz/live": {
       "get": {
         "summary": "Live",
@@ -68,6 +104,64 @@
         ],
         "title": "LiveStatus"
       },
+      "Me": {
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Id"
+          },
+          "clerk_user_id": {
+            "type": "string",
+            "title": "Clerk User Id"
+          },
+          "created_at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Created At"
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "clerk_user_id",
+          "created_at"
+        ],
+        "title": "Me"
+      },
+      "ProblemDetails": {
+        "properties": {
+          "type": {
+            "type": "string",
+            "title": "Type",
+            "default": "about:blank"
+          },
+          "title": {
+            "type": "string",
+            "title": "Title"
+          },
+          "status": {
+            "type": "integer",
+            "title": "Status"
+          },
+          "detail": {
+            "type": "string",
+            "title": "Detail"
+          },
+          "instance": {
+            "type": "string",
+            "title": "Instance"
+          }
+        },
+        "type": "object",
+        "required": [
+          "title",
+          "status",
+          "detail",
+          "instance"
+        ],
+        "title": "ProblemDetails"
+      },
       "ReadyStatus": {
         "properties": {
           "status": {
@@ -84,6 +178,12 @@
           "status"
         ],
         "title": "ReadyStatus"
+      }
+    },
+    "securitySchemes": {
+      "HTTPBearer": {
+        "type": "http",
+        "scheme": "bearer"
       }
     }
   }

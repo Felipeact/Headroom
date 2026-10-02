@@ -53,3 +53,35 @@ def test_rejects_non_psycopg_scheme(url: str, monkeypatch: pytest.MonkeyPatch) -
 def test_missing_database_url_raises() -> None:
     with pytest.raises(ValidationError):
         Settings()
+
+
+def test_clerk_jwt_key_required(
+    isolated: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    monkeypatch.setenv("DATABASE_URL", ENV_URL)
+    monkeypatch.delenv("CLERK_JWT_KEY", raising=False)
+
+    with pytest.raises(ValidationError) as excinfo:
+        Settings()
+
+    assert "clerk_jwt_key" in str(excinfo.value)
+
+
+@pytest.mark.parametrize(
+    ("raw", "parsed"),
+    [
+        ("http://a.test, https://b.test", ["http://a.test", "https://b.test"]),
+        (None, []),
+    ],
+    ids=["comma_list", "unset"],
+)
+def test_clerk_authorized_parties_parse(
+    raw: str | None, parsed: list[str], monkeypatch: pytest.MonkeyPatch
+) -> None:
+    monkeypatch.setenv("DATABASE_URL", ENV_URL)
+    if raw is None:
+        monkeypatch.delenv("CLERK_AUTHORIZED_PARTIES", raising=False)
+    else:
+        monkeypatch.setenv("CLERK_AUTHORIZED_PARTIES", raw)
+
+    assert Settings().clerk_authorized_parties == parsed

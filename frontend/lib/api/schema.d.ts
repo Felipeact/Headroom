@@ -4,6 +4,23 @@
  */
 
 export interface paths {
+    "/v1/me": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Read Me */
+        get: operations["read_me_v1_me_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/healthz/live": {
         parameters: {
             query?: never;
@@ -50,6 +67,37 @@ export interface components {
              */
             status: "ok";
         };
+        /** Me */
+        Me: {
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /** Clerk User Id */
+            clerk_user_id: string;
+            /**
+             * Created At
+             * Format: date-time
+             */
+            created_at: string;
+        };
+        /** ProblemDetails */
+        ProblemDetails: {
+            /**
+             * Type
+             * @default about:blank
+             */
+            type: string;
+            /** Title */
+            title: string;
+            /** Status */
+            status: number;
+            /** Detail */
+            detail: string;
+            /** Instance */
+            instance: string;
+        };
         /** ReadyStatus */
         ReadyStatus: {
             /**
@@ -67,6 +115,35 @@ export interface components {
 }
 export type $defs = Record<string, never>;
 export interface operations {
+    read_me_v1_me_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Me"];
+                };
+            };
+            /** @description Unauthorized */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ProblemDetails"];
+                };
+            };
+        };
+    };
     live_healthz_live_get: {
         parameters: {
             query?: never;

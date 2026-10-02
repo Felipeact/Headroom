@@ -3,15 +3,17 @@ from contextlib import asynccontextmanager
 from typing import Annotated, Literal
 
 import structlog
-from fastapi import Depends, FastAPI, Response, status
+from fastapi import APIRouter, Depends, FastAPI, Response, status
 from pydantic import BaseModel, ValidationError
 from sqlalchemy import Engine, text
 from sqlalchemy.exc import SQLAlchemyError
 
+from app.auth import current_user
 from app.db import get_engine
 from app.log import configure_logging
+from app.modules.accounts.api import router as accounts_router
 from app.monitoring import init_sentry
-from app.problems import install_problem_handlers
+from app.problems import ProblemDetails, install_problem_handlers
 from app.settings import get_settings
 
 log = structlog.get_logger(__name__)
@@ -37,6 +39,16 @@ async def lifespan(app: FastAPI) -> AsyncIterator[None]:
 
 app = FastAPI(title="Headroom API", lifespan=lifespan)
 install_problem_handlers(app)
+
+# Every /v1 route requires a verified Clerk session token: module routers go in here,
+# so a new route cannot become public by forgetting a dependency (spec 10, AD-022).
+v1 = APIRouter(
+    prefix="/v1",
+    dependencies=[Depends(current_user)],
+    responses={status.HTTP_401_UNAUTHORIZED: {"model": ProblemDetails}},
+)
+v1.include_router(accounts_router)
+app.include_router(v1)
 
 
 class LiveStatus(BaseModel):

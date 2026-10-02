@@ -82,7 +82,8 @@ def alembic_run(*args: str, database_url: str) -> subprocess.CompletedProcess[st
 
 
 def test_audit_log_upgrade_downgrade_and_check(empty_database_url: str) -> None:
-    for args in (("upgrade", "head"), ("downgrade", "-1")):
+    # audit_log is the first revision, so downgrading to base undoes it.
+    for args in (("upgrade", "head"), ("downgrade", "base")):
         result = alembic_run(*args, database_url=empty_database_url)
         assert result.returncode == 0, result.stderr
 
@@ -97,6 +98,52 @@ def test_audit_log_upgrade_downgrade_and_check(empty_database_url: str) -> None:
         engine.dispose()
     assert "audit_log" not in tables
     assert function is None
+
+    for args in (("upgrade", "head"), ("check",)):
+        result = alembic_run(*args, database_url=empty_database_url)
+        assert result.returncode == 0, result.stdout + result.stderr
+
+
+def test_users_table_upgrade_downgrade_and_check(empty_database_url: str) -> None:
+    result = alembic_run("upgrade", "head", database_url=empty_database_url)
+    assert result.returncode == 0, result.stderr
+
+    engine = create_engine(empty_database_url)
+    try:
+        with engine.connect() as conn:
+            columns = conn.exec_driver_sql(
+                "SELECT column_name, data_type, is_nullable"
+                " FROM information_schema.columns WHERE table_name = 'users'"
+            ).all()
+            constraints = conn.exec_driver_sql(
+                "SELECT tc.constraint_name, tc.constraint_type, kcu.column_name"
+                " FROM information_schema.table_constraints tc"
+                " JOIN information_schema.key_column_usage kcu"
+                " USING (constraint_schema, constraint_name)"
+                " WHERE tc.table_name = 'users'"
+            ).all()
+    finally:
+        engine.dispose()
+
+    assert {(name, kind, nullable) for name, kind, nullable in columns} == {
+        ("id", "uuid", "NO"),
+        ("clerk_user_id", "text", "NO"),
+        ("created_at", "timestamp with time zone", "NO"),
+    }
+    assert set(constraints) == {
+        ("pk_users", "PRIMARY KEY", "id"),
+        ("uq_users_clerk_user_id", "UNIQUE", "clerk_user_id"),
+    }
+
+    result = alembic_run("downgrade", "-1", database_url=empty_database_url)
+    assert result.returncode == 0, result.stderr
+    engine = create_engine(empty_database_url)
+    try:
+        tables = inspect(engine).get_table_names()
+    finally:
+        engine.dispose()
+    assert "users" not in tables
+    assert "audit_log" in tables
 
     for args in (("upgrade", "head"), ("check",)):
         result = alembic_run(*args, database_url=empty_database_url)

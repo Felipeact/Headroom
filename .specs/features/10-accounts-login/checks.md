@@ -110,7 +110,7 @@ Proof: `uv run pytest tests/test_auth.py -k "accepted_logs_no_token"`
 **C31** - Among `git ls-files frontend`, `getToken` appears only in `frontend/lib/api/auth.ts`, which contains no `console.`, `cookies(`, `localStorage` or `sessionStorage` (AC 23)
 Proof: `bash .specs/features/10-accounts-login/proofs.sh c31`
 
-**C32** - `frontend/.env.example` has `NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY=`, `CLERK_SECRET_KEY=`, `NEXT_PUBLIC_CLERK_SIGN_IN_URL=/sign-in`, `NEXT_PUBLIC_CLERK_SIGN_UP_URL=/sign-up`; `services/core/.env.example` has `CLERK_JWT_KEY=` and `CLERK_AUTHORIZED_PARTIES=`; no file in `git ls-files` (tracked, plus untracked-not-ignored) contains `sk_test_`, `sk_live_`, `pk_test_cG9s`, `BEGIN PUBLIC KEY` or `BEGIN PRIVATE KEY` (Impact: configuration, L-006)
+**C32** - `frontend/.env.example` has `NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY=`, `CLERK_SECRET_KEY=`, `NEXT_PUBLIC_CLERK_SIGN_IN_URL=/sign-in`, `NEXT_PUBLIC_CLERK_SIGN_UP_URL=/sign-up`; `services/core/.env.example` has `CLERK_JWT_KEY=` and `CLERK_AUTHORIZED_PARTIES=`; no file in `git ls-files -co --exclude-standard` (tracked, plus untracked-not-ignored) contains a Clerk key (`sk_test_`, `sk_live_`, `pk_test_` or `pk_live_` followed by at least 20 key characters) or a PEM line (`-----BEGIN` then `PUBLIC KEY-----`, `PRIVATE KEY-----` or the `RSA` forms) (Impact: configuration, L-006)
 Proof: `bash .specs/features/10-accounts-login/proofs.sh c32`
 
 **C33** - The CI run for the pushed feature commit on `development` has jobs `web` and `api`, both concluding `success` (Impact: CI, AD-004)
@@ -156,3 +156,4 @@ Proof: `bash .specs/features/10-accounts-login/proofs.sh c33`
 
 - S1-S4 touch about 20 existing and new files: 66 KB existing (`wc -c` on `main.py`, `settings.py`, `env.py`, `test_migrations.py`, `test_settings.py`, both `.env.example`, both layouts, `error.tsx`, the shell components, the five e2e specs, `playwright.config.ts`, `en.json`, `ci.yml`, `client.ts`) plus about 40 KB new = 106 KB / 4 = ~27k tokens, under the 150k budget - one builder
 - Mechanism: one builder
+- **Settled mid-build:** C32's secret patterns were literal prefixes, which `checks.md` itself contains; restated before its proof was written as a prefix plus 20+ key characters or a full PEM line, with no folder excluded. C8's route table reads `app.openapi()["paths"]`, because this FastAPI keeps included routers out of `app.routes`
