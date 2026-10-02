@@ -103,3 +103,8 @@ Proof: `bash .specs/features/04-setup-tests-and-ci/proofs.sh c17`
 ## Handoff
 
 - S1-S3 = ~10k (about 8 small frontend files, generated Vitest and Playwright setup, one workflow, `proofs.sh`), under the 150k budget - one builder
+
+- **Boundary:** C1-C17 closed at the commit that marks spec 04 Done; generated setup `efcfb78`, scripts and tests `52a7c0c`, workflow `dd0c7fc`. Throwaway pull request #1 (`ci/spec-04-proof` into `development`): green run `36957067839`, red run `36957188351`; left open for the Verifier (C15), then closed and the branch deleted
+- **Settled mid-build:** C1 amended with the user - `typecheck` is `next typegen && tsc --noEmit` (Next.js 16 CLI docs), because plain `tsc --noEmit` fails on a fresh clone; C2 tightened to require the error be in `zz-type-error.tsx`; C3's proof passes `--reporter=verbose` so the file name is printed. `vitest@^4` (v5 needs `@types/node` 22 or 24+, the scaffold has ^20) and `@vitejs/plugin-react@^5` (v6 reaches Babel 8 through an optional peer; shadcn pins Babel 7). `create-playwright` 1.17.139 run with `node` directly, because npm 12 rejects the `allow-scripts` setting `npm init` passes down; `--quiet` always picks `tests/`, so `testDir` was edited to `./e2e`. `webServer` runs `npm run dev`. `astral-sh/setup-uv` is pinned by SHA (`c18668a`, v10.2.0) because it publishes no floating major tag. Protection pins `web` and `api` to the GitHub Actions app (id 15368, read from the check runs)
+- **Abandoned:** `--legacy-peer-deps` - CI's `npm ci` would have needed an `.npmrc` to match
+

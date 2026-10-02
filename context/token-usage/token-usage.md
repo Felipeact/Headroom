@@ -15,3 +15,5 @@ Context used per request, measured against a context window of about 250,000 tok
 | Spec 02: backend scaffold (checks, build, verify) | ~90,000 (~36%) | High (smart zone) |
 | Spec 03: database and migrations (plan) | ~55,000 (~22%) | High (smart zone) |
 | Spec 03: database and migrations (checks, build) | ~75,000 (~30%) | High (smart zone) |
+| Spec 04: tests and CI (plan) | ~50,000 (~20%) | High (smart zone) |
+| Spec 04: tests and CI (checks, build) | ~95,000 (~38%) | High (smart zone) |
