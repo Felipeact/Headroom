@@ -7,7 +7,7 @@
   "paths": {
     "/healthz/live": {
       "get": {
-        "summary": "Live",
+        "summary": "Liveness probe",
         "operationId": "live_healthz_live_get",
         "responses": {
           "200": {
