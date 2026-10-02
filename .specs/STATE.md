@@ -12,6 +12,10 @@
 | AD-006 | Railway `DATABASE_URL` on `api` is `postgresql+psycopg://${{Postgres.PGUSER}}:${{Postgres.PGPASSWORD}}@${{Postgres.PGHOST}}:${{Postgres.PGPORT}}/${{Postgres.PGDATABASE}}`, private host only; `Postgres` gets no public domain or TCP proxy | Railway's own `DATABASE_URL` uses `postgresql://`, which AD-001 rejects (spec 05 door 3) | active | 2026-10-01 |
 | AD-007 | Railway service settings live only in `.railway/railway.ts` (Railway Infrastructure as Code, SDK `railway` pinned in `.railway/package.json`), applied with `railway config apply`; no `railway.json` / `railway.toml`; `railway config plan --detailed-exit-code` exits 0 when live matches the file. Under Git Bash on Windows run it as `env _=<railway.exe> <railway.exe> config ...` | Railway stops reading Config as Code on 2026-12-01 and rejects setting its path; IaC keeps settings in a reviewed diff (spec 05 door 4) | active | 2026-10-01 |
 
+| AD-008 | Web colour tokens: the DESIGN.md names verbatim as CSS variables in `frontend/app/globals.css` `:root`, plus `--line-soft` `#ECE8E0` and `--line-strong` `#C9C2B5`; each exposed as Tailwind `--color-<name>`; shadcn semantic variables alias them, and shadcn `--accent` is the brand blue | screens spell colours with these names, so renaming one touches every screen (spec 06 doors 1, 6) | active | 2026-10-01 |
+| AD-009 | Component variant names follow DESIGN.md: Button `primary \| secondary \| outline \| link \| destructive \| ghost` (default `primary`, sizes `default` and `icon`, both at least 44px); Badge `neutral \| muted \| positive \| warning \| danger` | shadcn's `outline` is DESIGN.md's secondary look, so its names would mean two buttons (spec 06 doors 2, 3) | active | 2026-10-01 |
+| AD-010 | Development-only pages live under `app/dev/` and call `notFound()` when `process.env.NODE_ENV === "production"`, so they 404 on staging and production | no Railway variable for pages no client needs (spec 06 door 5) | active | 2026-10-01 |
+
 ## Handoff
 
 **Feature**: 05-setup-railway-staging

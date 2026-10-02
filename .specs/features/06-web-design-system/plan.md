@@ -61,8 +61,8 @@ Only routes this adds or whose signature changes.
 | 2. Button variant names | `variant: "primary" \| "secondary" \| "outline" \| "link" \| "destructive" \| "ghost"`, default `"primary"`. `size: "default" \| "icon"`, both at least 44px. `ghost` is kept only for the dialog's icon-only close button. | shadcn's names (`default`, `outline`, ...): shadcn's `outline` is DESIGN's *secondary* look, so `outline` would mean different buttons in the docs and in the code. shadcn's `xs`/`sm`/`lg` sizes: all under 44px, which DESIGN.md forbids. |
 | 3. Badge variant names | `variant: "neutral" \| "muted" \| "positive" \| "warning" \| "danger"` (Primary, Recurring/Expected, Synced, Needs attention, Overdraws) | Content names (`synced`, `recurring`): every new label would need a new variant |
 | 4. Dev dependency | `npm install -D @axe-core/playwright` (exact version recorded by npm in `package-lock.json`). Tests use `new AxeBuilder({ page }).analyze()`. | Injecting `axe-core` by hand with `page.addScriptTag`: re-implements the official Deque integration, and every later screen's axe check copies it |
-| 5. Dev-only page gate | `if (process.env.NODE_ENV === "production") notFound()` at the top of `app/dev/components/page.tsx`. Later `/dev/*` pages copy it. | `NEXT_PUBLIC_SHOW_DEV_PAGES` flag: a new Railway variable for a page no client needs. A `proxy`/middleware matcher: more machinery for one route. **Pending - question 2** |
-| 6. Colours the mockup uses outside the token table | Near-duplicates fold into existing tokens: `#D9CFC8` -> `--border-input`, `#8A4B00` -> `--warning-text`, `#3D2E1C` -> `--warning-strong`, `#3F2A2A` -> `--danger-strong`. Two new tokens for the colours DESIGN.md already names for the chart: `--line-soft: #ECE8E0` (skeleton blocks, gridlines) and `--line-strong: #C9C2B5` (switch off-track, zero line). They are added to DESIGN.md's table in a separate commit. Shadow `0 1px 2px rgba(22, 32, 43, 0.14)` becomes `--shadow-selected`. | Six new tokens, one per mockup hex: four of them differ from an existing token by a shade nobody can see, and that grows the palette DESIGN.md says not to grow. Hard-coding them in the page: breaks the "no hex in components" criterion. **Pending - question 1** |
+| 5. Dev-only page gate | `if (process.env.NODE_ENV === "production") notFound()` at the top of `app/dev/components/page.tsx`. Later `/dev/*` pages copy it. | `NEXT_PUBLIC_SHOW_DEV_PAGES` flag: a new Railway variable for a page no client needs. A `proxy`/middleware matcher: more machinery for one route. User confirmed: hidden on staging too. |
+| 6. Colours the mockup uses outside the token table | Near-duplicates fold into existing tokens: `#D9CFC8` -> `--border-input`, `#8A4B00` -> `--warning-text`, `#3D2E1C` -> `--warning-strong`, `#3F2A2A` -> `--danger-strong`. Two new tokens for the colours DESIGN.md already names for the chart: `--line-soft: #ECE8E0` (skeleton blocks, gridlines) and `--line-strong: #C9C2B5` (switch off-track, zero line). They are added to DESIGN.md's table in a separate commit. Shadow `0 1px 2px rgba(22, 32, 43, 0.14)` becomes `--shadow-selected`. | Six new tokens, one per mockup hex: four of them differ from an existing token by a shade nobody can see, and that grows the palette DESIGN.md says not to grow. Hard-coding them in the page: breaks the "no hex in components" criterion. User confirmed: fold 4, add 2. |
 
 - Nothing else in this change is hard to reverse
 
@@ -74,8 +74,8 @@ Any element styled with a token utility renders DESIGN.md's value, in DESIGN.md'
 
 **Acceptance Criteria**
 
-1. The web app SHALL define all 22 DESIGN.md colour tokens in `app/globals.css` `:root`, each with its DESIGN.md hex value (`--bg` `#F5F3EE` through `--danger-strong` `#5E1111`)
-2. The web app SHALL expose each token as a Tailwind colour, so `bg-<token>`, `text-<token>` and `border-<token>` compile to `var(--<token>)` for all 22 tokens
+1. The web app SHALL define all 22 DESIGN.md colour tokens in `app/globals.css` `:root`, each with its DESIGN.md hex value (`--bg` `#F5F3EE` through `--danger-strong` `#5E1111`), plus `--line-soft` `#ECE8E0` and `--line-strong` `#C9C2B5` (door 6)
+2. The web app SHALL expose each of those 24 tokens as a Tailwind colour, so `bg-<token>`, `text-<token>` and `border-<token>` compile to `var(--<token>)`
 3. The web app SHALL keep `app/globals.css` free of any `oklch(` value and any `.dark {` block
 4. WHILE the operating system prefers a dark colour scheme, the `/dev/components` body SHALL keep background `rgb(245, 243, 238)` and text colour `rgb(22, 32, 43)`
 5. The `/dev/components` body text SHALL use the IBM Plex Sans family loaded by `next/font/google`, with `Segoe UI`, `system-ui` and `sans-serif` after it in the computed `font-family`
@@ -165,12 +165,7 @@ Defaults that are not already a numbered criterion. Drop a row once it is.
 | Fraunces weights | Load 500 and 600 (the mockup's Google Fonts link). IBM Plex Sans: 400, 500 and 600. | Matches the mockup's `<link>` exactly | n |
 | Profile for this feature | `light` (no `tlc-spec-lean` profile in AGENTS.md) | Default. The `ui` profile would have the Verifier open the mockup and compare each screen's copy and layout, which suits a "matches the mockup" spec. | n |
 
-**Open questions:**
-
-| # | Kind | Question | Until answered |
-| --- | --- | --- | --- |
-| 1 | blocks | The mockup uses 6 colours that aren't in DESIGN.md's token table. Fold 4 into existing tokens and add 2 (`--line-soft`, `--line-strong`) to DESIGN.md in a separate commit (door 6)? | AC 23 can't pass without a token for the skeleton and the switch's off-track, and AGENTS.md says to ask before adding colours |
-| 2 | open | Should `/dev/components` be hidden on staging as well as production (door 5, `NODE_ENV` gate), or shown on staging for design review? | AC 33 is written for "hidden in any production build", and staging runs a production build |
+**Open questions:** none - all resolved or logged above. The user chose door 6 as written (fold 4, add `--line-soft` and `--line-strong` to DESIGN.md in a separate commit) and door 5 as written (404 in any production build, staging included).
 
 ## Observable
 
