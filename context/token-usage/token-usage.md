@@ -24,3 +24,6 @@ Context used per request, measured against a context window of about 250,000 tok
 | Spec 05: verifier sub-agent, rounds 1 and 2 (separate context) | ~123,000 (~49%) | Medium (attention degrades) |
 | Spec 08: API errors, logging, and monitoring (plan) | ~75,000 (~30%) | High (smart zone) |
 | Spec 08: API errors, logging, and monitoring (checks, build S1-S4) | ~110,000 (~44%) | Medium (attention degrades) |
+| Spec 06: design system in the web app (plan) | ~75,000 (~30%) | High (smart zone) |
+| Spec 06: design system in the web app (checks, build, verify) | ~135,000 (~54%) | Medium (attention degrades) |
+| Spec 06: verifier sub-agent (separate context) | ~108,000 (~43%) | Medium (attention degrades) |
