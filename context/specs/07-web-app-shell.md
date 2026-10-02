@@ -1,7 +1,7 @@
 # Spec 07: App shell, translations, and formatting
 
 - **Milestone:** 2, foundations
-- **Status:** In progress
+- **Status:** Done
 - **Depends on:** 06
 
 ## Goal
@@ -21,6 +21,6 @@ Build the frame every page lives in: the header, navigation, translations, forma
 
 ## Done when
 
-- [ ] Unit tests cover money formatting (for example, 320000 → "$3,200" and −320000 → "−$3,200") and date formatting.
-- [ ] The shell works at 375 pixels wide and with the keyboard alone.
-- [ ] A deliberate test error shows up in Sentry.
+- [x] Unit tests cover money formatting (for example, 320000 → "$3,200" and −320000 → "−$3,200") and date formatting.
+- [x] The shell works at 375 pixels wide and with the keyboard alone.
+- [x] A deliberate test error shows up in Sentry.

@@ -154,7 +154,7 @@ Proof: `npx vitest run tests/sentry-config.test.ts -t "no dsn in source"`
 Proof: `NEXT_PUBLIC_SENTRY_DSN= npx playwright test e2e/shell.spec.ts -g "no sentry without dsn"`
 
 **C43** - With `SENTRY_AUTH_TOKEN` unset, `npm run build` exits 0 (AC 43)
-Proof: `env -u SENTRY_AUTH_TOKEN npm run build`
+Proof: `SENTRY_AUTH_TOKEN= npm run build` (an empty value overrides the token `frontend/.env.local` supplies; `env -u` would not)
 
 ## Coverage
 
@@ -210,3 +210,4 @@ Proof: `env -u SENTRY_AUTH_TOKEN npm run build`
 - **Abandoned:** `npx @sentry/wizard -i nextjs --non-interactive` - it stops at the Sentry login prompt. The files follow Sentry's manual setup guide, minus `onRouterTransitionStart` (navigation tracing, which door 4 leaves off)
 - **Round 1 fixes (Verifier FAIL 41/43):** C41's text now names the git-tracked scope its proof already used (recorded above as settled mid-build). C5 gains `link metrics in the menu (C5)` for the menu Dialog's links, which AC 5 covers and round 1 found unsampled. Plan `Impact` corrected: `e2e/home.spec.ts` stays as it was (it asserts an `h1` and still passes) and `app/page.test.tsx` was deleted, not rewritten
 - **Settled after round 2:** `proofs.sh` reads Sentry with `SENTRY_READ_TOKEN`, a personal `sntryu_` token (`project:read`, `event:read`). The `sntrys_` organization token in `SENTRY_AUTH_TOKEN` is for source map uploads and gets 403 on read endpoints. The lookup uses the project issues endpoint, matching the message in the issue title; the org-wide `events/` endpoint also needs `org:read`. Run with `set -a; . frontend/.env.local; set +a`. C37 and C38 PASS for run `check179096744025449`; a never-sent tag matches 0
+- **Round 3 follow-ups (Verifier PASS 43/43 at `313bfd5`):** C37 now requires a `javascript` (browser SDK) issue and C38 a `node` (server SDK) issue, because in development the browser also reports the server action's error. C43's proof is `SENTRY_AUTH_TOKEN= npm run build`, since `.env.local` now supplies a token that `env -u` leaves in place. `proofs.sh` is LF-only with a portable `tr -d '\r'`. Re-run by the author, not re-verified: `proofs.sh c37 c38` PASS (run `check179096799132521`), tokenless build exit 0, `check-prod-gate.mjs` exit 0

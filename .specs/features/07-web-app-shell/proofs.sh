@@ -34,15 +34,17 @@ click_buttons() {
     || fail "$1" "the sentry-check Playwright run failed"
 }
 
-# event_count MESSAGE: how many issues in the project, seen in the last 24 h, have a title
-# containing MESSAGE, polling up to 60 s. Uses the project issues endpoint, which needs only
+# event_count MESSAGE PLATFORM: how many issues in the project, seen in the last 24 h, have a
+# title containing MESSAGE and come from PLATFORM (javascript = browser SDK, node = server SDK),
+# polling up to 60 s. In development the browser also reports the server action's error, so
+# the platform is what tells the two runtimes apart. Uses the project issues endpoint, which needs only
 # project:read and event:read; the org-wide events endpoint also needs org:read.
 event_count() {
-  local message="$1" count deadline=$((SECONDS + 60))
+  local message="$1" platform="$2" count deadline=$((SECONDS + 60))
   while [ "$SECONDS" -lt "$deadline" ]; do
     count="$(curl -s -G -H "Authorization: Bearer $SENTRY_READ_TOKEN"       "$SENTRY_API_URL/api/0/projects/$SENTRY_ORG/$SENTRY_PROJECT/issues/"       --data-urlencode "statsPeriod=24h"       --data-urlencode "query=\"$message\""       | python3 -c 'import json,sys
-m=sys.argv[1]; d=json.load(sys.stdin)
-print(sum(1 for i in d if m in (i.get("title") or "")) if isinstance(d,list) else 0)' "$message" 2>/dev/null | tr -d '')"
+m, p = sys.argv[1], sys.argv[2]; d=json.load(sys.stdin)
+print(sum(1 for i in d if m in (i.get("title") or "") and i.get("platform") == p) if isinstance(d,list) else 0)' "$message" "$platform" 2>/dev/null | tr -d '\r')"
     [ "${count:-0}" -gt 0 ] && { echo "$count"; return; }
     sleep 5
   done
@@ -52,16 +54,16 @@ print(sum(1 for i in d if m in (i.get("title") or "")) if isinstance(d,list) els
 c37() {
   need_sentry_api c37
   click_buttons c37
-  [ "$(event_count "Headroom web Sentry check (client) $RUN_ID")" -gt 0 ] \
-    || fail c37 "no client event for run $RUN_ID in $SENTRY_PROJECT"
+  [ "$(event_count "Headroom web Sentry check (client) $RUN_ID" javascript)" -gt 0 ] \
+    || fail c37 "no browser (javascript) event for run $RUN_ID in $SENTRY_PROJECT"
   echo "PASS c37"
 }
 
 c38() {
   need_sentry_api c38
   click_buttons c38
-  [ "$(event_count "Headroom web Sentry check (server) $RUN_ID")" -gt 0 ] \
-    || fail c38 "no server event for run $RUN_ID in $SENTRY_PROJECT"
+  [ "$(event_count "Headroom web Sentry check (server) $RUN_ID" node)" -gt 0 ] \
+    || fail c38 "no server (node) event for run $RUN_ID in $SENTRY_PROJECT"
   echo "PASS c38"
 }
 

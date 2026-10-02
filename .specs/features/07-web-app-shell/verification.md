@@ -1,32 +1,45 @@
 # 07 - App shell, translations, and formatting verification
 
-**Verdict**: FAIL
+**Verdict**: PASS
 **Profile**: light
-**Diff range**: 61cfae80fbfd67d685f5f8f18cad3f4f4539e1cd..bb7d02a6aba737f39a78293ce7d222d13ef7cdd8 (round 2 fix diff: 32e806a..bb7d02a)
-**Round**: 2 - scoped
+**Diff range**: 61cfae80fbfd67d685f5f8f18cad3f4f4539e1cd..313bfd53d6737899d16a2f5443ced9ad51287c43 (round 3 fix diff: bb7d02a..313bfd5)
+**Round**: 3 - scoped
 **Verifier**: independent sub-agent (author != verifier)
 
-41 of 43 checks PASS with located evidence. C37 and C38 are still BLOCKED. Their proof needs the `headroom-web` Sentry project, its DSN and an API token (plan open question 1, kind `blocks`). `proofs.sh` still stops at `FAIL c37: SENTRY_AUTH_TOKEN is not set in this shell` (exit 1). The FAIL comes from that outside dependency, not from a code defect, and it stands until the proof passes.
+43 of 43 checks PASS with located evidence. C37 and C38 now pass on a live run against the `headroom-web` Sentry project:
 
-Round 2 scope: fix commit `bb7d02a` touched `frontend/e2e/shell.spec.ts`, `checks.md` (C5 and C41 text, plus a new Coverage row) and `plan.md` (the Impact row). `8ebfaa1`, between the two, changes only `.specs/STATE.md` for spec 08 and is outside this feature.
+- **Run:** `check17909675334579`.
+- **Proof:** `proofs.sh` exited 0 in 27s, printing `PASS c37` and `PASS c38`.
+- **Negative control:** a never-sent tag matches 0 issues.
+- **Runtimes:** I confirmed by hand that each check's event came from the right runtime. That includes a `platform: node` event for C38.
 
-- **Proofs:** all re-run in full at `bb7d02a`.
-- **Citations:** refreshed for `frontend/e2e/shell.spec.ts`. The new test at lines 204-217 shifts every line after it by 15.
-- **Re-judged:** C5, C41 and the round 1 gaps.
-- **Carried from `32e806a`:** everything else.
+One precision gap remains, and it does not fail the verdict: `proofs.sh` alone cannot tell the server event in C38 from a browser-side duplicate (see "Ranked gaps").
+
+Round 3 scope:
+
+- **What changed:**
+  - Fix commit `313bfd5` rewrote `.specs/features/07-web-app-shell/proofs.sh` and added a handoff line to `checks.md`.
+  - `3936c86` committed the round 2 report and some notes, with no code change. `967a288` is spec 08's STATE note and is outside this feature.
+  - No file under `frontend/` changed, so every citation in `frontend/` stands.
+- **Proofs:** all re-run in full at `313bfd5`.
+- **Re-judged:** C37, C38, C42 (now that `.env.local` holds a DSN) and C43 (now that `.env.local` holds `SENTRY_AUTH_TOKEN`).
+- **Carried from bb7d02a:** citation judgments for C1-C36 and C39-C41.
+
+The credentials were loaded with `set -a; . frontend/.env.local; set +a`. I never printed a value. Presence checks only printed `set` or `unset`.
 
 ## Binding sources
 
-Carried from 32e806a. Step 1 (comparing the checks against the binding sources) does not run under profile `light`. The fix did not touch the interface.
+Carried from 32e806a. Step 1 (comparing the checks against the binding sources) does not run under profile `light`. Neither fix touched the interface.
 
 ## Checks
 
-Verified at bb7d02a. Every proof re-ran at HEAD `bb7d02a` from `frontend/`:
+Verified at 313bfd5. Every proof re-ran at HEAD `313bfd5` from `frontend/`:
 
 - **Vitest:** one batched run of `npx vitest run lib/format.test.ts components/shell/app-header.test.tsx "app/(app)/states.test.tsx" tests/i18n.test.ts tests/i18n-keys.test.ts tests/sentry-config.test.ts tests/dev-gate.test.ts --reporter=verbose`. All 7 files and 26 tests passed, and each named test is listed individually.
-- **Playwright:** one run of `NEXT_PUBLIC_SENTRY_DSN= npx playwright test e2e/shell.spec.ts --reporter=list`. All 26 tests passed (exit 0) on the first run, including the new `phone › link metrics in the menu (C5)`. Port 3000 was free beforehand.
+- **Playwright:** one run of `NEXT_PUBLIC_SENTRY_DSN= npx playwright test e2e/shell.spec.ts --reporter=list`. All 26 tests passed (exit 0) on the first run, with port 3000 free.
+- **Sentry proofs:** `set -a; . frontend/.env.local; set +a; bash .specs/features/07-web-app-shell/proofs.sh c37 c38`, run from the repo root with port 3000 free. Exit 0 after 27s, printing `run check17909675334579`, `PASS c37` and `PASS c38`.
 
-For files the fix did not touch (every file except `e2e/shell.spec.ts`), the assertion judgments are carried from 32e806a.
+No file under `frontend/` changed after bb7d02a. For C1-C36 and C39-C41, the `file:line` citations and assertion judgments are carried from bb7d02a, and the proofs are green again at 313bfd5.
 
 | Check | Claim | Proof run | Evidence | Result |
 | --- | --- | --- | --- | --- |
@@ -66,62 +79,70 @@ For files the fix did not touch (every file except `e2e/shell.spec.ts`), the ass
 | C34 | "Nov 9" and "Fri, Oct 2" | Vitest `C34 date styles` passed | `frontend/lib/format.test.ts:53-54` | PASS |
 | C35 | "Oct 2" under Vancouver and Auckland TZ | Vitest `C35 date ignores time zone` passed | `frontend/lib/format.test.ts:58-61` - sets `process.env.TZ` each time, then `toBe('Oct 2')` | PASS |
 | C36 | RangeError for 4 malformed dates | Vitest `C36 rejects malformed dates` passed | `frontend/lib/format.test.ts:65-66` - all 4 inputs, `toThrow(RangeError)` | PASS |
-| C37 | client error event found in `headroom-web` through the Sentry API within 60s | `bash ../.specs/features/07-web-app-shell/proofs.sh c37 c38` at bb7d02a: `FAIL c37: SENTRY_AUTH_TOKEN is not set in this shell`, exit 1 | no evidence. The supporting code exists: `frontend/app/dev/sentry-check/sentry-check-buttons.tsx:12` throws `` `Headroom web Sentry check (client) ${runId}` ``. `frontend/e2e/sentry-check.spec.ts:14` (run in round 1 with no DSN, 1 passed) only proves the button throws, not that Sentry receives the event | BLOCKED (open question 1) |
-| C38 | server error event found in `headroom-web` within 60s | same `proofs.sh` run, which stopped before reaching c38, exit 1 | no evidence. The supporting code exists: `frontend/app/dev/sentry-check/actions.ts:4` throws `` `Headroom web Sentry check (server) ${runId}` ``, and `frontend/instrumentation.ts:13` sets `onRequestError = Sentry.captureRequestError` | BLOCKED (open question 1) |
+| C37 | client error event found in `headroom-web` through the Sentry API within 60s | `proofs.sh c37 c38` at 313bfd5, exit 0: `PASS c37` for run `check17909675334579` | Proof assertion `.specs/features/07-web-app-shell/proofs.sh:55` - `[ "$(event_count "Headroom web Sentry check (client) $RUN_ID")" -gt 0 ]`. `event_count` (`:41-49`) polls `/api/0/projects/$SENTRY_ORG/$SENTRY_PROJECT/issues/` for up to 60s (`:41` `deadline=$((SECONDS + 60))`) and counts issues whose title contains the full message plus the nonce (`:45` `m in (i.get("title") or "")`). A 403 or any non-list reply counts as 0 (`isinstance(d,list) else 0`).<br>Independent checks, no value printed:<br>- `SENTRY_PROJECT` is `headroom-web`, and the project id in the DSN equals the API's id for `headroom-web`.<br>- The matching issue 7768827132 is `platform: javascript` (the browser SDK), environment `development`, created 2026-10-02T18:58:58Z, inside the 27s run.<br>- Negative control: `Headroom web Sentry check (client) neversent1771021867` matched 0 issues of 0 returned | PASS |
+| C38 | server error event found in `headroom-web` within 60s | same run, exit 0: `PASS c38` | `.specs/features/07-web-app-shell/proofs.sh:63` - `[ "$(event_count "Headroom web Sentry check (server) $RUN_ID")" -gt 0 ]`, same lookup as C37.<br>Independent check: the server nonce matched 2 issues.<br>- Issue 7768827055 is `platform: node`, tag `runtime: node v24.16.0`. This is the server SDK via `frontend/instrumentation.ts:13` (`onRequestError = Sentry.captureRequestError`).<br>- Issue 7768826997 is `platform: javascript`. It is the browser's `unhandledRejection` of the server action's dev-mode error, seen in the run's `[browser] ⨯ unhandledRejection` log.<br>- Negative control: `Headroom web Sentry check (server) neversent1594830914` matched 0.<br>The check as worded is met, and the server runtime is proven by the `node` event. Precision gap: the proof's count alone would pass on the browser duplicate, even if the server SDK sent nothing (see "Ranked gaps") | PASS |
 | C39 | dev renders, production calls notFound; `next start` answers 404 for `/dev/sentry-check` and 200 for the 4 pages | Vitest `C39 sentry check: ...` (2 tests) passed. `env -u SENTRY_AUTH_TOKEN npm run build` exit 0, then `node scripts/check-prod-gate.mjs` exit 0, printing `GET / -> 200; GET /expected-payments -> 200; GET /alerts -> 200; GET /settings -> 200; GET /dev/components -> 404; GET /dev/sentry-check -> 404` | `frontend/tests/dev-gate.test.ts:32` - `digest).toBe('NEXT_HTTP_ERROR_FALLBACK;404')`; `:38-40` - `resolves.toBeDefined()`; `frontend/scripts/check-prod-gate.mjs:34-39,45` - expected map plus `if (got !== want) failed = true` | PASS |
-| C40 | no `sentry-example-(page\|api)` path under `app/` | Vitest `C40 no example routes` passed | `frontend/tests/sentry-config.test.ts:22` - `paths.filter(... /sentry-example-(page\|api)/ ...)).toEqual([])` | PASS |
+| C40 | no `sentry-example-page` or `sentry-example-api` path under `app/` | Vitest `C40 no example routes` passed | `frontend/tests/sentry-config.test.ts:22` - `paths.filter(...sentry-example-(page or api) regex...)).toEqual([])` | PASS |
 | C41 | 3 init files: DSN from env plus shared options, no tracing, replay or logs; 6 dataCollection values; no DSN literal in any git-tracked or would-track file | Vitest `C41 init options` and `C41 no dsn in source` passed | `frontend/tests/sentry-config.test.ts:28-31` - `toContain('dsn: process.env.NEXT_PUBLIC_SENTRY_DSN')`, `toContain('...sentryOptions')`, 4 forbidden strings `not.toContain`; `:34-41` - `dataCollection).toEqual({userInfo:false, cookies:false, httpHeaders:false, httpBodies:[], urlQueryParams:false, stackFrameVariables:false})`; `:47` - `git ls-files --cached --others --exclude-standard`; `:63` - `expect(leaks).toEqual([])`. The check text (`checks.md:149`) now names the same scope, so round 1's precision gap is closed | PASS |
-| C42 | empty DSN: 4 pages, no pageerror, no request to a host containing "sentry" | PW `no sentry without dsn (C42)` passed (run with `NEXT_PUBLIC_SENTRY_DSN=`) | `frontend/e2e/shell.spec.ts:351-352` - `expect(errors).toEqual([])`, `expect(sentryRequests).toEqual([])` | PASS |
-| C43 | build exits 0 with SENTRY_AUTH_TOKEN unset | `env -u SENTRY_AUTH_TOKEN npm run build` exit 0 at bb7d02a | command exit code 0. `frontend/next.config.ts:12-16` - `withSentryConfig` does not require a token | PASS |
+| C42 | empty DSN: 4 pages, no pageerror, no request to a host containing "sentry" | PW `no sentry without dsn (C42)` passed at 313bfd5 with `NEXT_PUBLIC_SENTRY_DSN=` | `frontend/e2e/shell.spec.ts:351-352` - `expect(errors).toEqual([])`, `expect(sentryRequests).toEqual([])`.<br>Negative control, since `.env.local` now holds a DSN: the same test run without the empty override failed (`1 failed`, `sentryRequests` received 5 entries). So the assertion discriminates, and the empty override wins over `.env.local` | PASS |
+| C43 | build exits 0 with SENTRY_AUTH_TOKEN unset | At 313bfd5:<br>- `env -u SENTRY_AUTH_TOKEN npm run build` exit 0. Next printed `Environments: .env.local`, so this build still read the token from `.env.local` and on its own is not a tokenless build.<br>- `SENTRY_AUTH_TOKEN= npm run build` exit 0. The C42 control shows an empty process variable wins over `.env.local`, so this build ran without a token. `.env.local` was not edited or moved | Command exit codes. `frontend/next.config.ts:12-16` - `withSentryConfig` does not require a token. The upload step is not observable in the log (`silent: !process.env.CI`), and C43 claims only the exit code | PASS |
 
 ## Coverage
 
-Verified at bb7d02a for the row the fix added; the rest is carried from 32e806a. Under `light` I did not recompute the coverage join, and I did not judge `Test policy` rows (`checks.md` has none).
-
-The fix added the row `nav link placements for metrics (2)`: desktop nav C5, menu Dialog C5. Both members now have an asserting proof (`frontend/e2e/shell.spec.ts:118-120` and `:213-215`).
+The Sentry runtimes row was verified at 313bfd5. The C5 placements row is carried from bb7d02a, and the rest from 32e806a. Under `light` I did not recompute the coverage join, and I did not judge `Test policy` rows (`checks.md` has none).
 
 | Set (size) | Recomputed from | Member -> proof | Unproven |
 | --- | --- | --- | --- |
 | nav link placements for metrics (2) | checks.md row added in bb7d02a | desktop nav: C5 `shell.spec.ts:118-120`; menu Dialog: C5 `shell.spec.ts:213-215` | - |
-| Sentry runtimes (2) | checks.md row (not recomputed under light) | client C37, server C38: both BLOCKED | client (C37), server (C38) |
+| Sentry runtimes (2) | Sentry API issue `platform` and `runtime` tag for run `check17909675334579` | client: C37, issue 7768827132 `platform: javascript`; server: C38, issue 7768827055 `platform: node`, `runtime: node v24.16.0` | - |
 
 ## Swept
 
-Carried from 32e806a. The fix touched no code these rows cite.
+Carried from 32e806a, except observability, which was verified at 313bfd5. No fix touched code these rows cite.
 
 - **validation:** `frontend/lib/format.ts:10-12` (`Number.isSafeInteger`) and `:37-46` (regex plus a round-trip check on the date). Present.
 - **failure modes:** `frontend/app/(app)/error.tsx:19-21` (`captureException`) and `:29` (`retry()`). Present.
 - **authorization:** `frontend/app/dev/sentry-check/page.tsx:8` (`if (process.env.NODE_ENV === "production") notFound()`). Present.
-- **dependency failure:** `frontend/lib/sentry-options.ts`, plus DSN-gated init in the 3 config files. Present.
-- **observability:** C37 and C38 are unproven, as above.
+- **dependency failure:** `frontend/lib/sentry-options.ts`, plus DSN-gated init in the 3 config files. Present. C42's negative control shows the DSN gate is real.
+- **observability:** client and server events reach `headroom-web` (C37, C38 above). The boundary path, C26, is proven at component level.
 
 ## Handoff corrections ("Settled mid-build")
 
-C25 and the C41 `dataCollection` items are carried from 32e806a. The C41 scoping item and the plan Impact row were verified at bb7d02a.
+The C25 and C41 `dataCollection` items are carried from 32e806a. The C41 scoping item and the plan Impact row are carried from bb7d02a. The "Settled after round 2" line was verified at 313bfd5.
 
 - **C25 `retry`:** faithful. The installed Next is 16.3.8. `node_modules/next/dist/docs/01-app/03-api-reference/03-file-conventions/error.md:117-121,155-157,331` names `retry` as the stable prop that re-fetches (since v16.3.0), and `reset` as the one that only clears the error state. Plan AC 25 already says `retry`.
 - **C41 `dataCollection`:** faithful. In `@sentry/nextjs` 11.3.0, a grep for `sendDefaultPii` in `@sentry/core/build/types` finds nothing, and `types/datacollection.d.ts:27-108` declares the 6 named categories. Plan door 4 explicitly allows "the installed SDK's equivalent".
   - Observation, not a failure: the same interface also has `graphQL`, `genAI`, `databaseQueryData`, `queues` and `frameContextLines`, left at their defaults. None of them applies to this web app today.
-- **C41 scoping to git-tracked files:** faithful to the plan, because open question 1 puts the DSN in the ignored `frontend/.env.local`. The C41 check text now states this scope, so the check and its proof agree.
-- **Plan Impact "starter page" row:** it now records that `e2e/home.spec.ts` is unchanged and `app/page.test.tsx` was deleted. `git diff 61cfae8..bb7d02a` confirms both: `home.spec.ts` is absent from the diff, and `app/page.test.tsx` shows as a deletion. Round 1's gap 4 is closed.
+- **C41 scoping to git-tracked files:** faithful to the plan, because open question 1 puts the DSN in the ignored `frontend/.env.local`. The C41 check text now states this scope.
+- **Plan Impact "starter page" row:** it records that `e2e/home.spec.ts` is unchanged and `app/page.test.tsx` was deleted, which matches the diff.
+- **Settled after round 2 (`SENTRY_READ_TOKEN`, project issues endpoint):**
+  - **Faithful to C37 and C38:** the lookup stays inside `headroom-web` (the slug and DSN project id are confirmed), matches the full message plus the nonce, and is bounded at 60s.
+  - **Never-sent nonce:** matches 0.
+  - **Title matching:** it can only give a false FAIL, never a false PASS. If a later run groups into an older issue whose title carries a different nonce, the proof fails, which is safe.
+  - **The handoff's own run:** it names a different run, `check179096744025449`. I did not rely on it; my run was `check17909675334579`.
 
 ## Faults injected
 
-Carried from 32e806a. Fault injection does not run under profile `light`.
+Carried from 32e806a. Fault injection does not run under profile `light`. Two non-mutating negative controls ran in this round: a never-sent nonce matched 0 Sentry issues, and C42 failed with the DSN active.
 
 ## Gate
 
-Verified at bb7d02a:
+Verified at 313bfd5:
 
 - **Vitest:** `npx vitest run <7 files> --reporter=verbose` - 26 passed, 0 failed.
 - **Playwright:** `NEXT_PUBLIC_SENTRY_DSN= npx playwright test e2e/shell.spec.ts --reporter=list` - 26 passed, 0 failed, on the first run.
 - **Typecheck:** `npm run typecheck` - exit 0.
-- **Build:** `env -u SENTRY_AUTH_TOKEN npm run build` - exit 0.
-- **Production gate:** `node scripts/check-prod-gate.mjs` - exit 0.
-- **Sentry proofs:** `bash ../.specs/features/07-web-app-shell/proofs.sh c37 c38` - exit 1 (`FAIL c37: SENTRY_AUTH_TOKEN is not set in this shell`).
+- **Build, token unset:** `env -u SENTRY_AUTH_TOKEN npm run build` - exit 0. Note that `.env.local` still supplies the token to this build.
+- **Build, token empty:** `SENTRY_AUTH_TOKEN= npm run build` - exit 0. This is the tokenless build.
+- **Production gate:** `node scripts/check-prod-gate.mjs` - exit 0, printing `GET / -> 200; GET /expected-payments -> 200; GET /alerts -> 200; GET /settings -> 200; GET /dev/components -> 404; GET /dev/sentry-check -> 404`.
+- **Sentry proofs:** `set -a; . frontend/.env.local; set +a; bash .specs/features/07-web-app-shell/proofs.sh c37 c38` - exit 0, `PASS c37`, `PASS c38`.
 
 ## Ranked gaps
 
-1. **C37 and C38 have no evidence.** They are blocked on plan open question 1, which needs the `headroom-web` Sentry project, its DSN in `frontend/.env.local`, and `SENTRY_AUTH_TOKEN`, `SENTRY_ORG` and `SENTRY_PROJECT`. AC 37 and 38 stay unproven, and the spec's Sentry Done-when item stays open.
+None of these fails a check. They are findings for the author.
 
-Round 1's gaps 2 (C41 text), 3 (C5 menu links) and 4 (plan Impact row) are closed in bb7d02a.
+1. **C38 precision gap.** `.specs/features/07-web-app-shell/proofs.sh:63` and `:45` count any issue whose title holds the server message. In development, the server action's error is re-raised in the browser and reported by the browser SDK (issue 7768826997, `platform: javascript`). So the proof would print `PASS c38` even if `sentry.server.config.ts` or `onRequestError` sent nothing. This round the server runtime is proven by the `platform: node` issue. To make the script prove it alone, filter on `platform == "node"` for C38, and on `javascript` for C37.
+2. **The C43 proof command does not unset the token any more.** The command in `checks.md` is `env -u SENTRY_AUTH_TOKEN npm run build`, but `.env.local` now supplies `SENTRY_AUTH_TOKEN`, so that build is not tokenless. `SENTRY_AUTH_TOKEN= npm run build` (exit 0) is the run that actually tests C43. The check's proof line should use it.
+3. **Minor: `proofs.sh` line endings.** 313bfd5 committed `proofs.sh` with CRLF endings on all 74 lines, plus a literal CR inside `tr -d '<CR>'` at `:45`; bb7d02a had 0 CR bytes. It runs under Git Bash, but a POSIX bash on Linux or CI would fail on a carriage return (`$'\r': command not found`).
+
+Round 1's gaps 2, 3 and 4 were closed in bb7d02a. The blocked-Sentry gap was closed in 313bfd5.
