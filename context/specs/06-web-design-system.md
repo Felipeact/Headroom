@@ -1,7 +1,7 @@
 # Spec 06: Design system in the web app
 
 - **Milestone:** 2, foundations
-- **Status:** In progress
+- **Status:** Done
 - **Depends on:** 01
 
 ## Goal
@@ -18,6 +18,6 @@ Turn `DESIGN.md` into the app's theme and shared components.
 
 ## Done when
 
-- [ ] `/dev/components` matches `design/mockups/components.dc.html`.
-- [ ] No hex colors appear in components, only the tokens.
-- [ ] The page passes an axe check in Playwright.
+- [x] `/dev/components` matches `design/mockups/components.dc.html`.
+- [x] No hex colors appear in components, only the tokens.
+- [x] The page passes an axe check in Playwright.

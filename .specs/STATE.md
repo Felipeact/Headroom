@@ -18,10 +18,10 @@
 
 ## Handoff
 
-**Feature**: 05-setup-railway-staging
-**Where**: done; independent Verifier PASS 22/22 at round 2 over `4a3f716..ebb410e`, `validate_verification.py` exit 0. Staging: api `https://api-staging-e068.up.railway.app`, web `https://web-staging-4398.up.railway.app`
+**Feature**: 06-web-design-system
+**Where**: done; independent Verifier PASS 37/37 at round 1 over `f1bbdd2..2a08ab3` (profile light), `validate_verification.py` exit 0. `/dev/components` renders the Components mockup locally and returns 404 in any production build
 **In progress**: none
-**Next step**: spec 06, 08 or 09 (all unblocked); milestone 1 (set-up) is complete
-**Blockers**: none. `railway config` under Git Bash on Windows needs `env _=<railway.exe>` (AD-007). The C3 proof uses the SSH key `~/.ssh/id_ed25519`, registered with Railway as `headroom-dev`
+**Next step**: spec 07 (app shell; depends on 06), 08 or 09
+**Blockers**: none. On this machine, npm 12 rejects the user-level `allow-scripts` in `~/.npmrc` for project installs; run `npm install` / `npx shadcn add` with `npm_config_userconfig=<empty file>`. Playwright reuses any server on port 3000, so stop other dev servers first
 **Uncommitted**: none
-**Branch**: development
+**Branch**: spec-06-web-design-system (worktree `.claude/worktrees/spec-06-web-design-system`), not yet merged into `development`
