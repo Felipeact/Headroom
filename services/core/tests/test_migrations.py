@@ -67,3 +67,37 @@ def test_alembic_ini_has_no_url() -> None:
     ini.read(CORE / "alembic.ini")
 
     assert ini.get("alembic", "sqlalchemy.url", fallback="").strip() == ""
+
+
+def alembic_run(*args: str, database_url: str) -> subprocess.CompletedProcess[str]:
+    return subprocess.run(
+        ["uv", "run", "alembic", *args],
+        cwd=CORE,
+        env={**os.environ, "DATABASE_URL": database_url},
+        check=False,
+        capture_output=True,
+        text=True,
+        timeout=120,
+    )
+
+
+def test_audit_log_upgrade_downgrade_and_check(empty_database_url: str) -> None:
+    for args in (("upgrade", "head"), ("downgrade", "-1")):
+        result = alembic_run(*args, database_url=empty_database_url)
+        assert result.returncode == 0, result.stderr
+
+    engine = create_engine(empty_database_url)
+    try:
+        with engine.connect() as conn:
+            function = conn.exec_driver_sql(
+                "SELECT to_regproc('audit_log_append_only')"
+            ).scalar()
+        tables = inspect(engine).get_table_names()
+    finally:
+        engine.dispose()
+    assert "audit_log" not in tables
+    assert function is None
+
+    for args in (("upgrade", "head"), ("check",)):
+        result = alembic_run(*args, database_url=empty_database_url)
+        assert result.returncode == 0, result.stdout + result.stderr

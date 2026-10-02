@@ -3,6 +3,7 @@ from logging.config import fileConfig
 from alembic import context
 from sqlalchemy import create_engine, pool
 
+import app.audit  # noqa: F401  (registers audit_log on Base.metadata)
 from app.db import Base
 from app.settings import get_settings
 
