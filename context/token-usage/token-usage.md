@@ -30,3 +30,5 @@ Context used per request, measured against a context window of about 250,000 tok
 | Spec 07: app shell, translations, and formatting (plan) | ~95,000 (~38%) | High (smart zone) |
 | Spec 07: app shell, translations, and formatting (checks, build S1-S6, round 1 fixes) | ~150,000 (~60%) | Medium (attention degrades) |
 | Spec 07: verifier sub-agent, rounds 1 and 2 (separate context) | ~151,000 (~60%) | Medium (attention degrades) |
+| Spec 08: API errors, logging, and monitoring (external proofs C21, C22, C32, Railway apply, done) | ~80,000 (~32%) | High (smart zone) |
+| Spec 08: verifier sub-agent (separate context) | ~110,000 (~44%) | Medium (attention degrades) |
