@@ -80,6 +80,30 @@ Seen once or not yet corroborated. Tracked, not trusted.
 - evidence: C1 - tests/test_export_openapi.py:42 (tests)
 - last seen: 2026-10-02T21:02:46Z
 
+### L-012 - A server render that forwards a short-lived session token must refresh it when it is near expiry, because a slow render can outlive the token before the API call.
+- signal: `gate_fail` · recurrence: 1 feature(s) · scope: `frontend/auth` · harmful: 0
+- features: 10-accounts-login
+- evidence: C28 - frontend/lib/api/auth.ts (frontend/auth)
+- last seen: 2026-10-02T22:49:29Z
+
+### L-013 - A check that says 'for each case in C2-C7' needs a table built from those checks' cases, counted against them, or a case gets dropped.
+- signal: `spec_precision_gap` · recurrence: 1 feature(s) · scope: `tests` · harmful: 0
+- features: 10-accounts-login
+- evidence: C29 - services/core/tests/test_auth.py:217 (tests)
+- last seen: 2026-10-02T22:49:29Z
+
+### L-014 - Run axe only after animations settle when the steps before it can trigger a fade-in, such as a field error after blur.
+- signal: `gate_fail` · recurrence: 1 feature(s) · scope: `frontend/e2e` · harmful: 0
+- features: 10-accounts-login
+- evidence: C26 - frontend/e2e/auth.spec.ts:115 (frontend/e2e)
+- last seen: 2026-10-02T22:49:29Z
+
+### L-015 - Check the installed library for deprecations and CSS-variable support before fixing an integration's literal shape in a Landing row; docs pages can lag the package.
+- signal: `spec_deviation` · recurrence: 1 feature(s) · scope: `frontend` · harmful: 0
+- features: 10-accounts-login
+- evidence: plan.md doors 7, 8 (frontend)
+- last seen: 2026-10-02T22:49:29Z
+
 ## Quarantined (failed when applied - ignore)
 
 A confirmed lesson that recurred alongside failure. Kept for the maintainer to review.

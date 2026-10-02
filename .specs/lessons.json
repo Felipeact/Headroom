@@ -3,7 +3,7 @@
   "promote_threshold": 2,
   "window_days": 45,
   "quarantine_threshold": 2,
-  "next_id": 12,
+  "next_id": 16,
   "lessons": [
     {
       "id": "L-001",
@@ -202,6 +202,78 @@
       ],
       "created": "2026-10-02T21:02:46Z",
       "last_seen": "2026-10-02T21:02:46Z"
+    },
+    {
+      "id": "L-012",
+      "key": "gate_fail::a server render that forwards a short lived session token must refresh it when it is near expiry because a slow render can outlive the token before the api call",
+      "text": "A server render that forwards a short-lived session token must refresh it when it is near expiry, because a slow render can outlive the token before the API call.",
+      "signal": "gate_fail",
+      "scope": "frontend/auth",
+      "status": "candidate",
+      "features": [
+        "10-accounts-login"
+      ],
+      "recurrence": 1,
+      "harmful": 0,
+      "evidence": [
+        "C28 - frontend/lib/api/auth.ts (frontend/auth)"
+      ],
+      "created": "2026-10-02T22:49:29Z",
+      "last_seen": "2026-10-02T22:49:29Z"
+    },
+    {
+      "id": "L-013",
+      "key": "spec_precision_gap::a check that says for each case in c2 c7 needs a table built from those checks cases counted against them or a case gets dropped",
+      "text": "A check that says 'for each case in C2-C7' needs a table built from those checks' cases, counted against them, or a case gets dropped.",
+      "signal": "spec_precision_gap",
+      "scope": "tests",
+      "status": "candidate",
+      "features": [
+        "10-accounts-login"
+      ],
+      "recurrence": 1,
+      "harmful": 0,
+      "evidence": [
+        "C29 - services/core/tests/test_auth.py:217 (tests)"
+      ],
+      "created": "2026-10-02T22:49:29Z",
+      "last_seen": "2026-10-02T22:49:29Z"
+    },
+    {
+      "id": "L-014",
+      "key": "gate_fail::run axe only after animations settle when the steps before it can trigger a fade in such as a field error after blur",
+      "text": "Run axe only after animations settle when the steps before it can trigger a fade-in, such as a field error after blur.",
+      "signal": "gate_fail",
+      "scope": "frontend/e2e",
+      "status": "candidate",
+      "features": [
+        "10-accounts-login"
+      ],
+      "recurrence": 1,
+      "harmful": 0,
+      "evidence": [
+        "C26 - frontend/e2e/auth.spec.ts:115 (frontend/e2e)"
+      ],
+      "created": "2026-10-02T22:49:29Z",
+      "last_seen": "2026-10-02T22:49:29Z"
+    },
+    {
+      "id": "L-015",
+      "key": "spec_deviation::check the installed library for deprecations and css variable support before fixing an integration s literal shape in a landing row docs pages can lag the package",
+      "text": "Check the installed library for deprecations and CSS-variable support before fixing an integration's literal shape in a Landing row; docs pages can lag the package.",
+      "signal": "spec_deviation",
+      "scope": "frontend",
+      "status": "candidate",
+      "features": [
+        "10-accounts-login"
+      ],
+      "recurrence": 1,
+      "harmful": 0,
+      "evidence": [
+        "plan.md doors 7, 8 (frontend)"
+      ],
+      "created": "2026-10-02T22:49:29Z",
+      "last_seen": "2026-10-02T22:49:29Z"
     }
   ]
 }
