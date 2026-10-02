@@ -38,6 +38,8 @@ Define these as CSS variables in `app/globals.css`, and map them in the Tailwind
 | `--warning-line` | `#B26B00` | The minimum-balance line on charts |
 | `--danger-bg`, `--danger-border` | `#FCEDEB`, `#EFC7C2` | Account shortfalls, errors, and destructive actions |
 | `--danger-text`, `--danger-strong` | `#8E1B1B`, `#5E1111` | Text on danger backgrounds, and error messages |
+| `--line-soft` | `#ECE8E0` | Skeleton blocks and chart gridlines |
+| `--line-strong` | `#C9C2B5` | A switch that is off, and the chart's zero line |
 
 Rules:
 
@@ -101,7 +103,7 @@ All shared components live in `frontend/components/ui/`. They're shadcn/ui compo
 | Step indicator | "Step 2 of 5" plus a five-segment bar. Used only in onboarding. |
 | Skeleton | Gray blocks in the shape of the content, shown while loading. |
 | Toast | Confirms a change, such as "Expected payment added", for 4 seconds. Never used for an error that needs action. |
-| Forecast chart | Recharts, with these styles: <ul><li>the line in `--accent`, 2.5px wide</li><li>the likely range in accent at 13% opacity</li><li>gridlines in `#ECE8E0` and the zero line in `#C9C2B5`</li><li>the minimum as a dashed `--warning-line`</li><li>the lowest point labeled</li></ul>It always comes with a text summary for screen readers. |
+| Forecast chart | Recharts, with these styles: <ul><li>the line in `--accent`, 2.5px wide</li><li>the likely range in accent at 13% opacity</li><li>gridlines in `--line-soft` and the zero line in `--line-strong`</li><li>the minimum as a dashed `--warning-line`</li><li>the lowest point labeled</li></ul>It always comes with a text summary for screen readers. |
 
 ## States
 
