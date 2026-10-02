@@ -9,7 +9,8 @@
     "mainNav": "Main",
     "openMenu": "Open menu",
     "menuTitle": "Menu",
-    "closeMenu": "Close menu"
+    "closeMenu": "Close menu",
+    "signOut": "Sign out"
   },
   "Nav": {
     "dashboard": "Dashboard",

@@ -4,6 +4,7 @@ import { api } from '@/lib/api/client'
 import ApiCheckPage from '@/app/dev/api-check/page'
 
 vi.mock('@/lib/api/client', () => ({ api: { GET: vi.fn() } }))
+vi.mock('@clerk/nextjs/server', () => ({ auth: { protect: vi.fn().mockResolvedValue({}) } }))
 
 beforeEach(() => {
   vi.stubEnv('NODE_ENV', 'development')

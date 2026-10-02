@@ -1,3 +1,4 @@
+import { auth } from "@clerk/nextjs/server"
 import { notFound } from "next/navigation"
 import { SentryCheckButtons } from "./sentry-check-buttons"
 
@@ -6,6 +7,7 @@ import { SentryCheckButtons } from "./sentry-check-buttons"
 // copy is for developers, so it is not in messages/en.json.
 export default async function SentryCheckPage({ searchParams }: PageProps<"/dev/sentry-check">) {
   if (process.env.NODE_ENV === "production") notFound()
+  await auth.protect()
   const { run } = await searchParams
   const runId = typeof run === "string" ? run : ""
 

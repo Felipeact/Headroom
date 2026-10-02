@@ -44,8 +44,11 @@ function mainNav(page: Page): Locator {
 async function pageStrings(page: Page): Promise<string[]> {
   return page.evaluate(() => {
     const found: string[] = []
+    // [data-user-content] marks data such as the signed-in user's name (spec 10), not copy.
     const skip = (el: Element | null) =>
-      !!el?.closest('nextjs-portal, script, style, noscript, template, next-route-announcer')
+      !!el?.closest(
+        'nextjs-portal, script, style, noscript, template, next-route-announcer, [data-user-content]',
+      )
     const walker = document.createTreeWalker(document.body, NodeFilter.SHOW_TEXT)
     for (let node = walker.nextNode(); node; node = walker.nextNode()) {
       const text = node.textContent?.trim()

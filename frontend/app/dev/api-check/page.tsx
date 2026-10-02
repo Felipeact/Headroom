@@ -1,3 +1,4 @@
+import { auth } from "@clerk/nextjs/server"
 import { notFound } from "next/navigation"
 import { api } from "@/lib/api/client"
 
@@ -17,6 +18,7 @@ async function checkLive(): Promise<LiveResult> {
 // The copy is for developers, so it is not in messages/en.json.
 export default async function ApiCheckPage() {
   if (process.env.NODE_ENV === "production") notFound()
+  await auth.protect()
   const result = await checkLive()
 
   return (

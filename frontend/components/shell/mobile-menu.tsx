@@ -12,8 +12,9 @@ import {
   DialogTrigger,
 } from "@/components/ui/dialog"
 import { NavLinks } from "./nav-links"
+import { SignOutButton } from "./sign-out-button"
 
-export function MobileMenu({ className }: { className?: string }) {
+export function MobileMenu({ className, userName }: { className?: string; userName?: string }) {
   const t = useTranslations("Shell")
   const [open, setOpen] = useState(false)
 
@@ -29,6 +30,15 @@ export function MobileMenu({ className }: { className?: string }) {
         <nav aria-label={t("mainNav")}>
           <NavLinks className="flex-col" onNavigate={() => setOpen(false)} />
         </nav>
+        {userName && (
+          <div
+            data-testid="menu-user"
+            className="flex flex-col items-start gap-1 border-t border-border pt-3"
+          >
+            <span data-user-content className="px-3.5 text-[15px] text-ink-2">{userName}</span>
+            <SignOutButton />
+          </div>
+        )}
         <DialogClose asChild>
           <Button
             variant="ghost"

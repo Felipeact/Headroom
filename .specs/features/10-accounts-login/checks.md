@@ -3,7 +3,7 @@
 Profile: light
 Plan: `.specs/features/10-accounts-login/plan.md`
 
-33 checks in 4 slices · 6 one-way doors · 2 open, of which 0 block the build (staging variables block go-live; C33 needs the push go-ahead and the CI secret)
+34 checks in 4 slices · 8 one-way doors · 2 open, of which 0 block the build (staging variables block go-live; C33 needs the push go-ahead and the CI secret)
 
 Commands run from `services/core/` (`uv run pytest ...`) or `frontend/` (`npx vitest run <file> -t "<name>"`, `npx playwright test <file> -g "<name>"`). `bash .specs/features/10-accounts-login/proofs.sh <cNN>` runs from anywhere in the repo. The DB-backed pytest tests and Playwright need a Postgres on `localhost:5432` with database `headroom` (CI has one; locally a portable Postgres in the scratchpad). Playwright starts the web app on 3000 and the API on 8100, and signs in through `@clerk/testing` with `E2E_CLERK_USER_USERNAME` / `E2E_CLERK_USER_PASSWORD` from `frontend/.env.local`. API tests sign tokens with an RSA key pair generated per test session; they never call Clerk.
 
@@ -99,6 +99,9 @@ Proof: `npx playwright test e2e/auth.spec.ts -g "sign out reachable"`
 **C28** - The specs that existed before this feature (`shell`, `home`, `api-check`, `dev-components`, `sentry-check`) pass when signed in as the test user (Impact: web routing)
 Proof: `npx playwright test e2e/shell.spec.ts e2e/home.spec.ts e2e/api-check.spec.ts e2e/dev-components.spec.ts e2e/sentry-check.spec.ts`
 
+**C34** - Every `layout.tsx` and `page.tsx` under `frontend/app/`, except `app/layout.tsx` and the files under `app/sign-in/` and `app/sign-up/`, contains `await auth.protect()`; `proxy.ts` does not import `createRouteMatcher`; the test sees at least `8` files: the `(app)` layout, its 4 pages and the 3 `app/dev/` pages (door 7, added mid-build)
+Proof: `npx vitest run tests/auth-protect.test.ts -t "every page protected"`
+
 ### S4 - Nothing secret is kept · 4 files · 15 KB · ~4k
 
 **C29** - For each rejected case in C2-C7, captured log output contains one `auth.rejected` event whose `reason` is `missing`, `expired`, `invalid` or `unauthorized_party` as listed in Coverage, and contains neither the token string nor the `Authorization` header value (AC 21, door 2)
@@ -126,7 +129,7 @@ Proof: `bash .specs/features/10-accounts-login/proofs.sh c33`
 | `azp` cases (4) | listed C7 · foreign C7 · absent C7 · list empty C7 | - |
 | `auth.rejected` reasons (4) | `missing` C29 (no/malformed header) · `expired` C29 (C3) · `invalid` C29 (C4-C6) · `unauthorized_party` C29 (C7) | - |
 | routes and auth (2 kinds) | every `/v1/*` C8, table-driven over `app.routes` · `/healthz/live` open C8 | - |
-| doors (6) | 1 `users` C10 C12 C14 · 2 verification C1-C7 · 3 `/v1` router C8 · 4 module layout C15 · 5 Clerk web C16 C17 C25 · 6 token headers C20 C21 | - |
+| doors (8) | 1 `users` C10 C12 C14 · 2 verification C1-C7 · 3 `/v1` router C8 · 4 module layout C15 · 5 Clerk web C16 C17 C25 · 6 token headers C20 C21 · 7 per-page protection C16 C34 · 8 token copies C25 | - |
 | `users` row lifecycle (4) | first C10 · repeat C11 · concurrent C12 · rejected C13 | - |
 | protected pages (5) | `/` C16 · `/alerts` C16 · `/expected-payments` C16 · `/settings` C16 · `/dev/components` C16 | - |
 | auth pages (2) | `/sign-in` C17 C25 C26 · `/sign-up` C17 C26 | - |
@@ -157,3 +160,4 @@ Proof: `bash .specs/features/10-accounts-login/proofs.sh c33`
 - S1-S4 touch about 20 existing and new files: 66 KB existing (`wc -c` on `main.py`, `settings.py`, `env.py`, `test_migrations.py`, `test_settings.py`, both `.env.example`, both layouts, `error.tsx`, the shell components, the five e2e specs, `playwright.config.ts`, `en.json`, `ci.yml`, `client.ts`) plus about 40 KB new = 106 KB / 4 = ~27k tokens, under the 150k budget - one builder
 - Mechanism: one builder
 - **Settled mid-build:** C32's secret patterns were literal prefixes, which `checks.md` itself contains; restated before its proof was written as a prefix plus 20+ key characters or a full PEM line, with no folder excluded. C8's route table reads `app.openapi()["paths"]`, because this FastAPI keeps included routers out of `app.routes`
+- **Settled mid-build:** Door 7 (user chose per-page `auth.protect()` over the deprecated `createRouteMatcher`), with C34 added for it. The test user signs in through `@clerk/testing`'s email (sign-in token) path: the password path stops at `needs_client_trust`, Clerk's new-device email check, so `E2E_CLERK_USER_PASSWORD` is unused and the user is looked up by `E2E_CLERK_USER_USERNAME`

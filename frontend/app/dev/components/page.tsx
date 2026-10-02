@@ -1,3 +1,4 @@
+import { auth } from "@clerk/nextjs/server"
 import { notFound } from "next/navigation"
 import { CircleAlert, Landmark, TriangleAlert } from "lucide-react"
 import { Badge } from "@/components/ui/badge"
@@ -62,8 +63,9 @@ function Section({ id, title, children }: { id: string; title: string; children:
   )
 }
 
-export default function DevComponentsPage() {
+export default async function DevComponentsPage() {
   if (process.env.NODE_ENV === "production") notFound()
+  await auth.protect()
 
   return (
     <main className="mx-auto flex w-full max-w-[1440px] flex-col gap-10 px-4 py-8 lg:px-12 lg:py-12">

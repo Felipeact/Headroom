@@ -3,10 +3,13 @@
 import { useTranslations } from "next-intl"
 import { MobileMenu } from "./mobile-menu"
 import { NavLinks } from "./nav-links"
+import { SignOutButton } from "./sign-out-button"
 
 // The header from design/mockups/dashboard-desktop.dc.html and dashboard-phone.dc.html.
 // businessName arrives with spec 11; until then the wordmark stands in for it on phones.
-export function AppHeader({ businessName }: { businessName?: string }) {
+// userName is the signed-in person (spec 10); the mockups have no slot for it, so it sits
+// after the nav on desktop and at the bottom of the phone menu.
+export function AppHeader({ businessName, userName }: { businessName?: string; userName?: string }) {
   const t = useTranslations("Shell")
 
   return (
@@ -35,10 +38,18 @@ export function AppHeader({ businessName }: { businessName?: string }) {
       >
         {businessName ?? t("wordmark")}
       </span>
-      <nav aria-label={t("mainNav")} className="hidden lg:block">
-        <NavLinks />
-      </nav>
-      <MobileMenu className="border-border lg:hidden" />
+      <div className="hidden items-center gap-4 lg:flex">
+        <nav aria-label={t("mainNav")}>
+          <NavLinks />
+        </nav>
+        {userName && (
+          <div data-testid="header-user" className="flex items-center gap-2">
+            <span data-user-content className="text-[15px] text-ink-2">{userName}</span>
+            <SignOutButton />
+          </div>
+        )}
+      </div>
+      <MobileMenu userName={userName} className="border-border lg:hidden" />
     </header>
   )
 }

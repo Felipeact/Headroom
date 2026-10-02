@@ -1,7 +1,9 @@
 import type { Metadata } from "next";
+import { ClerkProvider } from "@clerk/nextjs";
 import { Fraunces, IBM_Plex_Sans } from "next/font/google";
 import { NextIntlClientProvider } from "next-intl";
 import { getTranslations } from "next-intl/server";
+import { clerkAppearance } from "@/lib/clerk-appearance";
 import "./globals.css";
 
 const plexSans = IBM_Plex_Sans({
@@ -30,7 +32,9 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
       className={`${plexSans.variable} ${fraunces.variable} h-full antialiased`}
     >
       <body className="min-h-full flex flex-col">
-        <NextIntlClientProvider>{children}</NextIntlClientProvider>
+        <ClerkProvider appearance={clerkAppearance}>
+          <NextIntlClientProvider>{children}</NextIntlClientProvider>
+        </ClerkProvider>
       </body>
     </html>
   );

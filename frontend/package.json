@@ -13,6 +13,7 @@
     "api:types": "openapi-typescript ../contracts/openapi.json -o lib/api/schema.d.ts"
   },
   "dependencies": {
+    "@clerk/nextjs": "^7.9.10",
     "@sentry/nextjs": "^11.3.0",
     "class-variance-authority": "^0.7.1",
     "cn": "^0.4.0",
@@ -30,6 +31,7 @@
   },
   "devDependencies": {
     "@axe-core/playwright": "^4.13.0",
+    "@clerk/testing": "^2.2.42",
     "@playwright/test": "^1.63.0",
     "@tailwindcss/postcss": "^4",
     "@testing-library/dom": "^10.4.2",

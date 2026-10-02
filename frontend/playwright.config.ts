@@ -1,4 +1,9 @@
+import { existsSync } from 'node:fs';
 import { defineConfig, devices } from '@playwright/test';
+import { SIGNED_IN_STATE } from './e2e/test-user';
+
+// Clerk keys and the test user (spec 10) live in .env.local, which CI does not have.
+if (existsSync('.env.local')) process.loadEnvFile('.env.local');
 
 /**
  * Read environment variables from file.
@@ -34,9 +39,12 @@ export default defineConfig({
 
   /* Configure projects for major browsers */
   projects: [
+    // Signs the Clerk test user in once and saves the session for the other projects.
+    { name: 'setup', testMatch: /global\.setup\.ts/ },
     {
       name: 'chromium',
-      use: { ...devices['Desktop Chrome'] },
+      use: { ...devices['Desktop Chrome'], storageState: SIGNED_IN_STATE },
+      dependencies: ['setup'],
     },
 
     // {

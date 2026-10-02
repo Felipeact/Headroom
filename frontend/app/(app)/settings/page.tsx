@@ -1,5 +1,7 @@
+import { auth } from "@clerk/nextjs/server"
 import { PlaceholderPage } from "@/components/shell/placeholder-page"
 
-export default function SettingsPage() {
+export default async function SettingsPage() {
+  await auth.protect()
   return <PlaceholderPage titleKey="settings" />
 }
