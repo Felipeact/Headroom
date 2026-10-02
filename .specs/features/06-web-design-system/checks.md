@@ -88,7 +88,7 @@ Proof: `npx vitest run tests/design-system.test.ts -t "guard detects"`
 **C24** - `GET /dev/components` in development answers `200`. The `h1` is "Components and states", and the `h2` texts are, in order: Colors, Type, Buttons, Form controls, Badges, Alert cards, States, Dialog and toast (AC 24, 32)
 Proof: `npx playwright test e2e/dev-components.spec.ts -g "sections in order"`
 
-**C25** - The Colors section has 13 swatches whose names and captions equal the mockup's 13, in order (Background `--bg · #F5F3EE` ... Danger text `--danger-text · #8E1B1B`) (AC 25)
+**C25** - The Colors section has 14 swatches whose names and captions equal the mockup's 14, in order (Background `--bg · #F5F3EE` ... Danger text `--danger-text · #8E1B1B`) (AC 25)
 Proof: `npx playwright test e2e/dev-components.spec.ts -g "colour swatches"`
 
 **C26** - The Type section has 7 rows. Each sample's computed size and weight are Display 40/600, Figure 36/600, Title 19/600, Section 18/600, Body 15/400, Caption 13/400 and Eyebrow 12/600 uppercase (AC 26)

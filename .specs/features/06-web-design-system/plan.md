@@ -116,7 +116,7 @@ A reviewer can put the page next to `components.dc.html` and find the same secti
 **Acceptance Criteria**
 
 24. WHEN `/dev/components` loads in development THEN it SHALL respond `200` with the `h1` "Components and states", followed by the `h2` sections Colors, Type, Buttons, Form controls, Badges, Alert cards and States, in that order
-25. The Colors section SHALL show 13 swatches, each with the mockup's name and `--token · #HEX` caption, in the mockup's order
+25. The Colors section SHALL show 14 swatches, each with the mockup's name and `--token · #HEX` caption, in the mockup's order
 26. The Type section SHALL show the mockup's 7 rows (Display, Figure, Title, Section, Body, Caption, Eyebrow), each sample at the size and weight its label names
 27. The Buttons section SHALL show the mockup's 6 buttons with their mockup labels (Primary, Secondary, Outline, Text link, Destructive, Disabled)
 28. The Form controls section SHALL show the Business name input with its hint, the Amount input with `$` inside and its error "Enter an amount greater than $0.", the Province or territory select, two "Counts as cash" switches (on and off), the two radio options, and the Money out / Money in segmented control
