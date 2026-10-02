@@ -1,4 +1,4 @@
-import { defineRailway, github, postgres, project, service, volume } from "railway/iac";
+import { defineRailway, github, postgres, preserve, project, service, volume } from "railway/iac";
 
 const REPO = "Felipeact/Headroom";
 const US_EAST = "us-east4-eqdc4a";
@@ -29,6 +29,9 @@ export default defineRailway((ctx) => {
       // Railway resolves the references; the psycopg scheme is required by app/settings.py.
       DATABASE_URL:
         "postgresql+psycopg://${{Postgres.PGUSER}}:${{Postgres.PGPASSWORD}}@${{Postgres.PGHOST}}:${{Postgres.PGPORT}}/${{Postgres.PGDATABASE}}",
+      // The DSN is set with `railway variable set`; preserve() keeps it out of this file.
+      SENTRY_DSN: preserve(),
+      SENTRY_ENVIRONMENT: "staging",
     },
   });
 
