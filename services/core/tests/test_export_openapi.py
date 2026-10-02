@@ -2,12 +2,23 @@ import json
 import os
 import subprocess
 import sys
+from collections.abc import Iterator
 from pathlib import Path
+
+import pytest
 
 from app.main import app
 
 CORE_DIR = Path(__file__).resolve().parents[1]
 CONTRACT = CORE_DIR.parents[1] / "contracts" / "openapi.json"
+
+
+@pytest.fixture(autouse=True)
+def restore_contract() -> Iterator[None]:
+    # The export writes the tracked contract; put the committed bytes back afterwards.
+    original = CONTRACT.read_bytes()
+    yield
+    CONTRACT.write_bytes(original)
 
 
 def run_export(cwd: Path) -> subprocess.CompletedProcess[str]:

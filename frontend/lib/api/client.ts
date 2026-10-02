@@ -2,7 +2,8 @@ import "server-only"
 import createClient, { type Client } from "openapi-fetch"
 import type { paths } from "./schema"
 
-type ApiClient = Client<paths>
+const METHODS = ["GET", "PUT", "POST", "DELETE", "OPTIONS", "HEAD", "PATCH", "TRACE"] as const
+type ApiClient = Pick<Client<paths>, (typeof METHODS)[number]>
 type Method = (...args: unknown[]) => Promise<unknown>
 
 /**
@@ -11,9 +12,12 @@ type Method = (...args: unknown[]) => Promise<unknown>
  *
  * `API_URL` is read on each request, not at import, because `next build` imports this
  * module without it. A client is built per request, so it also picks up Next's `fetch`.
+ * Only the HTTP methods exist: middleware (`use`) would land on a throwaway client, and
+ * leaving `then` undefined keeps `api` from looking like a promise.
  */
 export const api = new Proxy({} as ApiClient, {
   get(_target, method) {
+    if (!(METHODS as readonly unknown[]).includes(method)) return undefined
     return (...args: unknown[]) => {
       const baseUrl = process.env.API_URL
       if (!baseUrl) return Promise.reject(new Error("API_URL is not set"))

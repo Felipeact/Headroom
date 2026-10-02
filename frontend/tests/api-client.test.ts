@@ -44,3 +44,14 @@ test('API_URL unset: import works, the call rejects without fetching', async () 
   await expect(api.GET('/healthz/live')).rejects.toThrow(new Error('API_URL is not set'))
   expect(fakeFetch).not.toHaveBeenCalled()
 })
+
+test('exposes only the HTTP methods', async () => {
+  vi.stubEnv('API_URL', 'http://api.test:9999')
+  const { api } = await import('@/lib/api/client')
+
+  expect(typeof api.GET).toBe('function')
+  expect(typeof api.POST).toBe('function')
+  expect(Reflect.get(api, 'use')).toBeUndefined()
+  expect(Reflect.get(api, 'then')).toBeUndefined()
+  await expect(Promise.resolve(api)).resolves.toBe(api)
+})

@@ -23,6 +23,7 @@
 | AD-016 | Web types: `npm run api:types` = `openapi-typescript ../contracts/openapi.json -o lib/api/schema.d.ts`; output committed, never hand-edited | every screen's request and response types come from here (spec 09 door 2) | active | 2026-10-02 |
 | AD-017 | API client: `frontend/lib/api/client.ts` starts with `import "server-only"`, exports `api` (openapi-fetch `createClient<paths>`), base URL from server-only `API_URL` read per request with no default (`Error("API_URL is not set")`); never `NEXT_PUBLIC_API_URL` | the browser never calls the API (AGENTS.md); a default would make a misconfigured build call itself (spec 09 door 3) | active | 2026-10-02 |
 | AD-018 | CI drift check: the `api` job reruns the export and `git diff --exit-code -- ../../contracts/openapi.json`; the `web` job reruns `npm run api:types` and `git diff --exit-code -- lib/api/schema.d.ts`; no third job | only `web` and `api` are required checks (AD-004), so a drift job outside them would not block a merge (spec 09 door 4) | active | 2026-10-02 |
+| AD-019 | `api` from `lib/api/client.ts` exposes only `GET`, `PUT`, `POST`, `DELETE`, `OPTIONS`, `HEAD`, `PATCH`, `TRACE`; no `use`/`eject`. Auth headers (spec 10) go per call or through a client built per request with middleware applied inside `client.ts` | the client is rebuilt per request, so `api.use()` would silently do nothing (spec 09 door 6) | active | 2026-10-02 |
 
 ## Handoff
 

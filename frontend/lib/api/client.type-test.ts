@@ -10,4 +10,7 @@ export async function clientTypeTest(): Promise<void> {
     // @ts-expect-error LiveStatus has no "missing" field
     void data.missing
   }
+
+  // @ts-expect-error middleware is not exposed; it would land on a throwaway client
+  api.use({})
 }
