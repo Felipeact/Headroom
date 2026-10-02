@@ -1,8 +1,11 @@
 #!/usr/bin/env bash
 # Proofs for spec 07 that need Sentry. Usage: bash proofs.sh c37 [c38]
 # Needs NEXT_PUBLIC_SENTRY_DSN in frontend/.env.local (the headroom-web project), and in this
-# shell SENTRY_AUTH_TOKEN (scope project:read, event:read), SENTRY_ORG and SENTRY_PROJECT
-# (headroom-web). SENTRY_API_URL defaults to https://sentry.io; US-region orgs may need
+# shell SENTRY_ORG, SENTRY_PROJECT (headroom-web) and a token that can read events:
+# SENTRY_READ_TOKEN (a personal sntryu_ token with project:read and event:read). An
+# organization token (sntrys_, used for source maps) gets 403 from these endpoints.
+# Load them with: set -a; . frontend/.env.local; set +a
+# SENTRY_API_URL defaults to https://sentry.io; US-region orgs may need
 # https://us.sentry.io. Stop any server on port 3000 first: Playwright reuses it.
 # Prints the run nonce and pass/fail only, never the DSN or a token.
 set -uo pipefail
@@ -14,7 +17,7 @@ SENTRY_API_URL="${SENTRY_API_URL:-https://sentry.io}"
 fail() { echo "FAIL $1: $2" >&2; exit 1; }
 
 need_sentry_api() {
-  for var in SENTRY_AUTH_TOKEN SENTRY_ORG SENTRY_PROJECT; do
+  for var in SENTRY_READ_TOKEN SENTRY_ORG SENTRY_PROJECT; do
     [ -n "${!var:-}" ] || fail "$1" "$var is not set in this shell"
   done
   grep -q '^NEXT_PUBLIC_SENTRY_DSN=..*' .env.local 2>/dev/null \
@@ -31,23 +34,15 @@ click_buttons() {
     || fail "$1" "the sentry-check Playwright run failed"
 }
 
-# event_count MESSAGE: how many error events in the project carry MESSAGE, polling up to 60 s.
+# event_count MESSAGE: how many issues in the project, seen in the last 24 h, have a title
+# containing MESSAGE, polling up to 60 s. Uses the project issues endpoint, which needs only
+# project:read and event:read; the org-wide events endpoint also needs org:read.
 event_count() {
-  local message="$1" project_id count deadline=$((SECONDS + 60))
-  project_id="$(curl -s -H "Authorization: Bearer $SENTRY_AUTH_TOKEN" \
-    "$SENTRY_API_URL/api/0/projects/$SENTRY_ORG/$SENTRY_PROJECT/" \
-    | python3 -c 'import json,sys; print(json.load(sys.stdin).get("id",""))' | tr -d '\r')"
-  [ -n "$project_id" ] || { echo 0; return; }
+  local message="$1" count deadline=$((SECONDS + 60))
   while [ "$SECONDS" -lt "$deadline" ]; do
-    count="$(curl -s -G -H "Authorization: Bearer $SENTRY_AUTH_TOKEN" \
-      "$SENTRY_API_URL/api/0/organizations/$SENTRY_ORG/events/" \
-      --data-urlencode "dataset=errors" \
-      --data-urlencode "field=id" \
-      --data-urlencode "field=message" \
-      --data-urlencode "project=$project_id" \
-      --data-urlencode "statsPeriod=1h" \
-      --data-urlencode "query=message:\"$message\"" \
-      | python3 -c 'import json,sys; print(len(json.load(sys.stdin).get("data",[])))' 2>/dev/null | tr -d '\r')"
+    count="$(curl -s -G -H "Authorization: Bearer $SENTRY_READ_TOKEN"       "$SENTRY_API_URL/api/0/projects/$SENTRY_ORG/$SENTRY_PROJECT/issues/"       --data-urlencode "statsPeriod=24h"       --data-urlencode "query=\"$message\""       | python3 -c 'import json,sys
+m=sys.argv[1]; d=json.load(sys.stdin)
+print(sum(1 for i in d if m in (i.get("title") or "")) if isinstance(d,list) else 0)' "$message" 2>/dev/null | tr -d '')"
     [ "${count:-0}" -gt 0 ] && { echo "$count"; return; }
     sleep 5
   done
