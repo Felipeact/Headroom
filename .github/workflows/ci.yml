@@ -26,6 +26,11 @@ jobs:
           cache: npm
           cache-dependency-path: frontend/package-lock.json
       - run: npm ci
+      # lib/api/schema.d.ts must match contracts/openapi.json (spec 09).
+      - name: Check generated API types are current
+        run: |
+          npm run api:types
+          git diff --exit-code -- lib/api/schema.d.ts
       - run: npm run lint
       - run: npm run typecheck
       - run: npm test
@@ -63,3 +68,8 @@ jobs:
       - run: uv run ruff check .
       - run: uv run mypy app
       - run: uv run pytest
+      # contracts/openapi.json must match the API's routes (spec 09).
+      - name: Check the OpenAPI contract is current
+        run: |
+          uv run python -m app.export_openapi
+          git diff --exit-code -- ../../contracts/openapi.json
