@@ -11,9 +11,9 @@
 ## Handoff
 
 **Feature**: 03-setup-database
-**Where**: built; C1-C15 green at HEAD; independent Verifier dispatched over `714b59b..HEAD`
-**In progress**: verification report
-**Next step**: once `validate_verification.py 03-setup-database` exits 0, start spec 04
+**Where**: done; independent Verifier PASS 15/15 over `714b59b..8d37120`, `validate_verification.py` exit 0
+**In progress**: none
+**Next step**: spec 04
 **Blockers**: none (Docker Desktop must be running for the database-backed tests)
 **Uncommitted**: none
 **Branch**: development
