@@ -1,7 +1,7 @@
 # Spec 09: Typed API client
 
 - **Milestone:** 2, foundations
-- **Status:** Not started
+- **Status:** In progress
 - **Depends on:** 01, 02
 
 ## Goal
