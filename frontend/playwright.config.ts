@@ -71,9 +71,20 @@ export default defineConfig({
   ],
 
   /* Run your local dev server before starting the tests */
-  webServer: {
-    command: 'npm run dev',
-    url: 'http://localhost:3000',
-    reuseExistingServer: !process.env.CI,
-  },
+  webServer: [
+    {
+      command: 'npm run dev',
+      url: 'http://localhost:3000',
+      reuseExistingServer: !process.env.CI,
+      env: { API_URL: 'http://localhost:8100' },
+    },
+    // The API, for pages that call it through lib/api/client.ts (spec 09). Port 8100, not the
+    // usual 8000, so a developer's own `fastapi dev` never answers for the tests.
+    {
+      command: 'uv run fastapi dev app/main.py --port 8100',
+      cwd: '../services/core',
+      url: 'http://localhost:8100/healthz/live',
+      reuseExistingServer: !process.env.CI,
+    },
+  ],
 });

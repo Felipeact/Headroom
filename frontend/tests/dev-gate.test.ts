@@ -1,5 +1,8 @@
 import { afterEach, expect, test, vi } from 'vitest'
 import Page from '@/app/dev/components/page'
+import { api } from '@/lib/api/client'
+
+vi.mock('@/lib/api/client', () => ({ api: { GET: vi.fn() } }))
 
 afterEach(() => {
   vi.unstubAllEnvs()
@@ -38,4 +41,12 @@ test('C39 sentry check: development renders the page', async () => {
   await expect(
     SentryCheckPage({ searchParams: Promise.resolve({ run: 'abc' }), params: Promise.resolve({}) }),
   ).resolves.toBeDefined()
+})
+
+test('C14 api check: production calls notFound and makes no request', async () => {
+  vi.stubEnv('NODE_ENV', 'production')
+  const { default: ApiCheckPage } = await import('@/app/dev/api-check/page')
+  const thrown = await ApiCheckPage().catch((error: unknown) => error)
+  expect((thrown as { digest?: string } | undefined)?.digest).toBe('NEXT_HTTP_ERROR_FALLBACK;404')
+  expect(api.GET).toHaveBeenCalledTimes(0)
 })
