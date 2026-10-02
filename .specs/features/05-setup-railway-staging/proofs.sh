@@ -76,7 +76,7 @@ c2() { http_check c2 "https://$(domain_of api)/healthz/live" 200 '{"status":"ok"
 c3() {
   local id
   id="$(latest_success_id)"; [ -n "$id" ] || fail c3 "no SUCCESS api deployment"
-  railway logs "$id" --service api --environment "$ENV" --deployment --lines 1000 | grep -q 'Context impl PostgresqlImpl' \
+  railway logs "$id" --service api --environment "$ENV" --deployment --lines 1000 | grep -c 'Context impl PostgresqlImpl' >/dev/null \
     || fail c3 "deploy logs of $id do not show alembic running"
   # `alembic current` exits 0 even with no version table, so ask the schema directly.
   local has_table
@@ -142,14 +142,14 @@ c7() {
 c8() { node "$HERE/web-check.mjs" "$(domain_of web)" || fail c8 "web check failed"; echo "PASS c8"; }
 
 c9() {
-  local sha; sha="$(sha_of "$SUBJECT_A" c9)"
+  local sha; sha="$(sha_of "$SUBJECT_A" c9)" || exit 1
   ci_succeeded "$sha" || fail c9 "CI for commit A $sha has not succeeded"
   [ "$(has_deployment_for api "$sha")" = yes ] || fail c9 "no api deployment for commit A $sha"
   echo "PASS c9"
 }
 
 c10() {
-  local sha; sha="$(sha_of "$SUBJECT_W" c10)"
+  local sha; sha="$(sha_of "$SUBJECT_W" c10)" || exit 1
   ci_succeeded "$sha" || fail c10 "CI for commit W $sha has not succeeded"
   [ "$(has_deployment_for web "$sha")" = yes ] || fail c10 "no web deployment for commit W $sha"
   echo "PASS c10"
@@ -165,7 +165,7 @@ settled_since_ci() { # sha name
 }
 
 c11() {
-  local w n; w="$(sha_of "$SUBJECT_W" c11)"; n="$(sha_of "$SUBJECT_N" c11)"
+  local w n; w="$(sha_of "$SUBJECT_W" c11)" || exit 1; n="$(sha_of "$SUBJECT_N" c11)" || exit 1
   settled_since_ci "$n" c11; settled_since_ci "$w" c11
   [ "$(has_deployment_for api "$w")" = no ] || fail c11 "api deployed commit W $w"
   [ "$(has_deployment_for api "$n")" = no ] || fail c11 "api deployed commit N $n"
@@ -173,7 +173,7 @@ c11() {
 }
 
 c12() {
-  local a n; a="$(sha_of "$SUBJECT_A" c12)"; n="$(sha_of "$SUBJECT_N" c12)"
+  local a n; a="$(sha_of "$SUBJECT_A" c12)" || exit 1; n="$(sha_of "$SUBJECT_N" c12)" || exit 1
   settled_since_ci "$n" c12; settled_since_ci "$a" c12
   [ "$(has_deployment_for web "$a")" = no ] || fail c12 "web deployed commit A $a"
   [ "$(has_deployment_for web "$n")" = no ] || fail c12 "web deployed commit N $n"
