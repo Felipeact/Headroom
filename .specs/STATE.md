@@ -18,10 +18,10 @@
 
 ## Handoff
 
-**Feature**: 05-setup-railway-staging
-**Where**: done; independent Verifier PASS 22/22 at round 2 over `4a3f716..ebb410e`, `validate_verification.py` exit 0. Staging: api `https://api-staging-e068.up.railway.app`, web `https://web-staging-4398.up.railway.app`
-**In progress**: none
-**Next step**: spec 06, 08 or 09 (all unblocked); milestone 1 (set-up) is complete
-**Blockers**: none. `railway config` under Git Bash on Windows needs `env _=<railway.exe>` (AD-007). The C3 proof uses the SSH key `~/.ssh/id_ed25519`, registered with Railway as `headroom-dev`
+**Feature**: 08-api-errors-logging-monitoring
+**Where**: C1-C20, C23-C31 green at `23f9ed6`; C21, C22, C32 open (external)
+**In progress**: none - waiting on the Sentry project and the push go-ahead
+**Next step**: user puts `SENTRY_DSN` in `services/core/.env.local` and exports `SENTRY_AUTH_TOKEN`/`SENTRY_ORG`/`SENTRY_PROJECT`; run `proofs.sh c21`. With the push go-ahead: add `SENTRY_ENVIRONMENT: "staging"` to `api.env` in `.railway/railway.ts`, `railway variables` for `SENTRY_DSN` (first confirm `railway config plan` does not drop non-IaC variables), apply, push, then `proofs.sh c22 c32`; then the Verifier over `ec63c5f..HEAD`
+**Blockers**: Sentry DSN and API token (user); go-ahead to push and change staging
 **Uncommitted**: none
 **Branch**: development

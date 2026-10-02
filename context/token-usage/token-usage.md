@@ -23,3 +23,4 @@ Context used per request, measured against a context window of about 250,000 tok
 | Spec 05: staging on Railway (checks, provisioning, IaC switch, build, verify rounds) | ~140,000 (~56%) | Medium (attention degrades) |
 | Spec 05: verifier sub-agent, rounds 1 and 2 (separate context) | ~123,000 (~49%) | Medium (attention degrades) |
 | Spec 08: API errors, logging, and monitoring (plan) | ~75,000 (~30%) | High (smart zone) |
+| Spec 08: API errors, logging, and monitoring (checks, build S1-S4) | ~110,000 (~44%) | Medium (attention degrades) |
