@@ -87,11 +87,9 @@ command -v gh >/dev/null || PATH="$PATH:/c/Program Files/GitHub CLI"
 run_jobs() {
   local sha="$1" id status
   for _ in $(seq 1 120); do
-    id="$(gh run list --commit "$sha" --workflow CI --limit 1 --json databaseId --jq '.[0].databaseId' | tr -d '
-')"
+    id="$(gh run list --commit "$sha" --workflow CI --limit 1 --json databaseId --jq '.[0].databaseId' | tr -d '\r')"
     if [ -n "$id" ]; then
-      status="$(gh run view "$id" --json status --jq .status | tr -d '
-')"
+      status="$(gh run view "$id" --json status --jq .status | tr -d '\r')"
       [ "$status" = "completed" ] && { gh run view "$id" --json jobs; return 0; }
     fi
     sleep 10
@@ -100,8 +98,7 @@ run_jobs() {
 }
 
 # Reads the run_jobs JSON on stdin with Python, since jq is not installed everywhere.
-jobs_py() { python3 -c "import json,sys; jobs=json.load(sys.stdin)['jobs']; $1" "${@:2}" | tr -d '
-'; }
+jobs_py() { python3 -c "import json,sys; jobs=json.load(sys.stdin)['jobs']; $1" "${@:2}" | tr -d '\r'; }
 job_conclusion() { jobs_py "print(next(j['conclusion'] for j in jobs if j['name']==sys.argv[1]))" "$2" <<<"$1"; }
 failed_step() { jobs_py "print(','.join(s['name'] for j in jobs if j['name']==sys.argv[1] for s in j['steps'] if s['conclusion']=='failure'))" "$2" <<<"$1"; }
 job_names() { jobs_py "print(','.join(sorted(j['name'] for j in jobs)))" <<<"$1"; }
