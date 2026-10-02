@@ -106,3 +106,7 @@ Proof: `bash .specs/features/09-api-typed-client/proofs.sh c19`
 ## Handoff
 
 - S1-S4 touch about 16 files, ~39 KB including both generated files (~10k tokens), plus reading `app/main.py`, `ci.yml`, `playwright.config.ts` and `package.json` (~3k); ~13k total, under the 150k budget - one builder
+
+- **Boundary:** C1-C19 closed at `fc0a97b` (pushed). C16 at scratch `ac83ef0`, C17 at scratch `7cdae40` (PR #2, closed unmerged, branch deleted), C18 at `fc0a97b`
+- **Settled mid-build:** the user approved pushing `development` and the scratch pull request for C16-C18
+- **Abandoned:** Playwright's API on port 8000 - a system process (`Manager`) holds it on this machine, so the tests use 8100
