@@ -260,6 +260,20 @@ test('reduced motion (C22)', async ({ browser }) => {
   await context.close()
 })
 
+test('reduced motion toast (AC 22)', async ({ browser }) => {
+  const context = await browser.newContext({ reducedMotion: 'reduce' })
+  const page = await context.newPage()
+  await page.goto(URL)
+  await page.getByRole('button', { name: 'Show toast' }).click()
+  const toast = page.locator('[data-sonner-toast]')
+  await expect(toast).toBeVisible()
+  for (const property of ['animation-duration', 'transition-duration']) {
+    const longest = Math.max(...(await css(toast, property)).split(',').map((s) => parseFloat(s)))
+    expect(longest, property).toBeLessThanOrEqual(0.00001)
+  }
+  await context.close()
+})
+
 test.describe('mockup', () => {
   test('sections in order (C24)', async ({ page }) => {
     const response = await page.goto(URL)
