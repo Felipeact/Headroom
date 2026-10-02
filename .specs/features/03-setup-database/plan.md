@@ -101,17 +101,15 @@ Every later spec adds tables through Alembic autogenerate.
 
 | Assumption | Chosen default | Rationale | Confirmed? |
 | --- | --- | --- | --- |
-| Where Postgres runs for the proofs | Docker Desktop, via the existing `docker compose up -d postgres` | `docker` is not installed on this machine today (checked: not on PATH, no Postgres service). Every proof needing a live database (AC 7, 11, 13, 14) is **blocked** until it is. `blocks` | n |
+| Where Postgres runs for the proofs | Docker Desktop, via the existing `docker compose up -d postgres` | Docker Desktop 29.8.0 is now installed and the compose Postgres answers healthy on `localhost:5432` (checked 2026-10-01); AC 7, 11, 13, 14 are provable | y |
 | How "Postgres is stopped" is tested | the test overrides the engine with one built from the settings URL with its port swapped for a closed local port; the manual `docker compose stop` run is the repeatable check beside it | stopping a container from inside pytest makes the suite order-dependent and slow; swapping the port avoids writing a URL literal in the tests |
 | Empty-database test | the test creates a uniquely named database through the settings URL, runs `alembic upgrade head` as a subprocess with `DATABASE_URL` pointing at it, then drops it | proves "empty" literally instead of relying on the shared dev database being empty; the compose user is a superuser, so `CREATE DATABASE` is allowed |
-| Probe connect timeout | `connect_timeout=3` passed to psycopg | bounds AC 8 when the host does not answer at all, instead of hanging on TCP |
+| Probe connect timeout | `connect_timeout=2` passed to psycopg (changed from 3 during the build) | bounds AC 8 when the host does not answer at all, instead of hanging on TCP. psycopg 3.3 applies it per resolved address with a 2 s floor, and `localhost` resolves to `::1` and `127.0.0.1`, so 3 gave a 6.0 s 503 on Windows; 2 gives 4.0 s |
 | Alembic template | `uv run alembic init migrations` (the `generic` template), exactly as the spec says | the `pyproject` template exists in newer Alembic but would diverge from the spec's command |
 | Baseline revision | none; `alembic upgrade head` with no revisions | stays small; spec 11 creates the first revision |
 | Commit split | commit 1: raw `alembic init` output; commit 2: settings, db, `env.py` edits, readiness route, tests, `.env.example`, spec status | keeps the generated files reviewable on their own, as in spec 02 |
 
-**Open questions:**
-
-- `blocks`: install Docker Desktop (or otherwise make the compose Postgres reachable on `localhost:5432`) before the build. Without it the 200 path and the migration run cannot be proven.
+**Open questions:** none - the Docker blocker was resolved before the build.
 
 ## Observable
 

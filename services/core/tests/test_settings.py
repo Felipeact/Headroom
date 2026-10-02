@@ -1,0 +1,55 @@
+from collections.abc import Iterator
+from pathlib import Path
+
+import pytest
+from pydantic import ValidationError
+
+from app.settings import Settings, get_settings
+
+ENV_URL = "postgresql+psycopg://env-host:5432/env_db"
+FILE_URL = "postgresql+psycopg://file-host:5432/file_db"
+
+
+@pytest.fixture(autouse=True)
+def isolated(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> Iterator[Path]:
+    monkeypatch.chdir(tmp_path)
+    monkeypatch.delenv("DATABASE_URL", raising=False)
+    get_settings.cache_clear()
+    yield tmp_path
+    get_settings.cache_clear()
+
+
+def test_process_env_overrides_env_file(
+    isolated: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    (isolated / ".env.local").write_text(f"DATABASE_URL={FILE_URL}\n")
+    monkeypatch.setenv("DATABASE_URL", ENV_URL)
+
+    assert get_settings().database_url == ENV_URL
+
+
+def test_env_file_used_when_process_env_absent(isolated: Path) -> None:
+    (isolated / ".env.local").write_text(f"DATABASE_URL={FILE_URL}\n")
+
+    assert get_settings().database_url == FILE_URL
+
+
+@pytest.mark.parametrize(
+    "url",
+    [
+        "postgresql://h/d",
+        "postgres://h/d",
+        "postgresql+psycopg2://h/d",
+        "sqlite:///headroom.db",
+    ],
+)
+def test_rejects_non_psycopg_scheme(url: str, monkeypatch: pytest.MonkeyPatch) -> None:
+    monkeypatch.setenv("DATABASE_URL", url)
+
+    with pytest.raises(ValidationError):
+        Settings()
+
+
+def test_missing_database_url_raises() -> None:
+    with pytest.raises(ValidationError):
+        Settings()
