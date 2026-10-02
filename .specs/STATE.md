@@ -36,10 +36,11 @@
 ## Handoff
 
 **Feature**: 10-accounts-login
-**Where**: C1-C32 and C34 green; independent Verifier round 2 (scoped, `02ab1d3`) proved 33/34 over `c4aa31f..02ab1d3` (profile light). Gate exits 1 only because C33 (CI on the pushed commit) has not run. Spec status: In progress
+**Where**: C1-C34 all green; independent Verifier PASS 34/34 at round 3 over `c4aa31f..990e12a` (profile light), gate exit 0; spec Done. Pushed to `origin/development` up to `990e12a`; CI green there (the first push, `e56a9db`, failed CI because the api job's database is never migrated; fixed by the `migrated_database` fixture)
 **In progress**: none
-**Next step**: the user sets the Railway staging variables (`api`: `CLERK_JWT_KEY`, `CLERK_AUTHORIZED_PARTIES`; `web`: `NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY`, `CLERK_SECRET_KEY`, `API_URL`), then approves the push. Run `bash .specs/features/10-accounts-login/proofs.sh c33`, re-verify C33, run the gate, mark spec 10 Done, and run the-judge. Pushing before the variables are set breaks the staging deploy: Settings requires `CLERK_JWT_KEY` and migrations read Settings
-**Blockers**: staging variables (user), push go-ahead (user)
+**Next step**: run the-judge on spec 10 (AGENTS.md), preferably in a fresh session. Fix the staging variables: `api` `CLERK_JWT_KEY` must be the full PEM with real newlines (it holds the key body with literal `
+` and no BEGIN/END lines, which gives a 500 on every `/v1` call), `CLERK_AUTHORIZED_PARTIES=https://web-staging-4398.up.railway.app` (it holds `web.railway.internal`), and `web` `API_URL=https://api-staging-e068.up.railway.app` (it holds `api.railway.internal`, with no scheme or port). Spec 11 is unblocked
+**Blockers**: none for spec 11; staging sign-in waits on those variables (user)
 **Uncommitted**: none
 **Also done**: 10 notes - this machine has no Postgres or Docker; a portable Postgres 17.11 runs from the session scratchpad (`pgsql/bin/pg_ctl.exe -D pgdata -o "-p 5432" start`, trust auth) and is gone when the scratchpad is cleared. Clerk dev instance `polite-trout-7592`; Playwright signs in with `@clerk/testing` sign-in tokens, because password sign-in stops at `needs_client_trust`. The API's stdout does not reach Playwright output; run `uv run fastapi run app/main.py --port 8100 > api.log` first to read it (Playwright reuses the server). Known flake outside this spec: dev-components toast timing (spec 06 C20) under full parallel load
 **Also done**: 08-api-errors-logging-monitoring - independent Verifier PASS 32/32 over `ec63c5f..1fa01d5` (profile light). `railway ssh` needs a registered SSH key (the temporary one for C22 was removed). `railway config` needs CLI >= 5.42.1 (`npx @railway/cli@5.63.1`)
