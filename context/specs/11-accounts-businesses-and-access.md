@@ -1,7 +1,7 @@
 # Spec 11: Businesses and access
 
 - **Milestone:** 2, foundations
-- **Status:** Not started
+- **Status:** In progress
 - **Depends on:** 10
 
 ## Goal
