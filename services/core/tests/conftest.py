@@ -5,6 +5,7 @@ from collections.abc import Iterator
 from pathlib import Path
 
 import pytest
+from cryptography.fernet import Fernet
 from cryptography.hazmat.primitives import serialization
 from cryptography.hazmat.primitives.asymmetric import rsa
 from cryptography.hazmat.primitives.asymmetric.rsa import RSAPrivateKey
@@ -23,6 +24,12 @@ TEST_PUBLIC_PEM = (
 )
 os.environ["CLERK_JWT_KEY"] = TEST_PUBLIC_PEM
 os.environ["CLERK_AUTHORIZED_PARTIES"] = ""
+# Unit tests use a fake Plaid client, so these only have to satisfy Settings. setdefault:
+# the `plaid_sandbox` proofs export the real sandbox keys first (proofs.sh), and keep them.
+os.environ.setdefault("PLAID_CLIENT_ID", "test-client-id")
+os.environ.setdefault("PLAID_SECRET", "test-secret")
+os.environ.setdefault("PLAID_ENV", "sandbox")
+os.environ.setdefault("TOKEN_ENCRYPTION_KEYS", Fernet.generate_key().decode())
 
 
 CORE = Path(__file__).resolve().parents[1]

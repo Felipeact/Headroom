@@ -221,7 +221,8 @@ def test_businesses_and_memberships_upgrade_downgrade_and_check(
     assert "(user_id)" in index
     assert index.endswith("WHERE (role = 'owner'::text)")
 
-    result = alembic_run("downgrade", "-1", database_url=empty_database_url)
+    # To the users revision, not -1: later migrations sit on top of this one.
+    result = alembic_run("downgrade", "07f1bcba78b6", database_url=empty_database_url)
     assert result.returncode == 0, result.stderr
     engine = create_engine(empty_database_url)
     try:
@@ -231,6 +232,127 @@ def test_businesses_and_memberships_upgrade_downgrade_and_check(
     assert "businesses" not in tables
     assert "memberships" not in tables
     assert "users" in tables
+
+    for args in (("upgrade", "head"), ("check",)):
+        result = alembic_run(*args, database_url=empty_database_url)
+        assert result.returncode == 0, result.stdout + result.stderr
+
+
+def test_bank_connections_and_accounts_upgrade_downgrade_and_check(
+    empty_database_url: str,
+) -> None:
+    result = alembic_run("upgrade", "head", database_url=empty_database_url)
+    assert result.returncode == 0, result.stderr
+
+    tables = ("bank_connections", "bank_accounts")
+    engine = create_engine(empty_database_url)
+    try:
+        with engine.connect() as conn:
+            columns = conn.exec_driver_sql(
+                "SELECT table_name, column_name, data_type, is_nullable"
+                " FROM information_schema.columns WHERE table_name = ANY(%s)",
+                (list(tables),),
+            ).all()
+            keys = conn.exec_driver_sql(
+                "SELECT tc.table_name, tc.constraint_name, tc.constraint_type,"
+                " kcu.column_name, ccu.table_name AS referred"
+                " FROM information_schema.table_constraints tc"
+                " JOIN information_schema.key_column_usage kcu"
+                " USING (constraint_schema, constraint_name)"
+                " LEFT JOIN information_schema.constraint_column_usage ccu"
+                " ON tc.constraint_type = 'FOREIGN KEY'"
+                " AND ccu.constraint_name = tc.constraint_name"
+                " WHERE tc.table_name = ANY(%s)"
+                " AND tc.constraint_type IN ('PRIMARY KEY', 'FOREIGN KEY', 'UNIQUE')",
+                (list(tables),),
+            ).all()
+            checks = (
+                conn.exec_driver_sql(
+                    "SELECT conname FROM pg_constraint"
+                    " WHERE conrelid = 'bank_accounts'::regclass AND contype = 'c'"
+                )
+                .scalars()
+                .all()
+            )
+    finally:
+        engine.dispose()
+
+    text_not_null = [
+        ("bank_connections", c)
+        for c in (
+            "plaid_item_id",
+            "plaid_institution_id",
+            "institution_name",
+            "access_token_ciphertext",
+        )
+    ] + [("bank_accounts", c) for c in ("plaid_account_id", "name", "type", "currency")]
+    expected_columns = {
+        *((t, c, "text", "NO") for t, c in text_not_null),
+        ("bank_connections", "id", "uuid", "NO"),
+        ("bank_connections", "business_id", "uuid", "NO"),
+        ("bank_accounts", "id", "uuid", "NO"),
+        ("bank_accounts", "business_id", "uuid", "NO"),
+        ("bank_accounts", "connection_id", "uuid", "NO"),
+        ("bank_accounts", "mask", "text", "YES"),
+        ("bank_accounts", "balance_cents", "bigint", "YES"),
+        *(
+            (t, c, "timestamp with time zone", "NO")
+            for t in tables
+            for c in ("created_at", "updated_at")
+        ),
+    }
+    assert {tuple(row) for row in columns} == expected_columns
+    assert {tuple(row) for row in keys} == {
+        ("bank_connections", "pk_bank_connections", "PRIMARY KEY", "id", None),
+        (
+            "bank_connections",
+            "uq_bank_connections_plaid_item_id",
+            "UNIQUE",
+            "plaid_item_id",
+            None,
+        ),
+        (
+            "bank_connections",
+            "uq_bank_connections_business_id_plaid_institution_id",
+            "UNIQUE",
+            "business_id",
+            None,
+        ),
+        (
+            "bank_connections",
+            "uq_bank_connections_business_id_plaid_institution_id",
+            "UNIQUE",
+            "plaid_institution_id",
+            None,
+        ),
+        ("bank_accounts", "pk_bank_accounts", "PRIMARY KEY", "id", None),
+        (
+            "bank_accounts",
+            "uq_bank_accounts_plaid_account_id",
+            "UNIQUE",
+            "plaid_account_id",
+            None,
+        ),
+        (
+            "bank_accounts",
+            "fk_bank_accounts_connection_id_bank_connections",
+            "FOREIGN KEY",
+            "connection_id",
+            "bank_connections",
+        ),
+    }
+    assert "ck_bank_accounts_type" in checks
+
+    result = alembic_run("downgrade", "-1", database_url=empty_database_url)
+    assert result.returncode == 0, result.stderr
+    engine = create_engine(empty_database_url)
+    try:
+        remaining = inspect(engine).get_table_names()
+    finally:
+        engine.dispose()
+    assert "bank_connections" not in remaining
+    assert "bank_accounts" not in remaining
+    assert "businesses" in remaining
 
     for args in (("upgrade", "head"), ("check",)):
         result = alembic_run(*args, database_url=empty_database_url)

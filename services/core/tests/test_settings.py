@@ -2,6 +2,7 @@ from collections.abc import Iterator
 from pathlib import Path
 
 import pytest
+from cryptography.fernet import Fernet
 from pydantic import ValidationError
 
 from app.settings import Settings, get_settings
@@ -85,3 +86,67 @@ def test_clerk_authorized_parties_parse(
         monkeypatch.setenv("CLERK_AUTHORIZED_PARTIES", raw)
 
     assert Settings().clerk_authorized_parties == parsed
+
+
+# Spec 12: Plaid and token encryption settings
+
+
+@pytest.fixture
+def plaid_env(monkeypatch: pytest.MonkeyPatch) -> pytest.MonkeyPatch:
+    monkeypatch.setenv("DATABASE_URL", ENV_URL)
+    monkeypatch.setenv("PLAID_CLIENT_ID", "client")
+    monkeypatch.setenv("PLAID_SECRET", "secret")
+    monkeypatch.setenv("PLAID_ENV", "sandbox")
+    monkeypatch.setenv("TOKEN_ENCRYPTION_KEYS", Fernet.generate_key().decode())
+    return monkeypatch
+
+
+@pytest.mark.parametrize(
+    "raw",
+    [None, "", "not-a-key", "VALID,not-a-key"],
+    ids=["unset", "empty", "not_a_key", "one_bad_key"],
+)
+def test_token_encryption_keys_rejected(
+    raw: str | None, plaid_env: pytest.MonkeyPatch
+) -> None:
+    if raw is None:
+        plaid_env.delenv("TOKEN_ENCRYPTION_KEYS")
+    else:
+        valid = Fernet.generate_key().decode()
+        plaid_env.setenv("TOKEN_ENCRYPTION_KEYS", raw.replace("VALID", valid))
+
+    with pytest.raises(ValidationError) as excinfo:
+        Settings()
+
+    assert "token_encryption_keys" in str(excinfo.value)
+
+
+def test_token_encryption_keys_two_keys_in_order(plaid_env: pytest.MonkeyPatch) -> None:
+    new, old = Fernet.generate_key().decode(), Fernet.generate_key().decode()
+    plaid_env.setenv("TOKEN_ENCRYPTION_KEYS", f"{new}, {old}")
+
+    assert Settings().token_encryption_keys == [new, old]
+
+
+@pytest.mark.parametrize("name", ["PLAID_CLIENT_ID", "PLAID_SECRET", "PLAID_ENV"])
+def test_plaid_settings_required(name: str, plaid_env: pytest.MonkeyPatch) -> None:
+    plaid_env.delenv(name)
+
+    with pytest.raises(ValidationError) as excinfo:
+        Settings()
+
+    assert name.lower() in str(excinfo.value)
+
+
+def test_plaid_settings_env_rejects_development(plaid_env: pytest.MonkeyPatch) -> None:
+    plaid_env.setenv("PLAID_ENV", "development")
+
+    with pytest.raises(ValidationError):
+        Settings()
+
+
+@pytest.mark.parametrize("env", ["sandbox", "production"])
+def test_plaid_settings_env_accepted(env: str, plaid_env: pytest.MonkeyPatch) -> None:
+    plaid_env.setenv("PLAID_ENV", env)
+
+    assert Settings().plaid_env == env
