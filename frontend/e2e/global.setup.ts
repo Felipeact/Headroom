@@ -20,6 +20,8 @@ setup('sign in the test user', async ({ page }) => {
   await page.waitForURL(/\/(onboarding\/business)?$/)
   if (page.url().endsWith('/onboarding/business')) {
     await completeBusinessStep(page, 'Harbor Street Plumbing')
+    // Step 3 (spec 12) does not force a bank, so the dashboard is reachable without one.
+    await page.goto('/')
   }
   await page.getByTestId('shell').waitFor()
   await page.context().storageState({ path: SIGNED_IN_STATE })

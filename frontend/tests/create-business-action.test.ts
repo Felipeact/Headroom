@@ -37,12 +37,13 @@ beforeEach(() => {
 })
 
 describe('create business action', () => {
-  test('201 redirects to the dashboard, with the body and the token', async () => {
+  test('201 redirects to onboarding step 3, with the body and the token', async () => {
     answers(201)
 
     await expect(createBusiness(INPUT)).rejects.toThrow('NEXT_REDIRECT')
 
-    expect(redirect).toHaveBeenCalledWith('/')
+    // Spec 12 AC 24: step 2 now leads to step 3 (spec 11 sent it to the dashboard).
+    expect(redirect).toHaveBeenCalledWith('/onboarding/bank')
     expect(api.POST).toHaveBeenCalledWith('/v1/businesses', {
       body: { name: 'Harbor Street Plumbing', province: 'ON', time_zone: 'America/Toronto' },
       headers: { Authorization: 'Bearer tok_test' },

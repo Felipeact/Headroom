@@ -33,8 +33,8 @@ function fieldErrors(errors: FieldError[]): BusinessFieldErrors | null {
   return Object.keys(result).length > 0 ? result : null
 }
 
-// Onboarding step 2 (spec 11): create the business, then go to the dashboard. A 409 means the
-// user already owns one (a repeated submit, or another tab), so it lands there too.
+// Onboarding step 2 (spec 11): create the business, then go to step 3 (spec 12). A 409 means the
+// user already owns one (a repeated submit, or another tab), so it lands on the dashboard.
 export async function createBusiness(input: CreateBusinessInput): Promise<CreateBusinessResult> {
   let status: number
   let errors: FieldError[] = []
@@ -50,7 +50,8 @@ export async function createBusiness(input: CreateBusinessInput): Promise<Create
     return { formError: true }
   }
 
-  if (status === 201 || status === 409) redirect("/")
+  if (status === 201) redirect("/onboarding/bank")
+  if (status === 409) redirect("/")
   if (status === 422) {
     const mapped = fieldErrors(errors)
     if (mapped) return { fieldErrors: mapped }

@@ -47,7 +47,9 @@ test.describe('a user without a business', () => {
 
     await completeBusinessStep(page, 'Harbor Street Plumbing')
 
-    expect(pathOf(page)).toBe('/')
+    // Spec 12 AC 24: step 2 now lands on step 3; the dashboard shows the business from there.
+    expect(pathOf(page)).toBe('/onboarding/bank')
+    await page.goto('/')
     await expect(page.getByTestId('header-desktop-identity')).toContainText(
       'Harbor Street Plumbing',
     )
@@ -117,8 +119,9 @@ test.describe('a user without a business', () => {
     await tabTo(page, continueButton(page))
     await page.keyboard.press('Enter')
 
-    await expect(page.getByTestId('shell')).toBeVisible()
-    expect(pathOf(page)).toBe('/')
+    // Spec 12 AC 24: Continue lands on step 3.
+    await expect(page.getByRole('heading', { name: 'Connect your bank' })).toBeVisible()
+    expect(pathOf(page)).toBe('/onboarding/bank')
   })
 })
 
