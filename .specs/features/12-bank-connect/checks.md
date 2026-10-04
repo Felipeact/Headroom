@@ -124,6 +124,7 @@ Proof: `npx vitest run tests/bank-page.test.tsx -t "uses the onboarding loading 
 
 **C35** - The connect view renders, from `messages/en.json`, in document order: the wordmark, `Step 3 of 5`, the five-segment `aria-hidden` bar with exactly 3 segments in `bg-accent`, the heading `Connect your bank`, `Headroom reads your balances and transactions to build your 13-week forecast.`, the three items `Read-only` / `Headroom can see your balances and transactions. It can't move money.`, `Your password stays with your bank` / `You log in on your bank's own screen. Headroom never sees your password.`, `You're in control` / `Disconnect at any time, and Headroom removes that bank's data.` each with an `aria-hidden` icon, `Bank connections are provided by Plaid.`, and a button `Connect your bank` (AC 26)
 Proof: `npx vitest run tests/connect-bank.test.tsx -t "renders the mockup"`
+Proof: `npx vitest run tests/bank-page.test.tsx -t "header"` (added after verification round 1: the first proof renders only the view, not the page header)
 
 **C36** - With `usePlaidLink` mocked: it receives the page's `link_token`; pressing `Connect your bank` while `ready` is `true` calls `open` exactly once (AC 27)
 Proof: `npx vitest run tests/connect-bank.test.tsx -t "opens plaid link"`

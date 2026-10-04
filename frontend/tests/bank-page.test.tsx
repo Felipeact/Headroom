@@ -92,6 +92,28 @@ describe('bank page', () => {
     })
   })
 
+  test('header: the wordmark, step 3 of 5, and three of five segments filled', async () => {
+    businesses(200, ONE_BUSINESS)
+    linkToken(200)
+
+    await renderPage()
+
+    const header = screen.getByRole('banner')
+    const text = header.textContent ?? ''
+    const wordmark = text.indexOf(messages.Shell.wordmark)
+    const step = text.indexOf('Step 3 of 5')
+    expect(wordmark).toBeGreaterThanOrEqual(0)
+    expect(step).toBeGreaterThan(wordmark)
+    const bar = screen.getByTestId('step-bar')
+    expect(bar.getAttribute('aria-hidden')).toBe('true')
+    const segments = Array.from(bar.children)
+    expect(segments).toHaveLength(5)
+    expect(segments.filter((segment) => segment.className.includes('bg-accent'))).toHaveLength(3)
+    // The header comes before the page heading, as in the mockup.
+    const heading = screen.getByRole('heading', { level: 1, name: messages.Onboarding.Bank.title })
+    expect(header.compareDocumentPosition(heading) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy()
+  })
+
   const failures: [string, () => void][] = [
     ['businesses answer 500', () => businesses(500)],
     ['businesses reject', () => vi.mocked(api.GET).mockRejectedValue(new TypeError('fetch failed'))],

@@ -104,6 +104,7 @@ class FakePlaid:
         self.calls: list[str] = []
         self.link_requests: list[LinkTokenRequest] = []
         self.access_tokens: list[str] = []
+        self.item_ids: list[str] = []
         self.removed: list[str] = []
         self.fail: dict[str, PlaidError] = {}
         self.institution_id = INSTITUTION_ID
@@ -125,7 +126,9 @@ class FakePlaid:
         with self._lock:
             token = f"access-sandbox-secret-{len(self.access_tokens) + 1}"
             self.access_tokens.append(token)
-        return ExchangedItem(item_id=f"item-{uuid.uuid4().hex}", access_token=token)
+            item_id = f"item-{uuid.uuid4().hex}"
+            self.item_ids.append(item_id)
+        return ExchangedItem(item_id=item_id, access_token=token)
 
     def get_accounts(self, access_token: str) -> ItemAccounts:
         self._call("accounts")
@@ -296,7 +299,7 @@ def test_connect_stores_rows(owner_a: tuple[Caller, str], fake: FakePlaid) -> No
     connection = connections[0]
     assert str(connection.id) == body["id"]
     assert connection.plaid_institution_id == INSTITUTION_ID
-    assert connection.plaid_item_id.startswith("item-")
+    assert connection.plaid_item_id == fake.item_ids[0]
     assert len(rows) == 3
     assert {r.connection_id for r in rows} == {connection.id}
     assert {r.plaid_account_id for r in rows} == {a.account_id for a in accounts}
@@ -577,7 +580,7 @@ def test_orphaned_item_logged(
     assert len(orphaned) == 1
     assert orphaned[0]["level"] == "error"
     assert orphaned[0]["business_id"] == business_id
-    assert orphaned[0]["plaid_item_id"].startswith("item-")
+    assert orphaned[0]["plaid_item_id"] == fake.item_ids[0]
 
 
 @pytest.mark.parametrize(
@@ -737,7 +740,13 @@ def every_path(
     """
     responses: list[Any] = []
     owner, business_id = _owner(HARBOR)
+    responses.append(using.post(link_path(business_id), headers=owner.headers))  # 200
+    # The link-token route's own errors: 502, 404, 422 (403 is below, with both routes).
+    fake.fail = {"link_token": plaid_error()}
     responses.append(using.post(link_path(business_id), headers=owner.headers))
+    fake.fail = {}
+    responses.append(using.post(link_path(str(uuid.uuid4())), headers=owner.headers))
+    responses.append(using.post(link_path("not-a-uuid"), headers=owner.headers))
     responses.append(connect(owner, business_id, using=using))  # 201
     responses.append(connect(owner, business_id, using=using))  # 409
 
@@ -776,6 +785,7 @@ def every_path(
             lambda *_, **__: SimpleNamespace(role="viewer"),
         )
         responses.append(connect(owner, business_id, using=using))  # 403
+        responses.append(using.post(link_path(business_id), headers=owner.headers))
     responses.append(connect(owner, business_id, {"public_token": ""}, using=using))
     return responses, business_id
 
