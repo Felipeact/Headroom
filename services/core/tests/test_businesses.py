@@ -409,6 +409,10 @@ def test_member_reads_business(owner_a: tuple[Caller, str]) -> None:
     assert set(body) == BUSINESS_KEYS
     assert body["id"] == business_a
     assert body["name"] == "Harbor Street Plumbing"
+    assert body["province"] == "ON"
+    assert body["time_zone"] == "America/Toronto"
+    assert body["country"] == "CA"
+    assert body["currency"] == "CAD"
     assert body["role"] == "owner"
 
 

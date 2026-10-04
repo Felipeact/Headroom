@@ -1,12 +1,28 @@
 import { act, fireEvent, render, screen, within } from '@testing-library/react'
-import { NextIntlClientProvider } from 'next-intl'
+import { createTranslator, NextIntlClientProvider } from 'next-intl'
 import { afterEach, beforeAll, beforeEach, expect, test, vi } from 'vitest'
 import { createBusiness } from '@/app/onboarding/business/actions'
+import BusinessStepPage from '@/app/onboarding/business/page'
 import { BusinessForm } from '@/components/onboarding/business-form'
-import { StepIndicator } from '@/components/onboarding/step-indicator'
+import { api } from '@/lib/api/client'
 import messages from '@/messages/en.json'
 
 vi.mock('@/app/onboarding/business/actions', () => ({ createBusiness: vi.fn() }))
+// For the page itself (C26): signed in, and GET /v1/businesses answers no business.
+vi.mock('server-only', () => ({}))
+vi.mock('@/lib/api/client', () => ({ api: { GET: vi.fn() } }))
+vi.mock('@/lib/api/auth', () => ({
+  authHeaders: vi.fn().mockResolvedValue({ Authorization: 'Bearer tok_test' }),
+}))
+vi.mock('@clerk/nextjs/server', () => ({ auth: { protect: vi.fn().mockResolvedValue({}) } }))
+vi.mock('@sentry/nextjs', () => ({ captureException: vi.fn(), captureMessage: vi.fn() }))
+vi.mock('next-intl/server', () => ({
+  getTranslations: async () => createTranslator({ locale: 'en', messages }),
+}))
+vi.mock('next/navigation', () => ({
+  redirect: vi.fn(),
+  useRouter: () => ({ refresh: vi.fn() }),
+}))
 
 const copy = messages.Onboarding.Business
 const errors = copy.errors
@@ -40,12 +56,20 @@ afterEach(() => {
 function renderForm() {
   return render(
     <NextIntlClientProvider locale="en" messages={messages}>
-      <StepIndicator step={2} total={5}>
-        <span>{messages.Shell.wordmark}</span>
-      </StepIndicator>
-      <h1>{copy.title}</h1>
-      <p>{copy.intro}</p>
       <BusinessForm />
+    </NextIntlClientProvider>,
+  )
+}
+
+async function renderPage() {
+  vi.mocked(api.GET).mockResolvedValue({
+    data: { items: [] },
+    response: new Response('{"items":[]}', { status: 200 }),
+  } as unknown as Awaited<ReturnType<typeof api.GET>>)
+  const tree = await BusinessStepPage()
+  return render(
+    <NextIntlClientProvider locale="en" messages={messages}>
+      {tree}
     </NextIntlClientProvider>,
   )
 }
@@ -73,8 +97,8 @@ function describedBy(element: HTMLElement): string[] {
   return (element.getAttribute('aria-describedby') ?? '').split(' ').filter(Boolean)
 }
 
-test('renders the mockup', () => {
-  const { container } = renderForm()
+test('renders the mockup', async () => {
+  const { container } = await renderPage()
 
   const order = [
     messages.Shell.wordmark,
@@ -92,6 +116,9 @@ test('renders the mockup', () => {
   const positions = order.map((part) => text.indexOf(part))
   expect(positions.every((position) => position >= 0)).toBe(true)
   expect([...positions].sort((a, b) => a - b)).toEqual(positions)
+
+  expect(screen.getByRole('heading', { level: 1, name: copy.title })).toBeDefined()
+  expect(screen.getByText(copy.intro).tagName).toBe('P')
 
   const bar = screen.getByTestId('step-bar')
   expect(bar.getAttribute('aria-hidden')).toBe('true')
