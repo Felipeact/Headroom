@@ -42,3 +42,4 @@ Context used per request, measured against a context window of about 250,000 tok
 | Spec 11: businesses and access (plan) | ~75,000 (~30%) | High (smart zone) |
 | Spec 11: businesses and access (checks, build, verify round 1 fixes, close) | ~150,000 (~60%) | Medium (attention degrades) |
 | Spec 11: verifier sub-agent, rounds 1-2 (separate context) | ~143,000 (~57%) | Medium (attention degrades) |
+| Spec 12: connect a bank (plan) | ~70,000 (~28%) | High (smart zone) |

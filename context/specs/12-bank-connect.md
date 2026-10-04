@@ -1,7 +1,7 @@
 # Spec 12: Connect a bank
 
 - **Milestone:** 3, bank data
-- **Status:** Not started
+- **Status:** In progress
 - **Depends on:** 11
 
 ## Goal
