@@ -40,3 +40,5 @@ Context used per request, measured against a context window of about 250,000 tok
 | Spec 10: login with Clerk (checks, build, verify rounds 1-2 fixes) | ~190,000 (~76%) | Low (past 60%) |
 | Spec 10: verifier sub-agent, rounds 1-2 (separate context) | ~173,000 (~69%) | Low (past 60%) |
 | Spec 11: businesses and access (plan) | ~75,000 (~30%) | High (smart zone) |
+| Spec 11: businesses and access (checks, build, verify round 1 fixes, close) | ~150,000 (~60%) | Medium (attention degrades) |
+| Spec 11: verifier sub-agent, rounds 1-2 (separate context) | ~143,000 (~57%) | Medium (attention degrades) |
