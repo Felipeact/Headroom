@@ -47,12 +47,14 @@
 
 ## Handoff
 
-**Feature**: 11-accounts-businesses-and-access
-**Where**: C1-C41 all green; independent Verifier PASS 41/41 at round 2 over `e41a687..78b5790` (profile light), gate exit 0; spec Done. Not pushed
+**Feature**: 12-bank-connect
+**Where**: C1-C46 all green; independent Verifier PASS 46/46 at round 2 over `1d3e771..afaecb7` (profile light), gate exit 0; spec Done. Not pushed
 **In progress**: none
-**Next step**: run the-judge on spec 11 (AGENTS.md), preferably in a fresh session; push `development` when the user says so (CI runs the new migration through `migrated_database`). Spec 12 is unblocked. Staging needs `alembic upgrade` (automatic before deploy) and its existing users will land on onboarding once
-**Blockers**: none
+**Next step**: run the-judge on spec 12 (AGENTS.md), preferably in a fresh session. Before pushing `development`, the user sets the staging `api` Railway variables `PLAID_CLIENT_ID`, `PLAID_SECRET`, `PLAID_ENV=sandbox` and a freshly generated `TOKEN_ENCRYPTION_KEYS`, or the API fails at startup (AD-001). Specs 13 and 14 are unblocked
+**Blockers**: none for v1 work. Go-live: Plaid OAuth institutions (`redirect_uri`) are unhandled (plan open question 1)
 **Uncommitted**: none
+**Also done**: 12 notes - sandbox keys live in `services/core/.env.local`; `proofs.sh c21` runs the real-sandbox test (marker `plaid_sandbox`, deselected by default). Plaid Link sandbox path for Playwright: Continue without phone number, search, TD Canada Trust (`ins_42`), `user_good` / `pass_good`, Continue, Finish without saving. Redaction now covers public tokens and any key containing `body` (doors 7, 8). Sentry still captures other frame locals by default (open with the user). Plaid warned "link-initialize.js embedded more than once" in dev; check in a production build
+**Also done**: 11-accounts-businesses-and-access - Verifier PASS 41/41 at round 2 over `e41a687..78b5790`
 **Also done**: 11 notes - Docker Desktop now runs the local Postgres on 5432 (`DATABASE_URL` in `services/core/.env.local`). The onboarding e2e creates and deletes a Clerk user per test through the Backend API (`createOnboardingUser` in `e2e/test-user.ts`); setup gives the `E2E_CLERK_USER_USERNAME` user a business on its first run. A stale `next dev` on port 3000 makes every e2e test show the load-error page: stop it first. Spec 07's e2e C42 needs `NEXT_PUBLIC_SENTRY_DSN=` to pass. Open with the user: C39's text says the existing e2e specs pass "unchanged in their assertions", but spec 07's C11 was rewritten for AC 35
 **Also done**: 10-accounts-login - Verifier PASS 34/34 over `c4aa31f..990e12a`. Staging variables still to fix (user): `api` `CLERK_JWT_KEY` as a full PEM, `CLERK_AUTHORIZED_PARTIES=https://web-staging-4398.up.railway.app`, `web` `API_URL=https://api-staging-e068.up.railway.app`. Clerk dev instance `polite-trout-7592`; Playwright signs in with `@clerk/testing` sign-in tokens. Run the API with `uv run fastapi run app/main.py --port 8100 > api.log` to read its stdout during e2e
 **Also done**: 10 notes - this machine has no Postgres or Docker; a portable Postgres 17.11 runs from the session scratchpad (`pgsql/bin/pg_ctl.exe -D pgdata -o "-p 5432" start`, trust auth) and is gone when the scratchpad is cleared. Clerk dev instance `polite-trout-7592`; Playwright signs in with `@clerk/testing` sign-in tokens, because password sign-in stops at `needs_client_trust`. The API's stdout does not reach Playwright output; run `uv run fastapi run app/main.py --port 8100 > api.log` first to read it (Playwright reuses the server). Known flake outside this spec: dev-components toast timing (spec 06 C20) under full parallel load

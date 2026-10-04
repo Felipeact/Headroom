@@ -1,7 +1,7 @@
 # Spec 12: Connect a bank
 
 - **Milestone:** 3, bank data
-- **Status:** In progress
+- **Status:** Done
 - **Depends on:** 11
 
 ## Goal
@@ -23,5 +23,5 @@ Let an owner connect a bank through Plaid, without Headroom ever seeing their ba
 
 ## Done when
 
-- [ ] A sandbox bank connects in under 2 minutes.
-- [ ] No API response or log contains an access token, and the database stores it only in encrypted form (tested).
+- [x] A sandbox bank connects in under 2 minutes.
+- [x] No API response or log contains an access token, and the database stores it only in encrypted form (tested).
