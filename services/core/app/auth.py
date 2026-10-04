@@ -1,3 +1,6 @@
+import uuid
+from collections.abc import Callable
+from dataclasses import dataclass
 from typing import Annotated, Literal
 
 import jwt
@@ -12,6 +15,8 @@ from app.modules.accounts.models import User
 from app.settings import get_settings
 
 AUTHENTICATION_REQUIRED = "Authentication required."
+BUSINESS_NOT_FOUND = "Business not found."
+PERMISSION_DENIED = "You don't have permission to do this."
 LEEWAY_SECONDS = 5
 REQUIRED_CLAIMS = ["exp", "nbf", "iat", "sub"]
 
@@ -69,3 +74,37 @@ def current_user(
 
 
 CurrentUser = Annotated[User, Depends(current_user)]
+
+
+@dataclass(frozen=True)
+class Member:
+    """The signed-in user's membership in the business named by the route's path."""
+
+    business_id: uuid.UUID
+    user_id: uuid.UUID
+    role: str
+
+
+def require_member(*roles: accounts.Role) -> Callable[..., Member]:
+    """Dependency for every route under `/v1/businesses/{business_id}` (spec 11, AD-031).
+
+    A user who is not a member gets `404`, the same as for a business that does not exist,
+    so a stranger learns nothing; a member whose role is not in `roles` gets `403`.
+    """
+    allowed = frozenset(roles)
+
+    def member(
+        business_id: uuid.UUID,
+        user: CurrentUser,
+        session: Annotated[Session, Depends(get_session)],
+    ) -> Member:
+        membership = accounts.get_membership(
+            session, business_id=business_id, user_id=user.id
+        )
+        if membership is None:
+            raise HTTPException(status.HTTP_404_NOT_FOUND, detail=BUSINESS_NOT_FOUND)
+        if membership.role not in allowed:
+            raise HTTPException(status.HTTP_403_FORBIDDEN, detail=PERMISSION_DENIED)
+        return Member(business_id=business_id, user_id=user.id, role=membership.role)
+
+    return member

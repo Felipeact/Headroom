@@ -1,8 +1,11 @@
-from sqlalchemy import select
+import uuid
+from collections.abc import Mapping
+
+from sqlalchemy import func, select, update
 from sqlalchemy.dialects.postgresql import insert
 from sqlalchemy.orm import Session
 
-from app.modules.accounts.models import User
+from app.modules.accounts.models import Business, Membership, User
 
 
 def get_or_insert_user(session: Session, clerk_user_id: str) -> User:
@@ -15,3 +18,63 @@ def get_or_insert_user(session: Session, clerk_user_id: str) -> User:
     return session.scalars(
         select(User).where(User.clerk_user_id == clerk_user_id)
     ).one()
+
+
+def owns_a_business(session: Session, user_id: uuid.UUID) -> bool:
+    return (
+        session.scalar(
+            select(Membership.business_id).where(
+                Membership.user_id == user_id, Membership.role == "owner"
+            )
+        )
+        is not None
+    )
+
+
+def insert_business(
+    session: Session, *, name: str, province: str, time_zone: str
+) -> Business:
+    business = Business(name=name, province=province, time_zone=time_zone)
+    session.add(business)
+    session.flush()
+    session.refresh(business)
+    return business
+
+
+def insert_membership(
+    session: Session, *, business_id: uuid.UUID, user_id: uuid.UUID, role: str
+) -> None:
+    session.add(Membership(business_id=business_id, user_id=user_id, role=role))
+    session.flush()
+
+
+def get_membership(
+    session: Session, *, business_id: uuid.UUID, user_id: uuid.UUID
+) -> Membership | None:
+    return session.get(Membership, (business_id, user_id))
+
+
+def businesses_for_user(
+    session: Session, user_id: uuid.UUID
+) -> list[tuple[Business, str]]:
+    rows = session.execute(
+        select(Business, Membership.role)
+        .join(Membership, Membership.business_id == Business.id)
+        .where(Membership.user_id == user_id)
+        .order_by(Membership.created_at, Business.id)
+    ).all()
+    return [(business, role) for business, role in rows]
+
+
+def get_business(session: Session, business_id: uuid.UUID) -> Business:
+    return session.scalars(select(Business).where(Business.id == business_id)).one()
+
+
+def update_business(
+    session: Session, business_id: uuid.UUID, changes: Mapping[str, str]
+) -> None:
+    session.execute(
+        update(Business)
+        .where(Business.id == business_id)
+        .values(**changes, updated_at=func.now())
+    )

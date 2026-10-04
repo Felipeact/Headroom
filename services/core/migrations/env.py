@@ -4,7 +4,7 @@ from alembic import context
 from sqlalchemy import create_engine, pool
 
 import app.audit
-import app.modules.accounts.models  # noqa: F401  (registers users)
+import app.modules.accounts.models  # noqa: F401  (registers users, businesses, memberships)
 from app.db import Base
 from app.settings import get_settings
 

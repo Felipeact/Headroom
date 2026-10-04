@@ -135,7 +135,8 @@ def test_users_table_upgrade_downgrade_and_check(empty_database_url: str) -> Non
         ("uq_users_clerk_user_id", "UNIQUE", "clerk_user_id"),
     }
 
-    result = alembic_run("downgrade", "-1", database_url=empty_database_url)
+    # Down to the audit_log revision, the one before users.
+    result = alembic_run("downgrade", "99b26f739028", database_url=empty_database_url)
     assert result.returncode == 0, result.stderr
     engine = create_engine(empty_database_url)
     try:
@@ -144,6 +145,92 @@ def test_users_table_upgrade_downgrade_and_check(empty_database_url: str) -> Non
         engine.dispose()
     assert "users" not in tables
     assert "audit_log" in tables
+
+    for args in (("upgrade", "head"), ("check",)):
+        result = alembic_run(*args, database_url=empty_database_url)
+        assert result.returncode == 0, result.stdout + result.stderr
+
+
+def test_businesses_and_memberships_upgrade_downgrade_and_check(
+    empty_database_url: str,
+) -> None:
+    result = alembic_run("upgrade", "head", database_url=empty_database_url)
+    assert result.returncode == 0, result.stderr
+
+    engine = create_engine(empty_database_url)
+    try:
+        with engine.connect() as conn:
+            columns = conn.exec_driver_sql(
+                "SELECT table_name, column_name, data_type, is_nullable"
+                " FROM information_schema.columns"
+                " WHERE table_name IN ('businesses', 'memberships')"
+            ).all()
+            keys = conn.exec_driver_sql(
+                "SELECT tc.table_name, tc.constraint_name, tc.constraint_type,"
+                " kcu.column_name, ccu.table_name AS referred"
+                " FROM information_schema.table_constraints tc"
+                " JOIN information_schema.key_column_usage kcu"
+                " USING (constraint_schema, constraint_name)"
+                " LEFT JOIN information_schema.constraint_column_usage ccu"
+                " ON tc.constraint_type = 'FOREIGN KEY'"
+                " AND ccu.constraint_name = tc.constraint_name"
+                " WHERE tc.table_name IN ('businesses', 'memberships')"
+                " AND tc.constraint_type IN ('PRIMARY KEY', 'FOREIGN KEY')"
+            ).all()
+            index = conn.exec_driver_sql(
+                "SELECT indexdef FROM pg_indexes"
+                " WHERE indexname = 'uq_memberships_owner_user_id'"
+            ).scalar_one()
+    finally:
+        engine.dispose()
+
+    assert {tuple(row) for row in columns} == {
+        ("businesses", "id", "uuid", "NO"),
+        ("businesses", "name", "text", "NO"),
+        ("businesses", "province", "text", "NO"),
+        ("businesses", "time_zone", "text", "NO"),
+        ("businesses", "country", "text", "NO"),
+        ("businesses", "currency", "text", "NO"),
+        ("businesses", "created_at", "timestamp with time zone", "NO"),
+        ("businesses", "updated_at", "timestamp with time zone", "NO"),
+        ("memberships", "business_id", "uuid", "NO"),
+        ("memberships", "user_id", "uuid", "NO"),
+        ("memberships", "role", "text", "NO"),
+        ("memberships", "created_at", "timestamp with time zone", "NO"),
+    }
+    assert {tuple(row) for row in keys} == {
+        ("businesses", "pk_businesses", "PRIMARY KEY", "id", None),
+        ("memberships", "pk_memberships", "PRIMARY KEY", "business_id", None),
+        ("memberships", "pk_memberships", "PRIMARY KEY", "user_id", None),
+        (
+            "memberships",
+            "fk_memberships_business_id_businesses",
+            "FOREIGN KEY",
+            "business_id",
+            "businesses",
+        ),
+        (
+            "memberships",
+            "fk_memberships_user_id_users",
+            "FOREIGN KEY",
+            "user_id",
+            "users",
+        ),
+    }
+    assert index.startswith("CREATE UNIQUE INDEX uq_memberships_owner_user_id")
+    assert "(user_id)" in index
+    assert index.endswith("WHERE (role = 'owner'::text)")
+
+    result = alembic_run("downgrade", "-1", database_url=empty_database_url)
+    assert result.returncode == 0, result.stderr
+    engine = create_engine(empty_database_url)
+    try:
+        tables = inspect(engine).get_table_names()
+    finally:
+        engine.dispose()
+    assert "businesses" not in tables
+    assert "memberships" not in tables
+    assert "users" in tables
 
     for args in (("upgrade", "head"), ("check",)):
         result = alembic_run(*args, database_url=empty_database_url)
