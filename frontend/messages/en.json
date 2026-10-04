@@ -26,5 +26,53 @@
     "errorTitle": "We couldn't load this page",
     "errorBody": "Check your connection and try again.",
     "tryAgain": "Try again"
+  },
+  "Onboarding": {
+    "stepOf": "Step {step} of {total}",
+    "Business": {
+      "title": "Tell us about your business",
+      "intro": "Your time zone decides when alerts and your weekly email arrive.",
+      "nameLabel": "Business name",
+      "provinceLabel": "Province or territory",
+      "provincePlaceholder": "Choose a province or territory",
+      "quebecHint": "Headroom isn't available in Quebec yet.",
+      "timeZoneLabel": "Time zone",
+      "timeZonePlaceholder": "Choose a time zone",
+      "timeZoneHint": "Filled in from your device. Change it if it's wrong.",
+      "continue": "Continue",
+      "errors": {
+        "nameRequired": "Enter your business name.",
+        "nameTooLong": "Use 100 characters or fewer for the name.",
+        "provinceRequired": "Choose your province or territory.",
+        "quebec": "Headroom isn't available in Quebec yet. You can't set up a business there for now.",
+        "timeZoneRequired": "Choose your time zone.",
+        "saveFailed": "We couldn't save your business. Try again."
+      }
+    },
+    "provinces": {
+      "AB": "Alberta",
+      "BC": "British Columbia",
+      "MB": "Manitoba",
+      "NB": "New Brunswick",
+      "NL": "Newfoundland and Labrador",
+      "NT": "Northwest Territories",
+      "NS": "Nova Scotia",
+      "NU": "Nunavut",
+      "ON": "Ontario",
+      "PE": "Prince Edward Island",
+      "QC": "Quebec",
+      "SK": "Saskatchewan",
+      "YT": "Yukon"
+    },
+    "timeZones": {
+      "America/St_Johns": "Newfoundland Time (St. John's)",
+      "America/Halifax": "Atlantic Time (Halifax)",
+      "America/Toronto": "Eastern Time (Toronto)",
+      "America/Winnipeg": "Central Time (Winnipeg)",
+      "America/Regina": "Saskatchewan Time (Regina)",
+      "America/Edmonton": "Mountain Time (Edmonton)",
+      "America/Vancouver": "Pacific Time (Vancouver)",
+      "America/Whitehorse": "Yukon Time (Whitehorse)"
+    }
   }
 }

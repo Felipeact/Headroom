@@ -238,16 +238,20 @@ test.describe('phone', () => {
   })
 })
 
-test('no business yet (C11)', async ({ page }) => {
-  for (const viewport of [DESKTOP, PHONE]) {
-    await page.setViewportSize(viewport)
-    for (const { path } of PAGES) {
-      await page.goto(path)
-      await expect(page.getByText('Business', { exact: true })).toHaveCount(0)
-    }
+// Spec 07's C11 asserted no business label until spec 11 existed; since spec 11 the test user
+// has a business (global.setup.ts), and the header names it (spec 11 AC 35).
+test('business in the header (C11, spec 11 AC 35)', async ({ page }) => {
+  await page.setViewportSize(DESKTOP)
+  for (const { path } of PAGES) {
+    await page.goto(path)
+    await expect(page.getByTestId('header-desktop-identity')).toContainText('Business')
+    await expect(page.getByTestId('header-desktop-identity')).toContainText(
+      'Harbor Street Plumbing',
+    )
   }
+  await page.setViewportSize(PHONE)
   await page.goto('/')
-  await expect(page.getByTestId('header-phone-identity')).toHaveText('Headroom')
+  await expect(page.getByTestId('header-phone-identity')).toHaveText('Harbor Street Plumbing')
 })
 
 test('phone layout (C12)', async ({ page }) => {

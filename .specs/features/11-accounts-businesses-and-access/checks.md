@@ -130,7 +130,7 @@ Proof: `npx playwright test e2e/onboarding.spec.ts -g "layout keyboard and axe"`
 Proof: `npx vitest run tests/onboarding-copy.test.ts -t "no literal copy"`
 
 **C39** - With `e2e/global.setup.ts` giving the existing test user a business, the existing specs `shell`, `home`, `auth`, `api-check` pass unchanged in their assertions (Impact: web routing)
-Proof: `bash .specs/features/11-accounts-businesses-and-access/proofs.sh c39` (runs `npx playwright test e2e/shell.spec.ts e2e/home.spec.ts e2e/auth.spec.ts e2e/api-check.spec.ts`; C39 is a regression claim over those whole files)
+Proof: `bash .specs/features/11-accounts-businesses-and-access/proofs.sh c39` (runs `npx playwright test e2e/shell.spec.ts e2e/home.spec.ts e2e/auth.spec.ts e2e/api-check.spec.ts` without spec 07's C42, which needs `NEXT_PUBLIC_SENTRY_DSN` empty and is run as its own proof says; C39 is a regression claim over those whole files)
 
 ### S4 - The shell shows the business · covered by C23 (unit) and C34 (end to end)
 
@@ -182,3 +182,6 @@ Proof: `uv run pytest tests/test_businesses.py -k "no_foreign_fields"`
 
 - S1-S5 touch about 25 existing and new files: 59 KB existing (`wc -c` on `auth.py`, `main.py`, the five `accounts` files, `test_migrations.py`, `test_auth.py`, `(app)/layout.tsx`, `app-layout.test.tsx`, `global.setup.ts`, `test-user.ts`, `playwright.config.ts`, `en.json`, `app-header.tsx`, the `select`, `input`, `button`, `label` components, `auth-protect.test.ts`, `shell.spec.ts`) plus 9 KB generated (`openapi.json`, `schema.d.ts`) plus about 70 KB new (migration, `test_businesses.py`, the onboarding page, form, action, step indicator, loading, five test files, `proofs.sh`) = 138 KB / 4 = ~35k tokens, under the 150k budget - one builder
 - Mechanism: one builder
+- **Boundary:** C1-C41 green at the web commit (API `4853182`)
+- **Settled mid-build:** spec 07's e2e C11 ("no business yet") asserted the header has no business label until spec 11; since this spec gives the test user a business it now asserts the business name in the header (AC 35). The business name is user content, so it carries `data-user-content` like the user's name, which spec 07's C20 copy check skips. The users-table migration test downgrades to `99b26f739028` instead of `-1`, which now undoes this spec's migration. C36's "no business for that user" is observed through the page: a reload of `/onboarding/business` still shows the form, and that page sends any user with a business to `/` after its own `GET /v1/businesses`. The onboarding Clerk user is created per test through the Backend API (Open question 1), so no `E2E_CLERK_ONBOARDING_USERNAME` exists. Door 7 corrects door 6's colour token and row arrangement
+- **Abandoned:** prefilling the time zone with `useEffect` + `setState` (the React lint rule rejects it); `useSyncExternalStore` reads the device zone on the client with an empty server snapshot instead

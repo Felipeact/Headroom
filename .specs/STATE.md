@@ -38,7 +38,7 @@
 | AD-031 | Business routes use `member: Annotated[Member, Depends(require_member(Role.OWNER, ...))]` from `app/auth.py`; path param `business_id: uuid.UUID`; no membership is `404` `"Business not found."` (same as a missing business), a role outside `roles` is `403` `"You don't have permission to do this."`; `Role` lives in `accounts.service` | other modules cannot read `memberships`, so they import this one dependency (spec 11 door 3) | active | 2026-10-04 |
 | AD-032 | Business JSON: `id`, `name`, `province` (code), `time_zone` (IANA), `country`, `currency`, `role` (the caller's), `created_at`; lists are `{"items": [...]}` | a bare array cannot grow a cursor; display names live in `messages/en.json` (spec 11 door 4) | active | 2026-10-04 |
 | AD-033 | `GET /v1/businesses` lists the caller's businesses, oldest membership first; the web shell and onboarding decide "has a business" from it, never from a cookie or `/v1/me` | one source of truth the API enforces (spec 11 door 5) | active | 2026-10-04 |
-| AD-034 | Onboarding step indicator: `frontend/components/onboarding/step-indicator.tsx`, `StepIndicator({ step, total })`, text from `messages/en.json`, `aria-hidden` five-segment bar, done `--accent`, rest `--line` | specs 12, 13, 23 reuse it (spec 11 door 6) | active | 2026-10-04 |
+| AD-034 | Onboarding step indicator: `frontend/components/onboarding/step-indicator.tsx`, `StepIndicator({ step, total })`, text from `messages/en.json`, `aria-hidden` five-segment bar, done `--accent`, rest `--border`; `children` (the wordmark) start the text row, the step text ends it | specs 12, 13, 23 reuse it (spec 11 doors 6, 7) | active | 2026-10-04 |
 
 ## Handoff
 
