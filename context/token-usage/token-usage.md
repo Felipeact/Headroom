@@ -51,3 +51,4 @@ Context used per request, measured against a context window of about 250,000 tok
 | Spec 14: transaction sync (plan, checks) | ~95,000 (~38%) | High (smart zone) |
 | Spec 14: transaction sync (build S1-S7, proofs c46, c47) | ~180,000 (~72%) | Low (past 60%) |
 | Spec 14: verifier sub-agents, rounds 1-2 (separate contexts) | ~145,000 + ~108,000 (~58%, ~43%) | Medium (attention degrades) |
+| Spec 15: nightly sync job (plan) | ~70,000 (~28%) | High (smart zone) |

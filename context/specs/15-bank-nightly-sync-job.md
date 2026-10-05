@@ -1,7 +1,7 @@
 # Spec 15: Nightly sync job
 
 - **Milestone:** 3, bank data
-- **Status:** Not started
+- **Status:** In progress
 - **Depends on:** 05, 14
 
 ## Goal
