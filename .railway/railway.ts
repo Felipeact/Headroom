@@ -36,6 +36,12 @@ export default defineRailway((ctx) => {
       // origin allowed in a token's azp claim.
       CLERK_JWT_KEY: preserve(),
       CLERK_AUTHORIZED_PARTIES: preserve(),
+      // Plaid (specs 12, 14) and the access-token keys, set with `railway variable set`.
+      PLAID_CLIENT_ID: preserve(),
+      PLAID_SECRET: preserve(),
+      PLAID_ENV: preserve(),
+      PLAID_WEBHOOK_URL: preserve(),
+      TOKEN_ENCRYPTION_KEYS: preserve(),
     },
   });
 
@@ -55,7 +61,31 @@ export default defineRailway((ctx) => {
     },
   });
 
+  // The hourly job runner (spec 15): runs `python -m app.jobs.run_due`, which exits when done.
+  // No healthcheck (it serves nothing), no pre-deploy (`api` migrates), and no restart:
+  // a failed run is retried by the next hourly run, never at once.
+  const jobs = service("jobs", {
+    source: github(REPO, { branch: "development", rootDirectory: "/services/core", checkSuites: true }),
+    build: { builder: "RAILPACK", watchPatterns: ["/services/core/**"] },
+    start: "python -m app.jobs.run_due",
+    deploy: { cronSchedule: "0 * * * *", restartPolicyType: "NEVER" },
+    replicas: { [US_EAST]: 1 },
+    env: {
+      // The template `api` uses (AD-006), not a reference to a reference (spec 15 door 7).
+      DATABASE_URL:
+        "postgresql+psycopg://${{Postgres.PGUSER}}:${{Postgres.PGPASSWORD}}@${{Postgres.PGHOST}}:${{Postgres.PGPORT}}/${{Postgres.PGDATABASE}}",
+      // One source for each secret: references to `api`'s variables of the same name.
+      CLERK_JWT_KEY: "${{api.CLERK_JWT_KEY}}",
+      PLAID_CLIENT_ID: "${{api.PLAID_CLIENT_ID}}",
+      PLAID_SECRET: "${{api.PLAID_SECRET}}",
+      PLAID_ENV: "${{api.PLAID_ENV}}",
+      TOKEN_ENCRYPTION_KEYS: "${{api.TOKEN_ENCRYPTION_KEYS}}",
+      SENTRY_DSN: "${{api.SENTRY_DSN}}",
+      SENTRY_ENVIRONMENT: "${{api.SENTRY_ENVIRONMENT}}",
+    },
+  });
+
   return project("headroom", {
-    resources: [api, Postgres, web, postgresVolume],
+    resources: [api, jobs, Postgres, web, postgresVolume],
   });
 });
