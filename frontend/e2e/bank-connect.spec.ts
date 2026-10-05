@@ -1,7 +1,7 @@
 import AxeBuilder from '@axe-core/playwright'
 import { clerk } from '@clerk/testing/playwright'
-import { expect, test, type Locator, type Page } from '@playwright/test'
-import { completeBusinessStep } from './onboarding-steps'
+import { expect, test, type Page } from '@playwright/test'
+import { completeBusinessStep, connectSandboxBank, plaidLink, tabTo } from './onboarding-steps'
 import { createOnboardingUser, deleteUser, SIGNED_OUT } from './test-user'
 
 const STEP = '/onboarding/bank'
@@ -11,31 +11,6 @@ function pathOf(page: Page): string {
 }
 
 const connectButton = (page: Page) => page.getByRole('button', { name: 'Connect your bank' })
-const plaidLink = (page: Page) => page.frameLocator('iframe[id^="plaid-link-iframe"]')
-
-// Presses Tab until `target` has focus; fails after `limit` presses.
-async function tabTo(page: Page, target: Locator, limit = 30) {
-  for (let i = 0; i < limit; i++) {
-    await page.keyboard.press('Tab')
-    if (await target.evaluate((el) => el === document.activeElement)) return
-  }
-  throw new Error(`Tab never reached ${target}`)
-}
-
-/** Goes through the Plaid Link sandbox for TD Canada Trust with Plaid's test credentials. */
-async function connectSandboxBank(page: Page) {
-  const link = plaidLink(page)
-  await link.getByRole('button', { name: 'Continue without phone number' }).click()
-  await link.locator('input').first().fill('TD Canada Trust')
-  await link.getByText('TD Canada Trust', { exact: true }).first().click()
-  await link.getByRole('button', { name: 'TD Canada Trust', exact: true }).click()
-  await link.locator('input[type="text"]').fill('user_good')
-  await link.locator('input[type="password"]').fill('pass_good')
-  await link.getByRole('button', { name: 'Submit' }).click()
-  await link.getByRole('button', { name: 'Continue', exact: true }).click()
-  await link.getByRole('button', { name: 'Finish without saving' }).click()
-}
-
 test.describe('a user without a business', () => {
   test.use({ storageState: SIGNED_OUT, timezoneId: 'America/Toronto' })
 
@@ -63,7 +38,10 @@ test.describe('a user without a business', () => {
     await connectButton(page).click()
     await connectSandboxBank(page)
 
-    await expect.poll(() => pathOf(page), { timeout: 60_000 }).toBe('/')
+    // Spec 13: a connected bank lands on choosing cash accounts, and Continue goes on to `/`.
+    await expect.poll(() => pathOf(page), { timeout: 60_000 }).toBe('/onboarding/accounts')
+    await page.getByRole('button', { name: 'Continue' }).click()
+    await expect.poll(() => pathOf(page), { timeout: 30_000 }).toBe('/')
     await expect(page.getByTestId('shell')).toBeVisible()
     expect(Date.now() - started).toBeLessThan(120_000)
   })

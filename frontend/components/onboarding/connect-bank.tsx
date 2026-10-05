@@ -1,10 +1,8 @@
 "use client"
 
-import { useCallback, useState, useTransition } from "react"
 import { CircleAlert, Eye, Lock, Power, type LucideIcon } from "lucide-react"
 import { useTranslations } from "next-intl"
-import { usePlaidLink, type PlaidLinkError } from "react-plaid-link"
-import { connectBank, type ConnectBankError } from "@/app/onboarding/bank/actions"
+import { useConnectBank } from "@/components/onboarding/use-connect-bank"
 import { Button } from "@/components/ui/button"
 
 const TRUST_ITEMS = [
@@ -17,28 +15,7 @@ const TRUST_ITEMS = [
 // logs in on the bank's own screen inside Plaid Link; only the public token comes back here.
 export function ConnectBank({ businessId, linkToken }: { businessId: string; linkToken: string }) {
   const t = useTranslations("Onboarding")
-  const [error, setError] = useState<ConnectBankError | null>(null)
-  const [pending, startTransition] = useTransition()
-
-  const onSuccess = useCallback(
-    (publicToken: string | null) => {
-      if (!publicToken) {
-        setError("connectFailed")
-        return
-      }
-      setError(null)
-      startTransition(async () => {
-        const result = await connectBank(businessId, publicToken)
-        setError(result.error)
-      })
-    },
-    [businessId],
-  )
-  // Closing Link is not an error; Link reporting one is.
-  const onExit = useCallback((linkError: PlaidLinkError | null) => {
-    setError(linkError ? "connectFailed" : null)
-  }, [])
-  const { open, ready } = usePlaidLink({ token: linkToken, onSuccess, onExit })
+  const { open, ready, pending, error } = useConnectBank(businessId, linkToken)
 
   return (
     <div className="flex flex-1 flex-col gap-6">

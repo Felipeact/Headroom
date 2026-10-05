@@ -90,6 +90,38 @@
         "alreadyConnected": "This bank is already connected.",
         "connectFailed": "We couldn't connect your bank. Try again."
       }
+    },
+    "Accounts": {
+      "title": "Which accounts count as cash?",
+      "introOne": "{bank} is connected. Choose what Headroom counts as cash you can spend.",
+      "introMany": "Your banks are connected. Choose what Headroom counts as cash you can spend.",
+      "details": "••{mask} · {type}",
+      "types": {
+        "checking": "Checking",
+        "savings": "Savings",
+        "credit_card": "Credit",
+        "line_of_credit": "Credit",
+        "other": "Other"
+      },
+      "available": "available",
+      "countsAsCash": "Counts as cash",
+      "countsAsCashLabel": "{name} counts as cash",
+      "spendQuestion": "Is this money you can spend?",
+      "spendGroupLabel": "Count {name} as cash",
+      "spendYes": "Yes, count it",
+      "spendNo": "No, keep it separate",
+      "primary": "Primary account",
+      "primaryGroupLabel": "Primary account",
+      "creditNote": "Credit never counts as cash. Headroom shows what's available, and may suggest it as a fix.",
+      "otherNote": "This type of account can't count as cash.",
+      "currencyNote": "Only Canadian dollar accounts can count as cash for now.",
+      "primaryNote": "Expected payments you add go to your primary account unless you choose another.",
+      "connectAnother": "Connect another bank",
+      "continue": "Continue",
+      "errors": {
+        "saveFailed": "We couldn't save that change. Try again.",
+        "noneIncluded": "Choose at least one account that counts as cash."
+      }
     }
   }
 }

@@ -1,7 +1,9 @@
 #!/usr/bin/env bash
 # Proofs for spec 13 that are commands rather than single tests. Usage: bash proofs.sh c31 [c51 ...]
 #   c31: two banks on one business through the real Plaid sandbox. Exports services/core/.env.local
-#   c51: spec 12's step 3 e2e and the existing e2e specs, now that step 3 lands on choose accounts
+#   c51: spec 12's step 3 e2e and the existing e2e specs, now that step 3 lands on choose accounts.
+#        Spec 07's "no sentry without dsn" needs NEXT_PUBLIC_SENTRY_DSN empty, so it is left out,
+#        as spec 12's c44 did
 #   c52: the generated files match the API
 #   c53: every AGENTS.md check for the API and the web app
 set -uo pipefail
@@ -22,7 +24,8 @@ c31() {
 
 c51() {
   (cd "$FE" && npx playwright test e2e/bank-connect.spec.ts e2e/onboarding.spec.ts \
-    e2e/shell.spec.ts e2e/home.spec.ts e2e/auth.spec.ts e2e/api-check.spec.ts --reporter=line) \
+    e2e/shell.spec.ts e2e/home.spec.ts e2e/auth.spec.ts e2e/api-check.spec.ts \
+    --grep-invert "no sentry without dsn" --reporter=line) \
     || fail c51 "an existing e2e spec failed"
   pass c51
 }

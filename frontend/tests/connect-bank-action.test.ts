@@ -34,12 +34,12 @@ beforeEach(() => {
 })
 
 describe('connect bank action', () => {
-  test('201 redirects to the dashboard, with the business, the body and the token', async () => {
+  test('201 redirects to choosing accounts, with the business, the body and the token', async () => {
     answers(201)
 
     await expect(connectBank(BUSINESS, PUBLIC_TOKEN)).rejects.toThrow('NEXT_REDIRECT')
 
-    expect(redirect).toHaveBeenCalledWith('/')
+    expect(redirect).toHaveBeenCalledWith('/onboarding/accounts')
     expect(api.POST).toHaveBeenCalledWith('/v1/businesses/{business_id}/bank/connections', {
       params: { path: { business_id: BUSINESS } },
       body: { public_token: PUBLIC_TOKEN },
