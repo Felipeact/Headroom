@@ -70,6 +70,7 @@ def test_alembic_ini_has_no_url() -> None:
 
 
 BANK_TABLES = "5db30d28e759"
+CASH_COLUMNS = "d546cee847e0"
 
 
 def alembic_run(*args: str, database_url: str) -> subprocess.CompletedProcess[str]:
@@ -407,7 +408,8 @@ def test_bank_accounts_cash_columns_upgrade_backfill_downgrade_and_check(
     finally:
         engine.dispose()
 
-    result = alembic_run("upgrade", "head", database_url=empty_database_url)
+    # To spec 13's revision, not head: spec 14 adds bank_transactions on top.
+    result = alembic_run("upgrade", CASH_COLUMNS, database_url=empty_database_url)
     assert result.returncode == 0, result.stderr
 
     engine = create_engine(empty_database_url)
@@ -467,6 +469,77 @@ def test_bank_accounts_cash_columns_upgrade_backfill_downgrade_and_check(
     finally:
         engine.dispose()
     assert not {"included", "is_primary", "available_cents"} & remaining
+
+    for args in (("upgrade", "head"), ("check",)):
+        result = alembic_run(*args, database_url=empty_database_url)
+        assert result.returncode == 0, result.stdout + result.stderr
+
+
+def test_bank_transactions_upgrade_downgrade_and_check(empty_database_url: str) -> None:
+    result = alembic_run("upgrade", "head", database_url=empty_database_url)
+    assert result.returncode == 0, result.stderr
+
+    engine = create_engine(empty_database_url)
+    try:
+        with engine.connect() as conn:
+            columns = conn.exec_driver_sql(
+                "SELECT column_name, data_type, is_nullable"
+                " FROM information_schema.columns WHERE table_name = 'bank_transactions'"
+            ).all()
+            cursor = conn.exec_driver_sql(
+                "SELECT data_type, is_nullable FROM information_schema.columns"
+                " WHERE table_name = 'bank_connections'"
+                " AND column_name = 'transactions_cursor'"
+            ).one()
+            constraints = {
+                (name, kind, definition)
+                for name, kind, definition in conn.exec_driver_sql(
+                    "SELECT conname, contype, pg_get_constraintdef(oid) FROM pg_constraint"
+                    " WHERE conrelid = 'bank_transactions'::regclass"
+                )
+            }
+    finally:
+        engine.dispose()
+
+    assert {(c, t, n) for c, t, n in columns} == {
+        ("id", "uuid", "NO"),
+        ("business_id", "uuid", "NO"),
+        ("account_id", "uuid", "NO"),
+        ("plaid_transaction_id", "text", "NO"),
+        ("amount_cents", "bigint", "NO"),
+        ("currency", "text", "NO"),
+        ("date", "date", "NO"),
+        ("pending", "boolean", "NO"),
+        ("description", "text", "NO"),
+        ("counterparty", "text", "YES"),
+        ("category", "text", "YES"),
+        ("category_detailed", "text", "YES"),
+        ("created_at", "timestamp with time zone", "NO"),
+        ("updated_at", "timestamp with time zone", "NO"),
+    }
+    assert tuple(cursor) == ("text", "YES")
+    assert ("pk_bank_transactions", "p", "PRIMARY KEY (id)") in constraints
+    assert (
+        "uq_bank_transactions_plaid_transaction_id",
+        "u",
+        "UNIQUE (plaid_transaction_id)",
+    ) in constraints
+    assert (
+        "fk_bank_transactions_account_id_bank_accounts",
+        "f",
+        "FOREIGN KEY (account_id) REFERENCES bank_accounts(id)",
+    ) in constraints
+
+    result = alembic_run("downgrade", "-1", database_url=empty_database_url)
+    assert result.returncode == 0, result.stderr
+    engine = create_engine(empty_database_url)
+    try:
+        tables = set(inspect(engine).get_table_names())
+        remaining = {c["name"] for c in inspect(engine).get_columns("bank_connections")}
+    finally:
+        engine.dispose()
+    assert "bank_transactions" not in tables
+    assert "transactions_cursor" not in remaining
 
     for args in (("upgrade", "head"), ("check",)):
         result = alembic_run(*args, database_url=empty_database_url)

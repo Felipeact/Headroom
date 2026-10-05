@@ -25,6 +25,9 @@ class Settings(BaseSettings):
     plaid_client_id: str
     plaid_secret: str
     plaid_env: Literal["sandbox", "production"]
+    # Public URL of POST /v1/webhooks/plaid, sent on every link token. Unset (local runs):
+    # Plaid sends no webhooks, and banks sync on connect and from the nightly job.
+    plaid_webhook_url: str | None = None
     # Fernet keys for Plaid access tokens, comma-separated; the first encrypts, any decrypts.
     token_encryption_keys: Annotated[list[str], NoDecode]
 
@@ -33,6 +36,14 @@ class Settings(BaseSettings):
     def require_psycopg_scheme(cls, value: str) -> str:
         if not value.startswith(DATABASE_SCHEME):
             raise ValueError(f"DATABASE_URL must start with {DATABASE_SCHEME}")
+        return value
+
+    @field_validator("plaid_webhook_url", mode="before")
+    @classmethod
+    def empty_webhook_url_is_unset(cls, value: object) -> object:
+        # `PLAID_WEBHOOK_URL=` copied from .env.example means "no webhook", not "".
+        if isinstance(value, str) and not value.strip():
+            return None
         return value
 
     @field_validator("clerk_authorized_parties", mode="before")

@@ -675,6 +675,57 @@
         }
       }
     },
+    "/v1/webhooks/plaid": {
+      "post": {
+        "tags": [
+          "bank_sync"
+        ],
+        "summary": "Plaid Webhook",
+        "operationId": "plaid_webhook_v1_webhooks_plaid_post",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/WebhookAck"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Unprocessable Entity",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ValidationProblemDetails"
+                }
+              }
+            }
+          },
+          "502": {
+            "description": "Bad Gateway",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/healthz/live": {
       "get": {
         "summary": "Live",
@@ -1298,6 +1349,20 @@
           "errors"
         ],
         "title": "ValidationProblemDetails"
+      },
+      "WebhookAck": {
+        "properties": {
+          "status": {
+            "type": "string",
+            "const": "ok",
+            "title": "Status"
+          }
+        },
+        "type": "object",
+        "required": [
+          "status"
+        ],
+        "title": "WebhookAck"
       }
     },
     "securitySchemes": {

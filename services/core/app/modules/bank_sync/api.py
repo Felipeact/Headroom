@@ -3,13 +3,24 @@ from datetime import datetime
 from typing import Annotated, Literal
 
 import structlog
-from fastapi import APIRouter, Depends, HTTPException, status
+from fastapi import (
+    APIRouter,
+    BackgroundTasks,
+    Depends,
+    Header,
+    HTTPException,
+    Request,
+    status,
+)
+from fastapi.exceptions import RequestValidationError
 from pydantic import (
     BaseModel,
     ConfigDict,
     Field,
     SecretStr,
     StrictBool,
+    StrictStr,
+    ValidationError,
     model_validator,
 )
 from sqlalchemy.orm import Session
@@ -17,7 +28,7 @@ from sqlalchemy.orm import Session
 from app.auth import Member, require_member
 from app.db import get_session
 from app.modules.accounts.service import Role
-from app.modules.bank_sync import service
+from app.modules.bank_sync import service, webhooks
 from app.modules.bank_sync.models import AccountType
 from app.modules.bank_sync.plaid import PlaidClient, PlaidError, get_plaid_client
 from app.problems import ProblemDetails, ValidationProblemDetails
@@ -26,6 +37,7 @@ PROVIDER_UNAVAILABLE = "We couldn't reach our bank connection provider. Try agai
 CONNECT_FAILED = "We couldn't finish connecting your bank. Try again."
 ALREADY_CONNECTED = "This bank is already connected."
 ACCOUNT_NOT_FOUND = "Account not found."
+INVALID_SIGNATURE = "Invalid webhook signature."
 ACCOUNT_CONFLICTS: dict[service.AccountConflict, str] = {
     "credit": "Credit cards and lines of credit can't count as cash.",
     "other": "This type of account can't count as cash.",
@@ -37,6 +49,9 @@ ACCOUNT_CONFLICTS: dict[service.AccountConflict, str] = {
 log = structlog.get_logger(__name__)
 
 router = APIRouter(tags=["bank_sync"])
+# Mounted outside the authenticated /v1 router (AD-049): Plaid sends no Clerk token, so
+# every route here verifies the provider's signature before doing anything else.
+webhook_router = APIRouter(tags=["bank_sync"])
 
 SessionDep = Annotated[Session, Depends(get_session)]
 PlaidDep = Annotated[PlaidClient, Depends(get_plaid_client)]
@@ -139,7 +154,11 @@ def create_link_token(member: OwnerDep, plaid: PlaidDep) -> LinkToken:
     },
 )
 def create_connection(
-    body: ConnectionCreate, member: OwnerDep, plaid: PlaidDep, session: SessionDep
+    body: ConnectionCreate,
+    member: OwnerDep,
+    plaid: PlaidDep,
+    session: SessionDep,
+    background: BackgroundTasks,
 ) -> Connection:
     try:
         connection = service.connect_bank(
@@ -160,6 +179,14 @@ def create_connection(
                 status.HTTP_400_BAD_REQUEST, detail=CONNECT_FAILED
             ) from None
         raise _unavailable() from None
+    # The first sync after the response: it pulls the history, and Plaid sends this
+    # item's webhooks only once it has been called.
+    background.add_task(
+        service.sync_in_background,
+        plaid,
+        business_id=member.business_id,
+        connection_id=connection.id,
+    )
     return Connection.model_validate(connection, from_attributes=True)
 
 
@@ -204,3 +231,81 @@ def update_account(
             status.HTTP_409_CONFLICT, detail=ACCOUNT_CONFLICTS[exc.reason]
         ) from None
     return Account.model_validate(account, from_attributes=True)
+
+
+class PlaidWebhook(BaseModel):
+    # Plaid adds fields per webhook type; only these three decide anything here.
+    webhook_type: StrictStr
+    webhook_code: StrictStr
+    item_id: StrictStr
+
+
+class WebhookAck(BaseModel):
+    status: Literal["ok"]
+
+
+async def raw_body(request: Request) -> bytes:
+    # The signature covers the exact bytes Plaid sent, so they are read before parsing.
+    return await request.body()
+
+
+@webhook_router.post(
+    "/plaid",
+    response_model=WebhookAck,
+    responses={
+        status.HTTP_401_UNAUTHORIZED: {"model": ProblemDetails},
+        status.HTTP_422_UNPROCESSABLE_CONTENT: {"model": ValidationProblemDetails},
+        status.HTTP_502_BAD_GATEWAY: {"model": ProblemDetails},
+    },
+)
+def plaid_webhook(
+    body: Annotated[bytes, Depends(raw_body)],
+    plaid: PlaidDep,
+    session: SessionDep,
+    background: BackgroundTasks,
+    plaid_verification: Annotated[
+        str | None, Header(alias="Plaid-Verification", include_in_schema=False)
+    ] = None,
+) -> WebhookAck:
+    try:
+        webhooks.verify(plaid, plaid_verification, body)
+    except webhooks.InvalidSignatureError:
+        raise HTTPException(
+            status.HTTP_401_UNAUTHORIZED, detail=INVALID_SIGNATURE
+        ) from None
+    except PlaidError as exc:
+        log.warning(
+            "plaid.request_failed",
+            error_type=exc.error_type,
+            error_code=exc.error_code,
+            request_id=exc.request_id,
+        )
+        raise _unavailable() from None
+    try:
+        webhook = PlaidWebhook.model_validate_json(body)
+    except ValidationError as exc:
+        raise RequestValidationError(
+            [
+                {**error, "loc": ("body", *error["loc"])}
+                for error in exc.errors(include_url=False, include_input=False)
+            ]
+        ) from None
+
+    if (webhook.webhook_type, webhook.webhook_code) != (
+        "TRANSACTIONS",
+        "SYNC_UPDATES_AVAILABLE",
+    ):
+        return WebhookAck(status="ok")
+    found = service.connection_for_item(session, plaid_item_id=webhook.item_id)
+    if found is None:
+        # Answered 200 so Plaid stops retrying: an item we do not store has nothing to sync.
+        log.info("plaid.webhook_unknown_item", plaid_item_id=webhook.item_id)
+        return WebhookAck(status="ok")
+    business_id, connection_id = found
+    background.add_task(
+        service.sync_in_background,
+        plaid,
+        business_id=business_id,
+        connection_id=connection_id,
+    )
+    return WebhookAck(status="ok")

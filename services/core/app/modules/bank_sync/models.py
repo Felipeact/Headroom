@@ -1,11 +1,12 @@
 import uuid
-from datetime import datetime
+from datetime import date, datetime
 from typing import Literal, get_args
 
 from sqlalchemy import (
     BigInteger,
     Boolean,
     CheckConstraint,
+    Date,
     DateTime,
     ForeignKey,
     Index,
@@ -49,6 +50,8 @@ class BankConnection(Base):
     institution_name: Mapped[str] = mapped_column(Text)
     # Fernet token text; the plaintext access token is never stored.
     access_token_ciphertext: Mapped[str] = mapped_column(Text)
+    # Plaid's /transactions/sync cursor; None until the first sync (spec 14).
+    transactions_cursor: Mapped[str | None] = mapped_column(Text)
     created_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True), server_default=func.now()
     )
@@ -96,6 +99,34 @@ class BankAccount(Base):
     is_primary: Mapped[bool] = mapped_column(
         Boolean, default=False, server_default=false()
     )
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), server_default=func.now()
+    )
+    updated_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), server_default=func.now()
+    )
+
+
+class BankTransaction(Base):
+    """One bank transaction, stored once per Plaid transaction ID (spec 14).
+
+    `amount_cents` is signed our way: money in is positive, money out negative.
+    """
+
+    __tablename__ = "bank_transactions"
+
+    id: Mapped[uuid.UUID] = mapped_column(Uuid, primary_key=True, default=uuid.uuid4)
+    business_id: Mapped[uuid.UUID] = mapped_column(Uuid)
+    account_id: Mapped[uuid.UUID] = mapped_column(ForeignKey("bank_accounts.id"))
+    plaid_transaction_id: Mapped[str] = mapped_column(Text, unique=True)
+    amount_cents: Mapped[int] = mapped_column(BigInteger)
+    currency: Mapped[str] = mapped_column(Text)
+    date: Mapped[date] = mapped_column(Date)
+    pending: Mapped[bool] = mapped_column(Boolean)
+    description: Mapped[str] = mapped_column(Text)
+    counterparty: Mapped[str | None] = mapped_column(Text)
+    category: Mapped[str | None] = mapped_column(Text)
+    category_detailed: Mapped[str | None] = mapped_column(Text)
     created_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True), server_default=func.now()
     )

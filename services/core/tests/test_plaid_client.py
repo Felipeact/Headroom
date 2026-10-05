@@ -1,7 +1,8 @@
 """Spec 12: the real PlaidClient over a mocked plaid-python PlaidApi. No network."""
 
+import dataclasses
 import json
-from datetime import UTC, datetime
+from datetime import UTC, date, datetime
 from types import SimpleNamespace
 from typing import Any
 from unittest.mock import MagicMock
@@ -13,8 +14,11 @@ from plaid import ApiException
 from app.modules.bank_sync.plaid import (
     TIMEOUT_SECONDS,
     LinkTokenRequest,
+    PlaidAccount,
     PlaidError,
+    PlaidTransaction,
     SdkPlaidClient,
+    SyncPage,
 )
 
 REQUEST = LinkTokenRequest(
@@ -152,3 +156,180 @@ def test_available_balance(available: float | None) -> None:
     accounts = SdkPlaidClient(api).get_accounts("access-sandbox-1")
 
     assert accounts.accounts[0].available == available
+
+
+# Spec 14: link tokens carry the webhook URL; /transactions/sync; verification keys
+
+
+@pytest.mark.parametrize("webhook", ["https://example.test/v1/webhooks/plaid", None])
+def test_link_token_webhook(webhook: str | None) -> None:
+    api = sdk()
+
+    SdkPlaidClient(api).create_link_token(dataclasses.replace(REQUEST, webhook=webhook))
+
+    request = api.link_token_create.call_args.args[0]
+    assert request.get("webhook") == webhook
+
+
+def sync_response() -> Model:
+    return Model(
+        added=[
+            Model(
+                transaction_id="t1",
+                account_id="acc-1",
+                amount=12.34,
+                iso_currency_code="CAD",
+                unofficial_currency_code=None,
+                date=date(2026, 9, 30),
+                pending=True,
+                pending_transaction_id=None,
+                name="POS 4471 COASTAL",
+                merchant_name="Coastal Supply Co",
+                counterparties=[Model(name="Coastal Supply Co")],
+                personal_finance_category=Model(
+                    primary="GENERAL_MERCHANDISE",
+                    detailed="GENERAL_MERCHANDISE_OTHER",
+                ),
+            )
+        ],
+        modified=[
+            Model(
+                transaction_id="t2",
+                account_id="acc-1",
+                amount=-500.0,
+                iso_currency_code=None,
+                unofficial_currency_code="BTC",
+                date=date(2026, 9, 29),
+                pending=False,
+                pending_transaction_id="p2",
+                name="Deposit",
+            )
+        ],
+        removed=[Model(transaction_id="r1", account_id="acc-1")],
+        accounts=[
+            Model(
+                account_id="acc-1",
+                name="Chequing",
+                type=Model(value="depository"),
+                subtype=Model(value="checking"),
+                mask="0001",
+                balances=Model(current=80.0, available=79.5, iso_currency_code="CAD"),
+            )
+        ],
+        next_cursor="cursor-2",
+        has_more=True,
+    )
+
+
+def test_sync_transactions_request_and_mapping() -> None:
+    api = sdk()
+    api.transactions_sync.return_value = sync_response()
+    client = SdkPlaidClient(api)
+
+    result = client.sync_transactions("access-sandbox-1", None)
+    client.sync_transactions("access-sandbox-1", "c1")
+
+    first, second = (c.args[0] for c in api.transactions_sync.call_args_list)
+    assert first.access_token == "access-sandbox-1"
+    assert first.count == 500
+    assert first.options.include_personal_finance_category is True
+    assert first.get("cursor") is None
+    assert second.cursor == "c1"
+    for call in api.transactions_sync.call_args_list:
+        assert call.kwargs == {"_request_timeout": TIMEOUT_SECONDS}
+
+    assert result == SyncPage(
+        added=[
+            PlaidTransaction(
+                transaction_id="t1",
+                account_id="acc-1",
+                amount=12.34,
+                iso_currency_code="CAD",
+                unofficial_currency_code=None,
+                date=date(2026, 9, 30),
+                pending=True,
+                pending_transaction_id=None,
+                name="POS 4471 COASTAL",
+                merchant_name="Coastal Supply Co",
+                counterparties=("Coastal Supply Co",),
+                category="GENERAL_MERCHANDISE",
+                category_detailed="GENERAL_MERCHANDISE_OTHER",
+            )
+        ],
+        modified=[
+            PlaidTransaction(
+                transaction_id="t2",
+                account_id="acc-1",
+                amount=-500.0,
+                iso_currency_code=None,
+                unofficial_currency_code="BTC",
+                date=date(2026, 9, 29),
+                pending=False,
+                pending_transaction_id="p2",
+                name="Deposit",
+                merchant_name=None,
+                counterparties=(),
+                category=None,
+                category_detailed=None,
+            )
+        ],
+        removed=["r1"],
+        accounts=[
+            PlaidAccount(
+                account_id="acc-1",
+                name="Chequing",
+                type="depository",
+                subtype="checking",
+                mask="0001",
+                current=80.0,
+                available=79.5,
+                iso_currency_code="CAD",
+                unofficial_currency_code=None,
+            )
+        ],
+        next_cursor="cursor-2",
+        has_more=True,
+    )
+
+
+def test_sync_transactions_mutation_error() -> None:
+    api = sdk()
+    exc = ApiException(status=400, reason="Bad Request")
+    exc.body = json.dumps(
+        {
+            "error_type": "TRANSACTIONS_ERROR",
+            "error_code": "TRANSACTIONS_SYNC_MUTATION_DURING_PAGINATION",
+            "request_id": "req-m",
+        }
+    ).encode()
+    api.transactions_sync.side_effect = exc
+
+    with pytest.raises(PlaidError) as excinfo:
+        SdkPlaidClient(api).sync_transactions("access-sandbox-1", "c1")
+
+    assert excinfo.value.error_code == "TRANSACTIONS_SYNC_MUTATION_DURING_PAGINATION"
+
+
+def test_webhook_verification_key() -> None:
+    api = sdk()
+    key = {
+        "alg": "ES256",
+        "crv": "P-256",
+        "kid": "k1",
+        "kty": "EC",
+        "use": "sig",
+        "x": "abc",
+        "y": "def",
+        "created_at": 1700000000,
+        "expired_at": None,
+    }
+    api.webhook_verification_key_get.return_value = Model(
+        key=MagicMock(to_dict=MagicMock(return_value=key))
+    )
+
+    result = SdkPlaidClient(api).get_webhook_verification_key("k1")
+
+    assert api.webhook_verification_key_get.call_args.args[0].key_id == "k1"
+    assert result == key
+    assert isinstance(result, dict)
+    assert "expired_at" in result

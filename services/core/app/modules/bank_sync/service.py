@@ -7,16 +7,20 @@ from typing import Literal
 
 import structlog
 from psycopg.errors import UniqueViolation
+from sqlalchemy import func
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session
 
-from app import audit
+from app import audit, events
+from app.db import get_sessionmaker
 from app.modules.bank_sync import repository
+from app.modules.bank_sync.events import TRANSACTIONS_SYNCED
 from app.modules.bank_sync.models import (
     CASH_CURRENCY,
     CASH_TYPES,
     BankAccount,
     BankConnection,
+    BankTransaction,
 )
 from app.modules.bank_sync.plaid import (
     ExchangedItem,
@@ -25,13 +29,19 @@ from app.modules.bank_sync.plaid import (
     PlaidAccount,
     PlaidClient,
     PlaidError,
+    PlaidTransaction,
+    SyncPage,
 )
-from app.modules.bank_sync.tokens import encrypt_access_token
+from app.modules.bank_sync.tokens import decrypt_access_token, encrypt_access_token
+from app.settings import get_settings
 
 INSTITUTION_INDEX = "uq_bank_connections_business_id_plaid_institution_id"
 PRIMARY_INDEX = "uq_bank_accounts_primary_business_id"
 # 24 months of history, Plaid's maximum.
 DAYS_REQUESTED = 730
+# Plaid asks for the whole update to restart when the data changes while paging.
+MUTATION_DURING_PAGINATION = "TRANSACTIONS_SYNC_MUTATION_DURING_PAGINATION"
+SYNC_ATTEMPTS = 3
 
 # Plaid (type, subtype) -> our account type. Anything not listed is `other`.
 ACCOUNT_TYPES: dict[tuple[str, str | None], str] = {
@@ -51,6 +61,10 @@ class DuplicateBankError(Exception):
 
 class AccountNotFoundError(Exception):
     """The business has no account with this ID."""
+
+
+class ConnectionNotFoundError(Exception):
+    """The business has no connection with this ID."""
 
 
 AccountConflict = Literal[
@@ -77,6 +91,20 @@ class AccountView:
     available_cents: int | None
     included: bool
     primary: bool
+
+
+@dataclass(frozen=True)
+class SyncResult:
+    added: int
+    modified: int
+    removed: int
+    balances_changed: bool
+
+    @property
+    def changed(self) -> bool:
+        return bool(
+            self.added or self.modified or self.removed or self.balances_changed
+        )
 
 
 @dataclass(frozen=True)
@@ -139,6 +167,7 @@ def create_link_token(plaid: PlaidClient, *, user_id: uuid.UUID) -> LinkToken:
             country_codes=("CA",),
             products=("transactions",),
             days_requested=DAYS_REQUESTED,
+            webhook=get_settings().plaid_webhook_url,
         )
     )
 
@@ -367,3 +396,237 @@ def update_account(
             **changes,
         )
     return view
+
+
+def _invalid(error_code: str) -> PlaidError:
+    return PlaidError(
+        error_type="INVALID_RESPONSE", error_code=error_code, request_id=None
+    )
+
+
+def _fetch_pages(
+    plaid: PlaidClient, access_token: str, cursor: str | None
+) -> list[SyncPage]:
+    """Every page of the update after `cursor`.
+
+    When Plaid reports that the data changed while paging, the whole update restarts
+    from `cursor`, up to `SYNC_ATTEMPTS` times (Plaid's documented rule).
+    """
+    for attempt in range(1, SYNC_ATTEMPTS + 1):
+        pages: list[SyncPage] = []
+        next_cursor = cursor
+        try:
+            while True:
+                page = plaid.sync_transactions(access_token, next_cursor)
+                pages.append(page)
+                next_cursor = page.next_cursor
+                if not page.has_more:
+                    return pages
+        except PlaidError as exc:
+            if exc.error_code != MUTATION_DURING_PAGINATION or attempt == SYNC_ATTEMPTS:
+                raise
+    raise AssertionError("unreachable")
+
+
+def _values(transaction: PlaidTransaction, account: BankAccount) -> dict[str, object]:
+    """A Plaid transaction in our terms: cents, money in positive, one currency code.
+
+    The only place a Plaid amount's sign is flipped (AGENTS.md).
+    """
+    currency = transaction.iso_currency_code or transaction.unofficial_currency_code
+    if currency is None:
+        raise _invalid("NO_CURRENCY")
+    cents = to_cents(transaction.amount)
+    assert cents is not None
+    counterparty = (
+        transaction.counterparties[0]
+        if transaction.counterparties
+        else transaction.merchant_name
+    )
+    return {
+        "business_id": account.business_id,
+        "account_id": account.id,
+        "amount_cents": -cents,
+        "currency": currency,
+        "date": transaction.date,
+        "pending": transaction.pending,
+        "description": transaction.name,
+        "counterparty": counterparty,
+        "category": transaction.category,
+        "category_detailed": transaction.category_detailed,
+    }
+
+
+def _apply(
+    session: Session, connection: BankConnection, pages: list[SyncPage]
+) -> SyncResult:
+    business_id = connection.business_id
+    accounts = {
+        a.plaid_account_id: a
+        for a in repository.connection_accounts(
+            session, business_id=business_id, connection_id=connection.id
+        )
+    }
+    new_accounts: list[BankAccount] = []
+    for page in pages:
+        for reported in page.accounts:
+            if reported.account_id not in accounts:
+                row = _account(
+                    reported, business_id=business_id, connection_id=connection.id
+                )
+                # The owner decides whether an account found later counts as cash.
+                row.included = False
+                accounts[reported.account_id] = row
+                new_accounts.append(row)
+    if new_accounts:
+        repository.insert_accounts(session, new_accounts)
+
+    added = modified = removed = 0
+    for page in pages:
+        changes = [*page.added, *page.modified]
+        existing = repository.transactions_by_plaid_id(
+            session,
+            business_id=business_id,
+            plaid_transaction_ids=[t.transaction_id for t in changes],
+        )
+        replaced: list[str] = []
+        for transaction in changes:
+            account = accounts.get(transaction.account_id)
+            if account is None:
+                raise _invalid("UNKNOWN_ACCOUNT")
+            values = _values(transaction, account)
+            stored = existing.get(transaction.transaction_id)
+            if stored is None:
+                stored = BankTransaction(
+                    plaid_transaction_id=transaction.transaction_id, **values
+                )
+                repository.insert_transaction(
+                    session, business_id=business_id, transaction=stored
+                )
+                existing[transaction.transaction_id] = stored
+                added += 1
+            elif any(getattr(stored, k) != v for k, v in values.items()):
+                for key, value in values.items():
+                    setattr(stored, key, value)
+                stored.updated_at = func.now()
+                modified += 1
+            # The posted version replaces its pending one, even when Plaid's removal
+            # of the pending ID comes in a later page or not at all.
+            pending_id = transaction.pending_transaction_id
+            if pending_id is not None and pending_id != transaction.transaction_id:
+                replaced.append(pending_id)
+        removed += repository.delete_transactions(
+            session,
+            business_id=business_id,
+            plaid_transaction_ids=[*page.removed, *replaced],
+        )
+
+    balances_changed = bool(new_accounts)
+    for reported in pages[-1].accounts:
+        row = accounts[reported.account_id]
+        balance = to_cents(reported.current)
+        available = to_cents(reported.available)
+        if (row.balance_cents, row.available_cents) != (balance, available):
+            row.balance_cents = balance
+            row.available_cents = available
+            row.updated_at = func.now()
+            balances_changed = True
+
+    connection.transactions_cursor = pages[-1].next_cursor
+    session.flush()
+    return SyncResult(
+        added=added,
+        modified=modified,
+        removed=removed,
+        balances_changed=balances_changed,
+    )
+
+
+def sync_connection(
+    session: Session,
+    plaid: PlaidClient,
+    *,
+    business_id: uuid.UUID,
+    connection_id: uuid.UUID,
+) -> SyncResult:
+    """Bring in every transaction and balance change since the connection's last sync.
+
+    Locks the connection for the whole sync, so two syncs of it run one after the other
+    and the second starts from the cursor the first stored. Every page is fetched first;
+    then the changes, the balances and the new cursor are stored in one transaction, and
+    on any failure nothing is. Publishes `transactions.synced` after the commit when
+    something changed. Commits the session.
+    Raises `ConnectionNotFoundError`, and `PlaidError` when Plaid fails.
+    """
+    try:
+        connection = repository.lock_connection(
+            session, business_id=business_id, connection_id=connection_id
+        )
+        if connection is None:
+            raise ConnectionNotFoundError
+        pages = _fetch_pages(
+            plaid,
+            decrypt_access_token(connection.access_token_ciphertext),
+            connection.transactions_cursor,
+        )
+        result = _apply(session, connection, pages)
+        session.commit()
+    except BaseException:
+        session.rollback()
+        raise
+    log.info(
+        "bank_sync.synced",
+        business_id=str(business_id),
+        connection_id=str(connection_id),
+        added=result.added,
+        modified=result.modified,
+        removed=result.removed,
+        balances_changed=result.balances_changed,
+    )
+    if result.changed:
+        events.publish(
+            events.Event(
+                name=TRANSACTIONS_SYNCED,
+                business_id=business_id,
+                payload={
+                    "connection_id": str(connection_id),
+                    "added": result.added,
+                    "modified": result.modified,
+                    "removed": result.removed,
+                    "balances_changed": result.balances_changed,
+                },
+            )
+        )
+    return result
+
+
+def sync_in_background(
+    plaid: PlaidClient, *, business_id: uuid.UUID, connection_id: uuid.UUID
+) -> None:
+    """`sync_connection` in a session of its own, for work that runs after a response.
+
+    A Plaid failure is logged as `bank_sync.sync_failed` rather than raised: the response
+    has gone, and the next webhook or the nightly sync (spec 15) tries again.
+    """
+    with get_sessionmaker()() as session:
+        try:
+            sync_connection(
+                session, plaid, business_id=business_id, connection_id=connection_id
+            )
+        except PlaidError as exc:
+            log.warning(
+                "bank_sync.sync_failed",
+                business_id=str(business_id),
+                connection_id=str(connection_id),
+                error_type=exc.error_type,
+                error_code=exc.error_code,
+                request_id=exc.request_id,
+            )
+
+
+def connection_for_item(
+    session: Session, *, plaid_item_id: str
+) -> tuple[uuid.UUID, uuid.UUID] | None:
+    """The `(business_id, connection_id)` of a Plaid item; None when it is not stored."""
+    connection = repository.connection_for_item(session, plaid_item_id=plaid_item_id)
+    return None if connection is None else (connection.business_id, connection.id)

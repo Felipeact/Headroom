@@ -1,10 +1,10 @@
 import uuid
 from collections.abc import Sequence
 
-from sqlalchemy import select
+from sqlalchemy import delete, select
 from sqlalchemy.orm import Session
 
-from app.modules.bank_sync.models import BankAccount, BankConnection
+from app.modules.bank_sync.models import BankAccount, BankConnection, BankTransaction
 
 
 def has_institution(
@@ -93,3 +93,81 @@ def lock_accounts(session: Session, *, business_id: uuid.UUID) -> list[BankAccou
             .with_for_update()
         )
     )
+
+
+def connection_for_item(
+    session: Session, *, plaid_item_id: str
+) -> BankConnection | None:
+    """The connection for a Plaid item, whatever its business.
+
+    The one lookup without a business: a Plaid webhook names only the item. Everything
+    after it is scoped to the business this returns.
+    """
+    return session.scalar(
+        select(BankConnection).where(BankConnection.plaid_item_id == plaid_item_id)
+    )
+
+
+def lock_connection(
+    session: Session, *, business_id: uuid.UUID, connection_id: uuid.UUID
+) -> BankConnection | None:
+    """The connection, locked until the transaction ends, so its syncs run one at a time."""
+    return session.scalar(
+        select(BankConnection)
+        .where(
+            BankConnection.business_id == business_id,
+            BankConnection.id == connection_id,
+        )
+        .with_for_update()
+    )
+
+
+def connection_accounts(
+    session: Session, *, business_id: uuid.UUID, connection_id: uuid.UUID
+) -> list[BankAccount]:
+    return list(
+        session.scalars(
+            select(BankAccount).where(
+                BankAccount.business_id == business_id,
+                BankAccount.connection_id == connection_id,
+            )
+        )
+    )
+
+
+def transactions_by_plaid_id(
+    session: Session, *, business_id: uuid.UUID, plaid_transaction_ids: Sequence[str]
+) -> dict[str, BankTransaction]:
+    if not plaid_transaction_ids:
+        return {}
+    rows = session.scalars(
+        select(BankTransaction).where(
+            BankTransaction.business_id == business_id,
+            BankTransaction.plaid_transaction_id.in_(plaid_transaction_ids),
+        )
+    )
+    return {row.plaid_transaction_id: row for row in rows}
+
+
+def insert_transaction(
+    session: Session, *, business_id: uuid.UUID, transaction: BankTransaction
+) -> None:
+    if transaction.business_id != business_id:
+        raise ValueError("transaction belongs to another business")
+    session.add(transaction)
+    session.flush()
+
+
+def delete_transactions(
+    session: Session, *, business_id: uuid.UUID, plaid_transaction_ids: Sequence[str]
+) -> int:
+    """Delete these transactions of the business; returns how many existed."""
+    if not plaid_transaction_ids:
+        return 0
+    result = session.execute(
+        delete(BankTransaction).where(
+            BankTransaction.business_id == business_id,
+            BankTransaction.plaid_transaction_id.in_(plaid_transaction_ids),
+        )
+    )
+    return int(result.rowcount)  # type: ignore[attr-defined]

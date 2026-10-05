@@ -33,6 +33,7 @@ from app.modules.bank_sync.plaid import (
     LinkTokenRequest,
     PlaidAccount,
     PlaidError,
+    SyncPage,
     get_plaid_client,
 )
 from app.modules.bank_sync.tokens import decrypt_access_token
@@ -156,6 +157,19 @@ class FakePlaid:
         self.removed.append(access_token)
         if "remove" in self.fail:
             raise self.fail["remove"]
+
+    def sync_transactions(self, access_token: str, cursor: str | None) -> SyncPage:
+        # Spec 14: every connect starts a sync. An empty update leaves spec 12's rows
+        # exactly as the connect stored them.
+        self._call("sync")
+        return SyncPage(
+            added=[],
+            modified=[],
+            removed=[],
+            accounts=[],
+            next_cursor="",
+            has_more=False,
+        )
 
 
 @pytest.fixture

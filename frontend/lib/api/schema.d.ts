@@ -109,6 +109,23 @@ export interface paths {
         patch: operations["update_account_v1_businesses__business_id__bank_accounts__account_id__patch"];
         trace?: never;
     };
+    "/v1/webhooks/plaid": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Plaid Webhook */
+        post: operations["plaid_webhook_v1_webhooks_plaid_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/healthz/live": {
         parameters: {
             query?: never;
@@ -358,6 +375,14 @@ export interface components {
             instance: string;
             /** Errors */
             errors: components["schemas"]["FieldError"][];
+        };
+        /** WebhookAck */
+        WebhookAck: {
+            /**
+             * Status
+             * @constant
+             */
+            status: "ok";
         };
     };
     responses: never;
@@ -861,6 +886,53 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["ValidationProblemDetails"];
+                };
+            };
+        };
+    };
+    plaid_webhook_v1_webhooks_plaid_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["WebhookAck"];
+                };
+            };
+            /** @description Unauthorized */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ProblemDetails"];
+                };
+            };
+            /** @description Unprocessable Entity */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ValidationProblemDetails"];
+                };
+            };
+            /** @description Bad Gateway */
+            502: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ProblemDetails"];
                 };
             };
         };

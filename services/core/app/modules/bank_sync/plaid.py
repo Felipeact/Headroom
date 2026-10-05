@@ -7,7 +7,7 @@ error type, code and request ID, never the response body.
 
 import json
 from dataclasses import dataclass, field
-from datetime import datetime
+from datetime import date, datetime
 from functools import lru_cache
 from typing import Any, Protocol
 
@@ -25,11 +25,20 @@ from plaid.model.link_token_create_request import LinkTokenCreateRequest
 from plaid.model.link_token_create_request_user import LinkTokenCreateRequestUser
 from plaid.model.link_token_transactions import LinkTokenTransactions
 from plaid.model.products import Products
+from plaid.model.transactions_sync_request import TransactionsSyncRequest
+from plaid.model.transactions_sync_request_options import (
+    TransactionsSyncRequestOptions,
+)
+from plaid.model.webhook_verification_key_get_request import (
+    WebhookVerificationKeyGetRequest,
+)
 
 from app.settings import get_settings
 
 TIMEOUT_SECONDS = 15
 INSTITUTION_COUNTRY_CODES = ("CA",)
+# Plaid's maximum page size for /transactions/sync.
+SYNC_PAGE_SIZE = 500
 
 
 class PlaidError(Exception):
@@ -56,6 +65,8 @@ class LinkTokenRequest:
     country_codes: tuple[str, ...]
     products: tuple[str, ...]
     days_requested: int
+    # Where Plaid sends this item's webhooks; None sends none (spec 14).
+    webhook: str | None = None
 
 
 @dataclass(frozen=True)
@@ -89,6 +100,34 @@ class ItemAccounts:
     accounts: list[PlaidAccount]
 
 
+@dataclass(frozen=True)
+class PlaidTransaction:
+    transaction_id: str
+    account_id: str
+    # As Plaid reports it: positive is money out.
+    amount: float
+    iso_currency_code: str | None
+    unofficial_currency_code: str | None
+    date: date
+    pending: bool
+    pending_transaction_id: str | None
+    name: str
+    merchant_name: str | None
+    counterparties: tuple[str, ...]
+    category: str | None
+    category_detailed: str | None
+
+
+@dataclass(frozen=True)
+class SyncPage:
+    added: list[PlaidTransaction]
+    modified: list[PlaidTransaction]
+    removed: list[str]
+    accounts: list[PlaidAccount]
+    next_cursor: str
+    has_more: bool
+
+
 class PlaidClient(Protocol):
     def create_link_token(self, request: LinkTokenRequest) -> LinkToken: ...
 
@@ -99,6 +138,10 @@ class PlaidClient(Protocol):
     def get_institution_name(self, institution_id: str) -> str: ...
 
     def remove_item(self, access_token: str) -> None: ...
+
+    def sync_transactions(self, access_token: str, cursor: str | None) -> SyncPage: ...
+
+    def get_webhook_verification_key(self, key_id: str) -> dict[str, Any]: ...
 
 
 def _error_from(exc: ApiException) -> PlaidError:
@@ -117,6 +160,39 @@ def _error_from(exc: ApiException) -> PlaidError:
 
 def _value(enum: Any) -> str | None:
     return None if enum is None else str(enum.value)
+
+
+def _account(a: Any) -> PlaidAccount:
+    return PlaidAccount(
+        account_id=a.account_id,
+        name=a.name,
+        type=str(_value(a.type)),
+        subtype=_value(a.get("subtype")),
+        mask=a.get("mask"),
+        current=a.balances.get("current"),
+        available=a.balances.get("available"),
+        iso_currency_code=a.balances.get("iso_currency_code"),
+        unofficial_currency_code=a.balances.get("unofficial_currency_code"),
+    )
+
+
+def _transaction(t: Any) -> PlaidTransaction:
+    category = t.get("personal_finance_category")
+    return PlaidTransaction(
+        transaction_id=t.transaction_id,
+        account_id=t.account_id,
+        amount=t.amount,
+        iso_currency_code=t.get("iso_currency_code"),
+        unofficial_currency_code=t.get("unofficial_currency_code"),
+        date=t.date,
+        pending=t.pending,
+        pending_transaction_id=t.get("pending_transaction_id"),
+        name=t.get("name") or "",
+        merchant_name=t.get("merchant_name"),
+        counterparties=tuple(c.name for c in t.get("counterparties") or ()),
+        category=None if category is None else category.get("primary"),
+        category_detailed=None if category is None else category.get("detailed"),
+    )
 
 
 class SdkPlaidClient:
@@ -148,6 +224,7 @@ class SdkPlaidClient:
                 transactions=LinkTokenTransactions(
                     days_requested=request.days_requested
                 ),
+                **({} if request.webhook is None else {"webhook": request.webhook}),
             ),
         )
         return LinkToken(link_token=response.link_token, expiration=response.expiration)
@@ -174,20 +251,7 @@ class SdkPlaidClient:
             )
         return ItemAccounts(
             institution_id=institution_id,
-            accounts=[
-                PlaidAccount(
-                    account_id=a.account_id,
-                    name=a.name,
-                    type=str(_value(a.type)),
-                    subtype=_value(a.get("subtype")),
-                    mask=a.get("mask"),
-                    current=a.balances.get("current"),
-                    available=a.balances.get("available"),
-                    iso_currency_code=a.balances.get("iso_currency_code"),
-                    unofficial_currency_code=a.balances.get("unofficial_currency_code"),
-                )
-                for a in response.accounts
-            ],
+            accounts=[_account(a) for a in response.accounts],
         )
 
     def get_institution_name(self, institution_id: str) -> str:
@@ -202,6 +266,35 @@ class SdkPlaidClient:
 
     def remove_item(self, access_token: str) -> None:
         self._call(self._api.item_remove, ItemRemoveRequest(access_token=access_token))
+
+    def sync_transactions(self, access_token: str, cursor: str | None) -> SyncPage:
+        response = self._call(
+            self._api.transactions_sync,
+            TransactionsSyncRequest(
+                access_token=access_token,
+                count=SYNC_PAGE_SIZE,
+                options=TransactionsSyncRequestOptions(
+                    include_personal_finance_category=True
+                ),
+                # No cursor means the item's full history.
+                **({} if cursor is None else {"cursor": cursor}),
+            ),
+        )
+        return SyncPage(
+            added=[_transaction(t) for t in response.added],
+            modified=[_transaction(t) for t in response.modified],
+            removed=[r.transaction_id for r in response.removed],
+            accounts=[_account(a) for a in response.accounts],
+            next_cursor=response.next_cursor,
+            has_more=response.has_more,
+        )
+
+    def get_webhook_verification_key(self, key_id: str) -> dict[str, Any]:
+        response = self._call(
+            self._api.webhook_verification_key_get,
+            WebhookVerificationKeyGetRequest(key_id=key_id),
+        )
+        return dict(response.key.to_dict())
 
 
 @lru_cache
