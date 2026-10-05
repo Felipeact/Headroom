@@ -9,7 +9,9 @@ DATABASE_SCHEME = "postgresql+psycopg://"
 
 
 class Settings(BaseSettings):
-    model_config = SettingsConfigDict(env_file=".env.local")
+    # hide_input_in_errors: a validation error reaches deploy logs (the pre-deploy
+    # migration's traceback), so it must name the field, never the value (spec 12).
+    model_config = SettingsConfigDict(env_file=".env.local", hide_input_in_errors=True)
 
     database_url: str
     sentry_dsn: str | None = None
@@ -56,7 +58,6 @@ class Settings(BaseSettings):
             try:
                 Fernet(key)
             except ValueError:
-                # No key text in the message: it would end up in logs.
                 raise ValueError(
                     "TOKEN_ENCRYPTION_KEYS holds a value that is not a Fernet key"
                 ) from None

@@ -150,3 +150,25 @@ def test_plaid_settings_env_accepted(env: str, plaid_env: pytest.MonkeyPatch) ->
     plaid_env.setenv("PLAID_ENV", env)
 
     assert Settings().plaid_env == env
+
+
+@pytest.mark.parametrize(
+    "raw",
+    ["AsmZleIiu7PlepCRAlp5jTGkfJLK0qK9vN5dlguQ=", "VALID,not-a-key"],
+    ids=["short_key", "valid_then_bad"],
+)
+def test_token_encryption_keys_error_hides_value(
+    raw: str, plaid_env: pytest.MonkeyPatch
+) -> None:
+    # The error reaches deploy logs (alembic's pre-deploy traceback), so it must never
+    # carry the value: a valid key listed before a bad one would leak with it.
+    value = raw.replace("VALID", Fernet.generate_key().decode())
+    plaid_env.setenv("TOKEN_ENCRYPTION_KEYS", value)
+
+    with pytest.raises(ValidationError) as excinfo:
+        Settings()
+
+    message = str(excinfo.value)
+    assert "token_encryption_keys" in message
+    for part in value.split(","):
+        assert part not in message
