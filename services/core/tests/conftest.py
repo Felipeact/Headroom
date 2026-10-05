@@ -24,6 +24,9 @@ TEST_PUBLIC_PEM = (
 )
 os.environ["CLERK_JWT_KEY"] = TEST_PUBLIC_PEM
 os.environ["CLERK_AUTHORIZED_PARTIES"] = ""
+# Empty means no webhook URL (spec 14): link tokens in tests never carry the URL a
+# developer keeps in .env.local, because process env beats the file.
+os.environ["PLAID_WEBHOOK_URL"] = ""
 # Unit tests use a fake Plaid client, so these only have to satisfy Settings. setdefault:
 # the `plaid_sandbox` proofs export the real sandbox keys first (proofs.sh), and keep them.
 os.environ.setdefault("PLAID_CLIENT_ID", "test-client-id")

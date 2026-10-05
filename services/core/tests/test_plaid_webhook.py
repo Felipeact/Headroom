@@ -17,7 +17,7 @@ from app.main import app
 from app.modules.bank_sync import webhooks
 from app.modules.bank_sync.models import BankConnection, BankTransaction
 from app.modules.bank_sync.plaid import PlaidError, get_plaid_client
-from app.settings import get_settings
+from app.settings import Settings, get_settings
 from tests import webhook_signing as signing
 from tests.test_bank_connect import link_path
 from tests.test_businesses import HARBOR, Caller, _owner
@@ -291,7 +291,9 @@ def test_link_token_webhook(
     url: str | None,
 ) -> None:
     if value is None:
+        # Truly unset: neither the process env nor a developer's .env.local holds it.
         monkeypatch.delenv("PLAID_WEBHOOK_URL", raising=False)
+        monkeypatch.setitem(Settings.model_config, "env_file", None)
     else:
         monkeypatch.setenv("PLAID_WEBHOOK_URL", value)
     get_settings.cache_clear()
