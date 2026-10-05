@@ -104,6 +104,24 @@ Seen once or not yet corroborated. Tracked, not trusted.
 - evidence: plan.md doors 7, 8 (frontend)
 - last seen: 2026-10-02T22:49:29Z
 
+### L-016 - Prove a screen's copy and order by rendering the real page or route component, never a tree the test assembles from parts.
+- signal: `gate_fail` · recurrence: 1 feature(s) · scope: `frontend/tests` · harmful: 0
+- features: 11-accounts-businesses-and-access
+- evidence: C26 frontend/tests/business-form.test.tsx (frontend/tests)
+- last seen: 2026-10-04T17:44:56Z
+
+### L-017 - When a mid-build settlement changes what an approved check claims, raise the check wording with the user at that moment instead of recording it only in Handoff.
+- signal: `spec_precision_gap` · recurrence: 1 feature(s) · scope: `checks` · harmful: 0
+- features: 11-accounts-businesses-and-access
+- evidence: C39 checks.md (checks)
+- last seen: 2026-10-04T17:44:56Z
+
+### L-018 - A check that says 'with X's values' must assert every field of the response shape, not a sample.
+- signal: `spec_precision_gap` · recurrence: 1 feature(s) · scope: `services/core/tests` · harmful: 0
+- features: 11-accounts-businesses-and-access
+- evidence: C14 services/core/tests/test_businesses.py (services/core/tests)
+- last seen: 2026-10-04T17:44:56Z
+
 ## Quarantined (failed when applied - ignore)
 
 A confirmed lesson that recurred alongside failure. Kept for the maintainer to review.

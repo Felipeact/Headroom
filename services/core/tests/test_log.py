@@ -29,12 +29,16 @@ SECRET_KEYS = [
     "Sentry_DSN",
     "Account_Number",
     "Private_Key_pem",
+    "body_bytes",
+    "json_body",
 ]
 
 TOKENS = [
     f"access-sandbox-{UUID}",
     f"access-development-{UUID}",
     f"access-production-{UUID}",
+    f"public-sandbox-{UUID}",
+    f"public-production-{UUID}",
     "Bearer abc.def-123",
 ]
 

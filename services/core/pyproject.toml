@@ -6,7 +6,9 @@ readme = "README.md"
 requires-python = ">=3.12"
 dependencies = [
     "alembic>=1.20.0",
+    "cryptography>=50.0.2",
     "fastapi[standard]>=0.142.2",
+    "plaid-python>=45.0.0",
     "psycopg[binary]>=3.3.6",
     "pydantic-settings>=2.15.0",
     "pyjwt[crypto]>=2.15.1",
@@ -29,5 +31,13 @@ extend-select = ["I"]
 strict = true
 plugins = ["pydantic.mypy"]
 
+[[tool.mypy.overrides]]
+# plaid-python ships no type information (no py.typed).
+module = ["plaid", "plaid.*"]
+ignore_missing_imports = true
+
 [tool.pytest.ini_options]
 pythonpath = ["."]
+# Tests that call the real Plaid sandbox run only through their proof script (spec 12).
+markers = ["plaid_sandbox: calls the real Plaid sandbox; needs the keys in .env.local"]
+addopts = "-m 'not plaid_sandbox'"

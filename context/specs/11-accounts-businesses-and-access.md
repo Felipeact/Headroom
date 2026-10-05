@@ -1,7 +1,7 @@
 # Spec 11: Businesses and access
 
 - **Milestone:** 2, foundations
-- **Status:** Not started
+- **Status:** Done
 - **Depends on:** 10
 
 ## Goal
@@ -22,6 +22,6 @@ Let a signed-in owner create their business, and keep every business's data sepa
 
 ## Done when
 
-- [ ] A new user can create a business in under 2 minutes.
-- [ ] Every business endpoint returns 404 for a business the user doesn't belong to (tested).
-- [ ] Choosing Quebec shows the "not available yet" message.
+- [x] A new user can create a business in under 2 minutes. (C34, Playwright `e2e/onboarding.spec.ts`)
+- [x] Every business endpoint returns 404 for a business the user doesn't belong to (tested). (C15, C20, C21, `tests/test_businesses.py`)
+- [x] Choosing Quebec shows the "not available yet" message. (C29, C36)

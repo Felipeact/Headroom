@@ -35,3 +35,62 @@ export async function testUser(): Promise<{ email: string; fullName: string }> {
     fullName: [user.first_name, user.last_name].filter(Boolean).join(' '),
   }
 }
+
+const CLERK_API = 'https://api.clerk.com/v1'
+const ONBOARDING_PREFIX = 'e2e-onboarding-'
+
+function clerkSecret(): string {
+  const secret = process.env.CLERK_SECRET_KEY
+  if (!secret) throw new Error('Set CLERK_SECRET_KEY in .env.local')
+  return secret
+}
+
+async function clerkApi(path: string, init: RequestInit = {}): Promise<unknown> {
+  const response = await fetch(`${CLERK_API}${path}`, {
+    ...init,
+    headers: {
+      Authorization: `Bearer ${clerkSecret()}`,
+      'Content-Type': 'application/json',
+      ...init.headers,
+    },
+  })
+  if (!response.ok) throw new Error(`Clerk ${init.method ?? 'GET'} ${path}: ${response.status}`)
+  return response.json()
+}
+
+/**
+ * A Clerk user created for one test on the development instance, so it has no business
+ * (spec 11). Delete it with `deleteUser` when the test ends; `deleteStaleOnboardingUsers`
+ * removes any a crashed run left behind.
+ */
+export async function createOnboardingUser(): Promise<{ id: string; email: string }> {
+  const suffix = `${Date.now()}-${Math.random().toString(36).slice(2, 8)}`
+  const email = `${ONBOARDING_PREFIX}${suffix}+clerk_test@example.com`
+  const user = (await clerkApi('/users', {
+    method: 'POST',
+    body: JSON.stringify({
+      username: `${ONBOARDING_PREFIX}${suffix}`,
+      email_address: [email],
+      skip_password_requirement: true,
+      skip_legal_checks: true,
+    }),
+  })) as { id: string }
+  return { id: user.id, email }
+}
+
+export async function deleteUser(id: string): Promise<void> {
+  await clerkApi(`/users/${id}`, { method: 'DELETE' })
+}
+
+/** Deletes onboarding users older than an hour, left behind by a run that crashed. */
+export async function deleteStaleOnboardingUsers(): Promise<void> {
+  const users = (await clerkApi(
+    `/users?query=${encodeURIComponent(ONBOARDING_PREFIX)}&limit=100`,
+  )) as { id: string; username: string | null; created_at: number }[]
+  const hourAgo = Date.now() - 60 * 60 * 1000
+  for (const user of users) {
+    if (user.username?.startsWith(ONBOARDING_PREFIX) && user.created_at < hourAgo) {
+      await deleteUser(user.id)
+    }
+  }
+}

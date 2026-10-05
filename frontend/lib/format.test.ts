@@ -21,6 +21,12 @@ describe('formatMoney', () => {
     expect(formatMoney(320049)).toBe('$3,200')
   })
 
+  test('spec 13 C48 other currencies', () => {
+    expect(formatMoney(120000, 'USD')).toBe('US$1,200')
+    expect(formatMoney(320000)).toBe('$3,200')
+    expect(formatMoney(320000, 'CAD')).toBe('$3,200')
+  })
+
   test('C30 zero has no sign', () => {
     expect(formatMoney(-49)).toBe('$0')
     expect(formatMoney(49)).toBe('$0')

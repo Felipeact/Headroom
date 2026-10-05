@@ -12,6 +12,7 @@ from app.auth import current_user
 from app.db import get_engine
 from app.log import configure_logging
 from app.modules.accounts.api import router as accounts_router
+from app.modules.bank_sync.api import router as bank_sync_router
 from app.monitoring import init_sentry
 from app.problems import ProblemDetails, install_problem_handlers
 from app.settings import get_settings
@@ -48,6 +49,7 @@ v1 = APIRouter(
     responses={status.HTTP_401_UNAUTHORIZED: {"model": ProblemDetails}},
 )
 v1.include_router(accounts_router)
+v1.include_router(bank_sync_router)
 app.include_router(v1)
 
 

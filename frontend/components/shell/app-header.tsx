@@ -6,7 +6,8 @@ import { NavLinks } from "./nav-links"
 import { SignOutButton } from "./sign-out-button"
 
 // The header from design/mockups/dashboard-desktop.dc.html and dashboard-phone.dc.html.
-// businessName arrives with spec 11; until then the wordmark stands in for it on phones.
+// businessName is the user's first business (spec 11); the wordmark stands in for it on phones
+// only while it is missing.
 // userName is the signed-in person (spec 10); the mockups have no slot for it, so it sits
 // after the nav on desktop and at the bottom of the phone menu.
 export function AppHeader({ businessName, userName }: { businessName?: string; userName?: string }) {
@@ -27,13 +28,14 @@ export function AppHeader({ businessName, userName }: { businessName?: string; u
             />
             <div className="flex flex-col gap-0.5">
               <span className="text-xs text-ink-3">{t("businessLabel")}</span>
-              <span className="text-[15px] font-semibold">{businessName}</span>
+              <span data-user-content className="text-[15px] font-semibold">{businessName}</span>
             </div>
           </>
         )}
       </div>
       <span
         data-testid="header-phone-identity"
+        data-user-content={businessName ? true : undefined}
         className="font-heading text-xl font-semibold tracking-[-0.01em] lg:hidden"
       >
         {businessName ?? t("wordmark")}

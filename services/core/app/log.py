@@ -20,10 +20,12 @@ SECRET_KEY_FRAGMENTS = (
     "dsn",
     "account_number",
     "private_key",
+    # Raw request bodies (Sentry frame locals such as `body_bytes`): spec 12 door 8.
+    "body",
 )
 
 TOKEN_PATTERN = re.compile(
-    r"access-(?:sandbox|development|production)-"
+    r"(?:access|public)-(?:sandbox|development|production)-"
     r"[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}"
     r"|Bearer\s+[^\s\"',;]+",
     re.IGNORECASE,

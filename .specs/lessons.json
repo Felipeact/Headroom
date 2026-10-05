@@ -3,7 +3,7 @@
   "promote_threshold": 2,
   "window_days": 45,
   "quarantine_threshold": 2,
-  "next_id": 16,
+  "next_id": 19,
   "lessons": [
     {
       "id": "L-001",
@@ -274,6 +274,60 @@
       ],
       "created": "2026-10-02T22:49:29Z",
       "last_seen": "2026-10-02T22:49:29Z"
+    },
+    {
+      "id": "L-016",
+      "key": "gate_fail::prove a screen s copy and order by rendering the real page or route component never a tree the test assembles from parts",
+      "text": "Prove a screen's copy and order by rendering the real page or route component, never a tree the test assembles from parts.",
+      "signal": "gate_fail",
+      "scope": "frontend/tests",
+      "status": "candidate",
+      "features": [
+        "11-accounts-businesses-and-access"
+      ],
+      "recurrence": 1,
+      "harmful": 0,
+      "evidence": [
+        "C26 frontend/tests/business-form.test.tsx (frontend/tests)"
+      ],
+      "created": "2026-10-04T17:44:56Z",
+      "last_seen": "2026-10-04T17:44:56Z"
+    },
+    {
+      "id": "L-017",
+      "key": "spec_precision_gap::when a mid build settlement changes what an approved check claims raise the check wording with the user at that moment instead of recording it only in handoff",
+      "text": "When a mid-build settlement changes what an approved check claims, raise the check wording with the user at that moment instead of recording it only in Handoff.",
+      "signal": "spec_precision_gap",
+      "scope": "checks",
+      "status": "candidate",
+      "features": [
+        "11-accounts-businesses-and-access"
+      ],
+      "recurrence": 1,
+      "harmful": 0,
+      "evidence": [
+        "C39 checks.md (checks)"
+      ],
+      "created": "2026-10-04T17:44:56Z",
+      "last_seen": "2026-10-04T17:44:56Z"
+    },
+    {
+      "id": "L-018",
+      "key": "spec_precision_gap::a check that says with x s values must assert every field of the response shape not a sample",
+      "text": "A check that says 'with X's values' must assert every field of the response shape, not a sample.",
+      "signal": "spec_precision_gap",
+      "scope": "services/core/tests",
+      "status": "candidate",
+      "features": [
+        "11-accounts-businesses-and-access"
+      ],
+      "recurrence": 1,
+      "harmful": 0,
+      "evidence": [
+        "C14 services/core/tests/test_businesses.py (services/core/tests)"
+      ],
+      "created": "2026-10-04T17:44:56Z",
+      "last_seen": "2026-10-04T17:44:56Z"
     }
   ]
 }

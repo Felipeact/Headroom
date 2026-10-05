@@ -4,7 +4,8 @@ const LOCALE = 'en-CA'
 const MINUS_SIGN = '−'
 const ISO_DATE = /^(\d{4})-(\d{2})-(\d{2})$/
 
-type Currency = 'CAD'
+// An ISO 4217 code. Cash is CAD only, but a bank can hold other currencies (spec 13).
+type Currency = string
 
 function wholeDollars(amountCents: number, currency: Currency, signDisplay: 'auto' | 'exceptZero') {
   if (!Number.isSafeInteger(amountCents)) {
