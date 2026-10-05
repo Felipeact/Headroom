@@ -58,12 +58,14 @@
 
 ## Handoff
 
-**Feature**: 13-bank-cash-accounts
-**Where**: C1-C53 all green; independent Verifier PASS 53/53 at round 1 over `ed7529b..84a16bf` (profile light), gate exit 0; spec Done. Not pushed
+**Feature**: 14-bank-transaction-sync
+**Where**: built at `ae4c0e2` (C1-C38, C41-C47 green: API 334, web 185, `proofs.sh c46`, `c47`). Verifier round 1 over `cb8a360..3c686ba` (profile light): FAIL only because C39-C40 (real Plaid sandbox) could not run - this machine's `services/core/.env.local` has no Plaid keys; 45/47 proven. C33's test now also sends the JSON string `"not json"` (verifier gap 2). Spec stays In progress. Not pushed
 **In progress**: none
-**Next step**: run the-judge on spec 13 (AGENTS.md), preferably in a fresh session. Spec 14 (transaction sync) is unblocked. Before pushing `development`, staging still needs the spec 12 `api` Railway variables (`PLAID_CLIENT_ID`, `PLAID_SECRET`, `PLAID_ENV=sandbox`, `TOKEN_ENCRYPTION_KEYS`); migration `d546cee847e0` runs on deploy and backfills existing `bank_accounts`
-**Blockers**: none for v1 work. Go-live: Plaid OAuth institutions (spec 12 open question 1)
+**Next step**: add `PLAID_CLIENT_ID`, `PLAID_SECRET` (sandbox) and `TOKEN_ENCRYPTION_KEYS` to `services/core/.env.local`, run `bash .specs/features/14-bank-transaction-sync/proofs.sh c39`, then a scoped Verifier round 2 (C39, C40, C33). Open with the user: verifier gap 4 - `sync_in_background` catches only `PlaidError`, so a database error in a background sync reaches uvicorn's log with its message (values included)
+**Blockers**: Plaid sandbox keys on this machine (C39, C40)
 **Uncommitted**: none
+**Also done**: 14 notes - local Postgres is the portable 17.11 from an earlier session's scratchpad (`.../34eb90c2-.../scratchpad/pgsql`, `pg_ctl -D pgdata -o "-p 5432" start`); no Docker on this machine. Frontend deps needed `npm ci` (with an empty `npm_config_userconfig`). `PLAID_WEBHOOK_URL` is set on staging `api` (user, 2026-10-05)
+**Also done**: 13-bank-cash-accounts - Verifier PASS 53/53 at round 1 over `ed7529b..84a16bf`
 **Also done**: 13 notes - the second sandbox bank is RBC Royal Bank (`ins_39`); `proofs.sh c31` runs the two-bank sandbox proof. The segmented control (shadcn `ToggleGroup`) is a Radix `radiogroup` with `aria-checked`, not the mockup's `aria-pressed` buttons (open with the user). The primary-account `RadioGroup` wraps the cards with `tabIndex={-1}` so it is not a tab stop. Flakes seen outside this change: spec 12 `test_connect_logged` (random `0001` in a timestamp or UUID), spec 10 `auth.spec.ts` C26 axe contrast on `/sign-up` while Clerk renders, and the Plaid sandbox e2e tests under a long parallel Playwright run; each passed when run again or alone
 **Also done**: 12-bank-connect - Verifier PASS 46/46 at round 2 over `1d3e771..afaecb7`
 **Also done**: 12 notes - sandbox keys live in `services/core/.env.local`; `proofs.sh c21` runs the real-sandbox test (marker `plaid_sandbox`, deselected by default). Plaid Link sandbox path for Playwright: Continue without phone number, search, TD Canada Trust (`ins_42`), `user_good` / `pass_good`, Continue, Finish without saving. Redaction now covers public tokens and any key containing `body` (doors 7, 8). Sentry still captures other frame locals by default (open with the user). Plaid warned "link-initialize.js embedded more than once" in dev; check in a production build

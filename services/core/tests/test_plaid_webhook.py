@@ -212,6 +212,9 @@ def test_malformed_body(fake: SyncFake, connected: Connected) -> None:
                 "item_id": 123,
             }
         ).encode(),
+        # C33 (d): the JSON string "not json" - valid JSON, not an object.
+        b'"not json"',
+        # And bytes that are not JSON at all.
         b'"not json',
     ]
     for content in bodies:
