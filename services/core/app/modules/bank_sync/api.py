@@ -1,10 +1,17 @@
 import uuid
 from datetime import datetime
-from typing import Annotated
+from typing import Annotated, Literal
 
 import structlog
 from fastapi import APIRouter, Depends, HTTPException, status
-from pydantic import BaseModel, ConfigDict, Field, SecretStr
+from pydantic import (
+    BaseModel,
+    ConfigDict,
+    Field,
+    SecretStr,
+    StrictBool,
+    model_validator,
+)
 from sqlalchemy.orm import Session
 
 from app.auth import Member, require_member
@@ -18,6 +25,14 @@ from app.problems import ProblemDetails, ValidationProblemDetails
 PROVIDER_UNAVAILABLE = "We couldn't reach our bank connection provider. Try again."
 CONNECT_FAILED = "We couldn't finish connecting your bank. Try again."
 ALREADY_CONNECTED = "This bank is already connected."
+ACCOUNT_NOT_FOUND = "Account not found."
+ACCOUNT_CONFLICTS: dict[service.AccountConflict, str] = {
+    "credit": "Credit cards and lines of credit can't count as cash.",
+    "other": "This type of account can't count as cash.",
+    "currency": "Only Canadian dollar accounts can count as cash for now.",
+    "primary_not_included": "Only an account that counts as cash can be primary.",
+    "exclude_primary": "Choose another primary account first.",
+}
 
 log = structlog.get_logger(__name__)
 
@@ -54,6 +69,9 @@ class Account(BaseModel):
     mask: str | None
     currency: str
     balance_cents: int | None
+    available_cents: int | None
+    included: bool
+    primary: bool
 
 
 class Connection(BaseModel):
@@ -61,6 +79,25 @@ class Connection(BaseModel):
     institution_name: str
     created_at: datetime
     accounts: list[Account]
+
+
+class ConnectionList(BaseModel):
+    items: list[Connection]
+
+
+class AccountUpdate(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+
+    # Strict: "yes" or 1 is a malformed body, not a choice.
+    included: StrictBool | None = None
+    # Only true: a business never chooses to have no primary account.
+    primary: Literal[True] | None = None
+
+    @model_validator(mode="after")
+    def _not_empty(self) -> "AccountUpdate":
+        if self.included is None and self.primary is None:
+            raise ValueError("Send included, primary, or both.")
+        return self
 
 
 def _plaid_failed(exc: PlaidError, *, business_id: uuid.UUID) -> None:
@@ -124,3 +161,46 @@ def create_connection(
             ) from None
         raise _unavailable() from None
     return Connection.model_validate(connection, from_attributes=True)
+
+
+@router.get(
+    "/businesses/{business_id}/bank/connections",
+    response_model=ConnectionList,
+    responses={
+        k: v for k, v in OWNER_ERRORS.items() if k != status.HTTP_502_BAD_GATEWAY
+    },
+)
+def list_connections(member: OwnerDep, session: SessionDep) -> ConnectionList:
+    connections = service.list_connections(session, business_id=member.business_id)
+    return ConnectionList.model_validate({"items": connections}, from_attributes=True)
+
+
+@router.patch(
+    "/businesses/{business_id}/bank/accounts/{account_id}",
+    response_model=Account,
+    responses={
+        **{k: v for k, v in OWNER_ERRORS.items() if k != status.HTTP_502_BAD_GATEWAY},
+        status.HTTP_409_CONFLICT: {"model": ProblemDetails},
+    },
+)
+def update_account(
+    account_id: uuid.UUID, body: AccountUpdate, member: OwnerDep, session: SessionDep
+) -> Account:
+    try:
+        account = service.update_account(
+            session,
+            business_id=member.business_id,
+            account_id=account_id,
+            user_id=member.user_id,
+            included=body.included,
+            primary=body.primary is True,
+        )
+    except service.AccountNotFoundError:
+        raise HTTPException(
+            status.HTTP_404_NOT_FOUND, detail=ACCOUNT_NOT_FOUND
+        ) from None
+    except service.AccountRuleError as exc:
+        raise HTTPException(
+            status.HTTP_409_CONFLICT, detail=ACCOUNT_CONFLICTS[exc.reason]
+        ) from None
+    return Account.model_validate(account, from_attributes=True)

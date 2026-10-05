@@ -4,13 +4,17 @@ from typing import Literal, get_args
 
 from sqlalchemy import (
     BigInteger,
+    Boolean,
     CheckConstraint,
     DateTime,
     ForeignKey,
+    Index,
     Text,
     UniqueConstraint,
     Uuid,
+    false,
     func,
+    text,
 )
 from sqlalchemy.orm import Mapped, mapped_column
 
@@ -18,6 +22,9 @@ from app.db import Base
 
 AccountType = Literal["checking", "savings", "credit_card", "line_of_credit", "other"]
 ACCOUNT_TYPES: tuple[str, ...] = get_args(AccountType)
+# Only these can count as cash (AGENTS.md); credit never does, and CAD only for now.
+CASH_TYPES = ("checking", "savings")
+CASH_CURRENCY = "CAD"
 
 
 class BankConnection(Base):
@@ -58,6 +65,18 @@ class BankAccount(Base):
         CheckConstraint(
             f"type IN ({', '.join(repr(t) for t in ACCOUNT_TYPES)})", name="type"
         ),
+        CheckConstraint(
+            f"NOT included OR (type IN ({', '.join(repr(t) for t in CASH_TYPES)})"
+            f" AND currency = '{CASH_CURRENCY}')",
+            name="included_cash",
+        ),
+        CheckConstraint("NOT is_primary OR included", name="primary_included"),
+        Index(
+            "uq_bank_accounts_primary_business_id",
+            "business_id",
+            unique=True,
+            postgresql_where=text("is_primary"),
+        ),
     )
 
     id: Mapped[uuid.UUID] = mapped_column(Uuid, primary_key=True, default=uuid.uuid4)
@@ -70,6 +89,13 @@ class BankAccount(Base):
     currency: Mapped[str] = mapped_column(Text)
     # As the bank reports it: for a credit card or line of credit, the amount owed.
     balance_cents: Mapped[int | None] = mapped_column(BigInteger)
+    available_cents: Mapped[int | None] = mapped_column(BigInteger)
+    # The owner counts this account as cash; see `ck_bank_accounts_included_cash`.
+    included: Mapped[bool] = mapped_column(Boolean, default=False)
+    # At most one per business, always an included account (spec 13).
+    is_primary: Mapped[bool] = mapped_column(
+        Boolean, default=False, server_default=false()
+    )
     created_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True), server_default=func.now()
     )

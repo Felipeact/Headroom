@@ -81,7 +81,8 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        get?: never;
+        /** List Connections */
+        get: operations["list_connections_v1_businesses__business_id__bank_connections_get"];
         put?: never;
         /** Create Connection */
         post: operations["create_connection_v1_businesses__business_id__bank_connections_post"];
@@ -89,6 +90,23 @@ export interface paths {
         options?: never;
         head?: never;
         patch?: never;
+        trace?: never;
+    };
+    "/v1/businesses/{business_id}/bank/accounts/{account_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        /** Update Account */
+        patch: operations["update_account_v1_businesses__business_id__bank_accounts__account_id__patch"];
         trace?: never;
     };
     "/healthz/live": {
@@ -149,6 +167,19 @@ export interface components {
             currency: string;
             /** Balance Cents */
             balance_cents: number | null;
+            /** Available Cents */
+            available_cents: number | null;
+            /** Included */
+            included: boolean;
+            /** Primary */
+            primary: boolean;
+        };
+        /** AccountUpdate */
+        AccountUpdate: {
+            /** Included */
+            included?: boolean | null;
+            /** Primary */
+            primary?: true | null;
         };
         /** Business */
         Business: {
@@ -233,6 +264,11 @@ export interface components {
              * Format: password
              */
             public_token: string;
+        };
+        /** ConnectionList */
+        ConnectionList: {
+            /** Items */
+            items: components["schemas"]["Connection"][];
         };
         /** FieldError */
         FieldError: {
@@ -610,6 +646,64 @@ export interface operations {
             };
         };
     };
+    list_connections_v1_businesses__business_id__bank_connections_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                business_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ConnectionList"];
+                };
+            };
+            /** @description Unauthorized */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ProblemDetails"];
+                };
+            };
+            /** @description Forbidden */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ProblemDetails"];
+                };
+            };
+            /** @description Not Found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ProblemDetails"];
+                };
+            };
+            /** @description Unprocessable Entity */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ValidationProblemDetails"];
+                };
+            };
+        };
+    };
     create_connection_v1_businesses__business_id__bank_connections_post: {
         parameters: {
             query?: never;
@@ -695,6 +789,78 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["ProblemDetails"];
+                };
+            };
+        };
+    };
+    update_account_v1_businesses__business_id__bank_accounts__account_id__patch: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                account_id: string;
+                business_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["AccountUpdate"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Account"];
+                };
+            };
+            /** @description Unauthorized */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ProblemDetails"];
+                };
+            };
+            /** @description Forbidden */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ProblemDetails"];
+                };
+            };
+            /** @description Not Found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ProblemDetails"];
+                };
+            };
+            /** @description Conflict */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ProblemDetails"];
+                };
+            };
+            /** @description Unprocessable Entity */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ValidationProblemDetails"];
                 };
             };
         };

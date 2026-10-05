@@ -80,6 +80,7 @@ class PlaidAccount:
     current: float | None
     iso_currency_code: str | None
     unofficial_currency_code: str | None
+    available: float | None = None
 
 
 @dataclass(frozen=True)
@@ -181,6 +182,7 @@ class SdkPlaidClient:
                     subtype=_value(a.get("subtype")),
                     mask=a.get("mask"),
                     current=a.balances.get("current"),
+                    available=a.balances.get("available"),
                     iso_currency_code=a.balances.get("iso_currency_code"),
                     unofficial_currency_code=a.balances.get("unofficial_currency_code"),
                 )

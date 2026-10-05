@@ -140,3 +140,15 @@ def test_errors_mapped(raised: Exception, expected: tuple[Any, ...]) -> None:
     # `from None`: the SDK exception, with its body and headers, is not chained.
     assert error.__cause__ is None
     assert error.__suppress_context__ is True
+
+
+@pytest.mark.parametrize("available", [150.25, None])
+def test_available_balance(available: float | None) -> None:
+    api = sdk()
+    api.accounts_get.return_value.accounts[0].balances = Model(
+        current=12.5, available=available, iso_currency_code="CAD"
+    )
+
+    accounts = SdkPlaidClient(api).get_accounts("access-sandbox-1")
+
+    assert accounts.accounts[0].available == available

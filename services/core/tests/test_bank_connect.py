@@ -56,7 +56,18 @@ INSTITUTION_NAME = "TD Canada Trust"
 LINK_EXPIRATION = datetime(2026, 10, 4, 16, 0, tzinfo=UTC)
 PROVIDER_UNAVAILABLE = "We couldn't reach our bank connection provider. Try again."
 CONNECTION_KEYS = {"id", "institution_name", "created_at", "accounts"}
-ACCOUNT_KEYS = {"id", "name", "type", "mask", "currency", "balance_cents"}
+# Spec 13 added available_cents, included and primary (AD-044).
+ACCOUNT_KEYS = {
+    "id",
+    "name",
+    "type",
+    "mask",
+    "currency",
+    "balance_cents",
+    "available_cents",
+    "included",
+    "primary",
+}
 
 
 def plaid_account(
