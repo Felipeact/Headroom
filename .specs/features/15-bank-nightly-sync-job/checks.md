@@ -262,3 +262,11 @@ Proof: `bash .specs/features/15-bank-nightly-sync-job/proofs.sh c33`
 - Total: 161 KB / 4 = ~40k tokens, under the 150k budget - one builder
 
 - **Settled mid-build:** C3 and C4's Vancouver claims were wrong. tzdata 2026.4 keeps British Columbia on UTC−7 from 2026-11-01, so Vancouver changes no clocks in either window. The user chose (2026-10-05) to keep Vancouver at 02:00 local every night, with St. John's covering both transitions. Only those expected values changed
+- **Boundary:** C1-C30, C32, C33 closed at `ec66cf0`. Proofs green there: the API suite (365 passed), `proofs.sh c29`, `c30`, `c33`. C31 passed after the first scheduled staging run (2026-10-05T22:00:50Z, `due` 0, because every staging connection was created that day). Its proof now reads `railway logs --json`, since Railway shows JSON lines as `key=value`
+- **Settled mid-build (builder decisions, none asked):**
+  - The job module is `app/jobs/nightly.py`, because a submodule named `nightly_bank_sync` was shadowed by the function `app/jobs/__init__.py` imports.
+  - The success outcome is written inside the sync's savepoint, so C13's same-`xmin` proof holds. Postgres gives a savepoint's writes its own transaction ID. This is still door 4: everything happens under the lock, with one commit.
+  - Spec 14's migration test now targets its own revision `de44856f468e`, and its repository scope test also allows `nightly_candidates` (AC 8). No other assertion changed.
+  - The user approved the push (2026-10-05). Railway skipped `api` for the push, because the head commit touched only `.railway/`, so `api` was redeployed from source; migrations `de44856f468e` and `c183e89c1a74` ran on staging.
+  - `railway config apply` first planned to delete `api`'s hand-set Plaid and token-key variables, so they are now `preserve()`. A second apply was needed to set `jobs`' `checkSuites`.
+- **Abandoned:** none

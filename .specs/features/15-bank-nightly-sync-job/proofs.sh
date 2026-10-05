@@ -68,9 +68,18 @@ c31() {
   status="$(railway deployment list --service jobs --environment "$ENV" --limit 20 --json \
     | json "print(d[0]['status'])")"
   case "$status" in FAILED|CRASHED) fail c31 "newest jobs deployment is $status" ;; esac
-  logs="$(railway logs "$id" --service jobs --environment "$ENV" --deployment --lines 500)"
-  grep -q '"event": "jobs.run_finished"' <<<"$logs" || fail c31 "no jobs.run_finished line"
-  if grep -q 'jobs.run_failed' <<<"$logs"; then fail c31 "a jobs.run_failed line"; fi
+  # --json: Railway parses JSON log lines and shows them as key=value otherwise.
+  railway logs "$id" --service jobs --environment "$ENV" --deployment --lines 500 --json     | python3 -c "
+import json, sys
+events = []
+for line in sys.stdin:
+    try:
+        events.append(json.loads(line).get('event'))
+    except ValueError:
+        pass
+assert 'jobs.run_finished' in events, 'no jobs.run_finished line'
+assert 'jobs.run_failed' not in events, 'a jobs.run_failed line'
+" || fail c31 "the jobs log does not show a finished run"
   pass c31
 }
 
