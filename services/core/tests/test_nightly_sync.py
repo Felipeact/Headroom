@@ -49,6 +49,7 @@ ALL_ZONES = (
     "America/Whitehorse",
 )
 JOB = "nightly_bank_sync"
+CREATED_AT = datetime(2026, 10, 5, 12, tzinfo=ZoneInfo("UTC"))
 APP = Path(__file__).resolve().parents[1] / "app"
 
 
@@ -142,8 +143,9 @@ def new_connection(
             session,
             [service._account(account, business_id=bid, connection_id=connection.id)],
         )
-        if created_at is not None:
-            connection.created_at = created_at
+        # A fixed date before every simulated night, never the real `now()`: the tests'
+        # clocks are fixed dates, and a connection is not due on the night it was made.
+        connection.created_at = created_at or CREATED_AT
         connection.nightly_synced_on = synced_on
         session.commit()
         return Conn(bid, connection.id, token, account, time_zone)
