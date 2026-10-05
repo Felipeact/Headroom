@@ -122,6 +122,18 @@ Seen once or not yet corroborated. Tracked, not trusted.
 - evidence: C14 services/core/tests/test_businesses.py (services/core/tests)
 - last seen: 2026-10-04T17:44:56Z
 
+### L-019 - When a check lists literal inputs, copy each literal into the test byte for byte; a near-miss (invalid JSON for a JSON string) tests a different case.
+- signal: `spec_precision_gap` · recurrence: 1 feature(s) · scope: `api/tests` · harmful: 0
+- features: 14-bank-transaction-sync
+- evidence: C33 - services/core/tests/test_plaid_webhook.py:216 (api/tests)
+- last seen: 2026-10-05T19:49:03Z
+
+### L-020 - An optional setting a developer may keep in .env.local must be pinned in tests/conftest.py, and an 'unset' test must also disable the env file, or the local value leaks in.
+- signal: `gate_fail` · recurrence: 1 feature(s) · scope: `api/tests` · harmful: 0
+- features: 14-bank-transaction-sync
+- evidence: C38 - services/core/tests/conftest.py:29 (api/tests)
+- last seen: 2026-10-05T19:49:03Z
+
 ## Quarantined (failed when applied - ignore)
 
 A confirmed lesson that recurred alongside failure. Kept for the maintainer to review.

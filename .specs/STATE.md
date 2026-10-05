@@ -59,10 +59,10 @@
 ## Handoff
 
 **Feature**: 14-bank-transaction-sync
-**Where**: built at `ae4c0e2` (C1-C38, C41-C47 green: API 334, web 185, `proofs.sh c46`, `c47`). Verifier round 1 over `cb8a360..3c686ba` (profile light): FAIL only because C39-C40 (real Plaid sandbox) could not run - this machine's `services/core/.env.local` has no Plaid keys; 45/47 proven. C33's test now also sends the JSON string `"not json"` (verifier gap 2). Spec stays In progress. Not pushed
+**Where**: C1-C47 all green; independent Verifier PASS 47/47 at round 2 over `cb8a360..d7b56f9` (profile light), gate exit 0; spec Done. Not pushed
 **In progress**: none
-**Next step**: add `PLAID_CLIENT_ID`, `PLAID_SECRET` (sandbox) and `TOKEN_ENCRYPTION_KEYS` to `services/core/.env.local`, run `bash .specs/features/14-bank-transaction-sync/proofs.sh c39`, then a scoped Verifier round 2 (C39, C40, C33). Open with the user: verifier gap 4 - `sync_in_background` catches only `PlaidError`, so a database error in a background sync reaches uvicorn's log with its message (values included)
-**Blockers**: Plaid sandbox keys on this machine (C39, C40)
+**Next step**: run the-judge on spec 14 (AGENTS.md), preferably in a fresh session. Unblocked now: spec 15 (nightly sync job, also needs 05), 16 (labels), 18 (sample data). Open with the user: `sync_in_background` catches only `PlaidError`, so a database error in a background sync reaches uvicorn's log with its message (verifier note); C43 checks source text, not the query filter (verifier precision gap). Before pushing `development`: migration `de44856f468e` runs on deploy; `PLAID_WEBHOOK_URL` is set on staging `api`
+**Blockers**: none for v1 work. Go-live: Plaid OAuth institutions (spec 12 open question 1)
 **Uncommitted**: none
 **Also done**: 14 notes - local Postgres is the portable 17.11 from an earlier session's scratchpad (`.../34eb90c2-.../scratchpad/pgsql`, `pg_ctl -D pgdata -o "-p 5432" start`); no Docker on this machine. Frontend deps needed `npm ci` (with an empty `npm_config_userconfig`). `PLAID_WEBHOOK_URL` is set on staging `api` (user, 2026-10-05)
 **Also done**: 13-bank-cash-accounts - Verifier PASS 53/53 at round 1 over `ed7529b..84a16bf`

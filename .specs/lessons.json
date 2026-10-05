@@ -3,7 +3,7 @@
   "promote_threshold": 2,
   "window_days": 45,
   "quarantine_threshold": 2,
-  "next_id": 19,
+  "next_id": 21,
   "lessons": [
     {
       "id": "L-001",
@@ -328,6 +328,42 @@
       ],
       "created": "2026-10-04T17:44:56Z",
       "last_seen": "2026-10-04T17:44:56Z"
+    },
+    {
+      "id": "L-019",
+      "key": "spec_precision_gap::when a check lists literal inputs copy each literal into the test byte for byte a near miss invalid json for a json string tests a different case",
+      "text": "When a check lists literal inputs, copy each literal into the test byte for byte; a near-miss (invalid JSON for a JSON string) tests a different case.",
+      "signal": "spec_precision_gap",
+      "scope": "api/tests",
+      "status": "candidate",
+      "features": [
+        "14-bank-transaction-sync"
+      ],
+      "recurrence": 1,
+      "harmful": 0,
+      "evidence": [
+        "C33 - services/core/tests/test_plaid_webhook.py:216 (api/tests)"
+      ],
+      "created": "2026-10-05T19:49:03Z",
+      "last_seen": "2026-10-05T19:49:03Z"
+    },
+    {
+      "id": "L-020",
+      "key": "gate_fail::an optional setting a developer may keep in env local must be pinned in tests conftest py and an unset test must also disable the env file or the local value leaks in",
+      "text": "An optional setting a developer may keep in .env.local must be pinned in tests/conftest.py, and an 'unset' test must also disable the env file, or the local value leaks in.",
+      "signal": "gate_fail",
+      "scope": "api/tests",
+      "status": "candidate",
+      "features": [
+        "14-bank-transaction-sync"
+      ],
+      "recurrence": 1,
+      "harmful": 0,
+      "evidence": [
+        "C38 - services/core/tests/conftest.py:29 (api/tests)"
+      ],
+      "created": "2026-10-05T19:49:03Z",
+      "last_seen": "2026-10-05T19:49:03Z"
     }
   ]
 }
