@@ -171,3 +171,46 @@ def delete_transactions(
         )
     )
     return int(result.rowcount)  # type: ignore[attr-defined]
+
+
+def nightly_candidates(session: Session) -> list[BankConnection]:
+    """Every connection of every business, oldest first, for the nightly sync job.
+
+    The one read across businesses besides `connection_for_item`: the job has to find
+    every bank to sync. Each sync after it is scoped to the connection's own business.
+    """
+    return list(
+        session.scalars(
+            select(BankConnection).order_by(
+                BankConnection.created_at, BankConnection.id
+            )
+        )
+    )
+
+
+def claim_connection(
+    session: Session, *, business_id: uuid.UUID, connection_id: uuid.UUID
+) -> BankConnection | None:
+    """The connection, locked until the transaction ends; None when another holds it.
+
+    `SKIP LOCKED`: a nightly run moves on instead of waiting for a sync in progress.
+    """
+    return session.scalar(
+        select(BankConnection)
+        .where(
+            BankConnection.business_id == business_id,
+            BankConnection.id == connection_id,
+        )
+        .with_for_update(skip_locked=True)
+    )
+
+
+def get_connection(
+    session: Session, *, business_id: uuid.UUID, connection_id: uuid.UUID
+) -> BankConnection | None:
+    return session.scalar(
+        select(BankConnection).where(
+            BankConnection.business_id == business_id,
+            BankConnection.id == connection_id,
+        )
+    )

@@ -10,6 +10,7 @@ from sqlalchemy import (
     DateTime,
     ForeignKey,
     Index,
+    Integer,
     Text,
     UniqueConstraint,
     Uuid,
@@ -36,6 +37,7 @@ class BankConnection(Base):
 
     __tablename__ = "bank_connections"
     __table_args__ = (
+        CheckConstraint("failed_nights >= 0", name="failed_nights"),
         UniqueConstraint(
             "business_id",
             "plaid_institution_id",
@@ -52,6 +54,20 @@ class BankConnection(Base):
     access_token_ciphertext: Mapped[str] = mapped_column(Text)
     # Plaid's /transactions/sync cursor; None until the first sync (spec 14).
     transactions_cursor: Mapped[str | None] = mapped_column(Text)
+    # Nightly sync state (spec 15). The business-local date of the last night whose sync
+    # finished, whether it succeeded or ran out of attempts.
+    nightly_synced_on: Mapped[date | None] = mapped_column(Date)
+    # Failed attempts in the current night, and when the next one may run.
+    nightly_attempts: Mapped[int] = mapped_column(
+        Integer, default=0, server_default=text("0")
+    )
+    next_nightly_attempt_at: Mapped[datetime | None] = mapped_column(
+        DateTime(timezone=True)
+    )
+    # Consecutive nights whose sync never succeeded; any successful sync resets it.
+    failed_nights: Mapped[int] = mapped_column(
+        Integer, default=0, server_default=text("0")
+    )
     created_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True), server_default=func.now()
     )

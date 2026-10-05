@@ -1,9 +1,10 @@
 import uuid
 from collections.abc import Iterable
 from dataclasses import dataclass
-from datetime import datetime
+from datetime import date, datetime, timedelta
 from decimal import ROUND_HALF_EVEN, Decimal
 from typing import Literal
+from zoneinfo import ZoneInfo
 
 import structlog
 from psycopg.errors import UniqueViolation
@@ -13,6 +14,7 @@ from sqlalchemy.orm import Session
 
 from app import audit, events
 from app.db import get_sessionmaker
+from app.modules.accounts import service as accounts_service
 from app.modules.bank_sync import repository
 from app.modules.bank_sync.events import TRANSACTIONS_SYNCED
 from app.modules.bank_sync.models import (
@@ -542,38 +544,28 @@ def _apply(
     )
 
 
-def sync_connection(
-    session: Session,
-    plaid: PlaidClient,
-    *,
-    business_id: uuid.UUID,
-    connection_id: uuid.UUID,
+def _sync_locked(
+    session: Session, plaid: PlaidClient, connection: BankConnection
 ) -> SyncResult:
-    """Bring in every transaction and balance change since the connection's last sync.
+    """Fetch and apply every change since the cursor, inside the caller's transaction.
 
-    Locks the connection for the whole sync, so two syncs of it run one after the other
-    and the second starts from the cursor the first stored. Every page is fetched first;
-    then the changes, the balances and the new cursor are stored in one transaction, and
-    on any failure nothing is. Publishes `transactions.synced` after the commit when
-    something changed. Commits the session.
-    Raises `ConnectionNotFoundError`, and `PlaidError` when Plaid fails.
+    The caller holds the connection's row lock, and commits or rolls back. A sync that
+    succeeds also clears the connection's run of failed nights (spec 15).
     """
-    try:
-        connection = repository.lock_connection(
-            session, business_id=business_id, connection_id=connection_id
-        )
-        if connection is None:
-            raise ConnectionNotFoundError
-        pages = _fetch_pages(
-            plaid,
-            decrypt_access_token(connection.access_token_ciphertext),
-            connection.transactions_cursor,
-        )
-        result = _apply(session, connection, pages)
-        session.commit()
-    except BaseException:
-        session.rollback()
-        raise
+    pages = _fetch_pages(
+        plaid,
+        decrypt_access_token(connection.access_token_ciphertext),
+        connection.transactions_cursor,
+    )
+    result = _apply(session, connection, pages)
+    connection.failed_nights = 0
+    return result
+
+
+def _announce(
+    business_id: uuid.UUID, connection_id: uuid.UUID, result: SyncResult
+) -> None:
+    """Log a committed sync, and publish `transactions.synced` when it changed data."""
     log.info(
         "bank_sync.synced",
         business_id=str(business_id),
@@ -597,6 +589,37 @@ def sync_connection(
                 },
             )
         )
+
+
+def sync_connection(
+    session: Session,
+    plaid: PlaidClient,
+    *,
+    business_id: uuid.UUID,
+    connection_id: uuid.UUID,
+) -> SyncResult:
+    """Bring in every transaction and balance change since the connection's last sync.
+
+    Locks the connection for the whole sync, so two syncs of it run one after the other
+    and the second starts from the cursor the first stored. Every page is fetched first;
+    then the changes, the balances and the new cursor are stored in one transaction, and
+    on any failure nothing is. A success resets the connection's failed nights, so it no
+    longer needs attention. Publishes `transactions.synced` after the commit when
+    something changed. Commits the session.
+    Raises `ConnectionNotFoundError`, and `PlaidError` when Plaid fails.
+    """
+    try:
+        connection = repository.lock_connection(
+            session, business_id=business_id, connection_id=connection_id
+        )
+        if connection is None:
+            raise ConnectionNotFoundError
+        result = _sync_locked(session, plaid, connection)
+        session.commit()
+    except BaseException:
+        session.rollback()
+        raise
+    _announce(business_id, connection_id, result)
     return result
 
 
@@ -630,3 +653,147 @@ def connection_for_item(
     """The `(business_id, connection_id)` of a Plaid item; None when it is not stored."""
     connection = repository.connection_for_item(session, plaid_item_id=plaid_item_id)
     return None if connection is None else (connection.business_id, connection.id)
+
+
+# The nightly sync (spec 15). A business's night starts at 02:00 local time, so a night's
+# date is the local date two hours earlier. Failed attempts are retried after these
+# delays; the one after the last delay is the night's final attempt.
+NIGHT_STARTS_AFTER_MIDNIGHT = timedelta(hours=2)
+RETRY_DELAYS = (timedelta(hours=1), timedelta(hours=2), timedelta(hours=4))
+ATTENTION_AFTER_FAILED_NIGHTS = 3
+
+
+@dataclass
+class NightlyCounts:
+    due: int = 0
+    synced: int = 0
+    failed: int = 0
+    skipped_locked: int = 0
+
+
+def night_of(moment: datetime, time_zone: str) -> date:
+    """The date of the business night `moment` falls in, in `time_zone`."""
+    return (moment.astimezone(ZoneInfo(time_zone)) - NIGHT_STARTS_AFTER_MIDNIGHT).date()
+
+
+def _nightly_due(connection: BankConnection, time_zone: str, now: datetime) -> bool:
+    night = night_of(now, time_zone)
+    if night <= night_of(connection.created_at, time_zone):
+        return False  # connected during this night; the connect sync covered it
+    if (
+        connection.nightly_synced_on is not None
+        and connection.nightly_synced_on >= night
+    ):
+        return False
+    return (
+        connection.next_nightly_attempt_at is None
+        or connection.next_nightly_attempt_at <= now
+    )
+
+
+def _end_night(connection: BankConnection, night: date) -> None:
+    connection.nightly_synced_on = night
+    connection.nightly_attempts = 0
+    connection.next_nightly_attempt_at = None
+
+
+def _log_failure(
+    business_id: uuid.UUID, connection_id: uuid.UUID, exc: Exception
+) -> None:
+    # Never the exception text: it can carry provider data.
+    if isinstance(exc, PlaidError):
+        details = {
+            "error_type": exc.error_type,
+            "error_code": exc.error_code,
+            "request_id": exc.request_id,
+        }
+    else:
+        details = {"error_type": type(exc).__name__}
+    log.warning(
+        "bank_sync.sync_failed",
+        business_id=str(business_id),
+        connection_id=str(connection_id),
+        **details,
+    )
+
+
+def _nightly_sync(
+    plaid: PlaidClient, candidate: BankConnection, time_zone: str, now: datetime
+) -> Literal["synced", "failed", "skipped_locked", "not_due"]:
+    """One connection's nightly sync, its outcome stored under the connection's lock."""
+    business_id, connection_id = candidate.business_id, candidate.id
+    with get_sessionmaker()() as session:
+        connection = repository.claim_connection(
+            session, business_id=business_id, connection_id=connection_id
+        )
+        if connection is None:
+            return "skipped_locked"
+        if not _nightly_due(connection, time_zone, now):
+            return "not_due"  # another run finished this night after we listed it
+        night = night_of(now, time_zone)
+        try:
+            # A savepoint: a failed sync rolls back to here and keeps the lock, so the
+            # failure is recorded before any other run can take the connection.
+            with session.begin_nested():
+                result = _sync_locked(session, plaid, connection)
+                _end_night(connection, night)
+        except Exception as exc:  # noqa: BLE001 - any failure is one failed attempt
+            _log_failure(business_id, connection_id, exc)
+            attempts = connection.nightly_attempts + 1
+            if attempts > len(RETRY_DELAYS):
+                _end_night(connection, night)
+                connection.failed_nights += 1
+            else:
+                connection.nightly_attempts = attempts
+                connection.next_nightly_attempt_at = now + RETRY_DELAYS[attempts - 1]
+            session.commit()
+            return "failed"
+        session.commit()
+    _announce(business_id, connection_id, result)
+    return "synced"
+
+
+def run_nightly_syncs(plaid: PlaidClient, now: datetime) -> NightlyCounts:
+    """Sync every connection whose business night is due at `now`, once per night.
+
+    A connection is due from 02:00 in its business's time zone until it has synced that
+    night, starting with the first night after it was connected. A failed sync is
+    retried 1, 2 and 4 hours later; after the fourth failure the night counts as failed.
+    A connection another sync holds is skipped and stays due. Safe to run twice at once.
+    """
+    with get_sessionmaker()() as session:
+        candidates = repository.nightly_candidates(session)
+        time_zones = accounts_service.business_time_zones(
+            session, {c.business_id for c in candidates}
+        )
+    due = [
+        (c, time_zones[c.business_id])
+        for c in candidates
+        if c.business_id in time_zones
+        and _nightly_due(c, time_zones[c.business_id], now)
+    ]
+    counts = NightlyCounts(due=len(due))
+    for candidate, time_zone in due:
+        outcome = _nightly_sync(plaid, candidate, time_zone, now)
+        if outcome == "synced":
+            counts.synced += 1
+        elif outcome == "failed":
+            counts.failed += 1
+        elif outcome == "skipped_locked":
+            counts.skipped_locked += 1
+    return counts
+
+
+def needs_attention(
+    session: Session, *, business_id: uuid.UUID, connection_id: uuid.UUID
+) -> bool:
+    """Whether the connection's nightly sync has failed 3 nights in a row.
+
+    Raises `ConnectionNotFoundError`.
+    """
+    connection = repository.get_connection(
+        session, business_id=business_id, connection_id=connection_id
+    )
+    if connection is None:
+        raise ConnectionNotFoundError
+    return connection.failed_nights >= ATTENTION_AFTER_FAILED_NIGHTS

@@ -8,6 +8,7 @@ from pydantic import BaseModel, ValidationError
 from sqlalchemy import Engine, text
 from sqlalchemy.exc import SQLAlchemyError
 
+from app import subscriptions
 from app.auth import current_user
 from app.db import get_engine
 from app.log import configure_logging
@@ -36,6 +37,7 @@ async def lifespan(app: FastAPI) -> AsyncIterator[None]:
             # Rebuild the stack so Sentry also patches the ExceptionMiddleware that
             # handles a raised HTTPException with a 5xx status.
             app.middleware_stack = None
+    subscriptions.register()
     yield
 
 

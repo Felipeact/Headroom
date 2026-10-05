@@ -1,5 +1,5 @@
 import uuid
-from collections.abc import Mapping
+from collections.abc import Collection, Mapping
 from dataclasses import dataclass
 from datetime import datetime
 from enum import StrEnum
@@ -142,3 +142,13 @@ def update_business(
         log.info("business.updated", business_id=str(business_id), user_id=str(user_id))
     session.expire_all()
     return get_business(session, business_id=business_id, role=role)
+
+
+def business_time_zones(
+    session: Session, business_ids: Collection[uuid.UUID]
+) -> dict[uuid.UUID, str]:
+    """The IANA time zone of each business in `business_ids` that exists, by ID.
+
+    For jobs that act at a business's local time, such as the nightly bank sync.
+    """
+    return repository.time_zones(session, business_ids)

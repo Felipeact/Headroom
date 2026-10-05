@@ -969,4 +969,6 @@ def test_repository_requires_business() -> None:
             unscoped_connection_queries.append(name)
 
     assert any("BankTransaction" in inspect.getsource(fn) for _, fn in functions)
-    assert unscoped_connection_queries == ["connection_for_item"]
+    # The webhook's item lookup, and the nightly job's list of every connection (spec 15
+    # AC 8, its C9): each sync after either one is scoped to the connection's business.
+    assert unscoped_connection_queries == ["connection_for_item", "nightly_candidates"]

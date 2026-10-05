@@ -7,6 +7,7 @@ from pathlib import Path
 
 import pytest
 from sqlalchemy import create_engine, inspect, make_url
+from sqlalchemy.exc import IntegrityError
 
 from app.settings import get_settings
 
@@ -71,6 +72,7 @@ def test_alembic_ini_has_no_url() -> None:
 
 BANK_TABLES = "5db30d28e759"
 CASH_COLUMNS = "d546cee847e0"
+TRANSACTIONS = "de44856f468e"
 
 
 def alembic_run(*args: str, database_url: str) -> subprocess.CompletedProcess[str]:
@@ -476,7 +478,7 @@ def test_bank_accounts_cash_columns_upgrade_backfill_downgrade_and_check(
 
 
 def test_bank_transactions_upgrade_downgrade_and_check(empty_database_url: str) -> None:
-    result = alembic_run("upgrade", "head", database_url=empty_database_url)
+    result = alembic_run("upgrade", TRANSACTIONS, database_url=empty_database_url)
     assert result.returncode == 0, result.stderr
 
     engine = create_engine(empty_database_url)
@@ -540,6 +542,76 @@ def test_bank_transactions_upgrade_downgrade_and_check(empty_database_url: str) 
         engine.dispose()
     assert "bank_transactions" not in tables
     assert "transactions_cursor" not in remaining
+
+    for args in (("upgrade", "head"), ("check",)):
+        result = alembic_run(*args, database_url=empty_database_url)
+        assert result.returncode == 0, result.stdout + result.stderr
+
+
+def test_nightly_state_upgrade_downgrade_and_check(empty_database_url: str) -> None:
+    """Spec 15 C32: the nightly sync state on bank_connections (door 1)."""
+    result = alembic_run("upgrade", TRANSACTIONS, database_url=empty_database_url)
+    assert result.returncode == 0, result.stderr
+    engine = create_engine(empty_database_url)
+    try:
+        with engine.begin() as conn:
+            conn.exec_driver_sql(
+                "INSERT INTO bank_connections (id, business_id, plaid_item_id,"
+                " plaid_institution_id, institution_name, access_token_ciphertext)"
+                " VALUES (gen_random_uuid(), gen_random_uuid(), 'item-existing',"
+                " 'ins_1', 'TD Canada Trust', 'ciphertext')"
+            )
+    finally:
+        engine.dispose()
+
+    result = alembic_run("upgrade", "head", database_url=empty_database_url)
+    assert result.returncode == 0, result.stderr
+    engine = create_engine(empty_database_url)
+    try:
+        with engine.connect() as conn:
+            columns = {
+                name: (kind, nullable)
+                for name, kind, nullable in conn.exec_driver_sql(
+                    "SELECT column_name, data_type, is_nullable"
+                    " FROM information_schema.columns"
+                    " WHERE table_name = 'bank_connections'"
+                )
+            }
+            existing = conn.exec_driver_sql(
+                "SELECT nightly_synced_on, nightly_attempts, next_nightly_attempt_at,"
+                " failed_nights FROM bank_connections"
+            ).one()
+        with pytest.raises(IntegrityError) as excinfo, engine.begin() as conn:
+            conn.exec_driver_sql("UPDATE bank_connections SET failed_nights = -1")
+    finally:
+        engine.dispose()
+
+    assert columns["nightly_synced_on"] == ("date", "YES")
+    assert columns["nightly_attempts"] == ("integer", "NO")
+    assert columns["next_nightly_attempt_at"] == ("timestamp with time zone", "YES")
+    assert columns["failed_nights"] == ("integer", "NO")
+    assert tuple(existing) == (None, 0, None, 0)
+    assert "ck_bank_connections_failed_nights" in str(excinfo.value)
+
+    result = alembic_run("downgrade", TRANSACTIONS, database_url=empty_database_url)
+    assert result.returncode == 0, result.stderr
+    engine = create_engine(empty_database_url)
+    try:
+        remaining = {c["name"] for c in inspect(engine).get_columns("bank_connections")}
+        checks = {
+            c["name"] for c in inspect(engine).get_check_constraints("bank_connections")
+        }
+    finally:
+        engine.dispose()
+    assert remaining.isdisjoint(
+        {
+            "nightly_synced_on",
+            "nightly_attempts",
+            "next_nightly_attempt_at",
+            "failed_nights",
+        }
+    )
+    assert "ck_bank_connections_failed_nights" not in checks
 
     for args in (("upgrade", "head"), ("check",)):
         result = alembic_run(*args, database_url=empty_database_url)

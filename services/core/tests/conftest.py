@@ -38,13 +38,12 @@ os.environ.setdefault("TOKEN_ENCRYPTION_KEYS", Fernet.generate_key().decode())
 CORE = Path(__file__).resolve().parents[1]
 
 
-@pytest.fixture(scope="session")
-def migrated_database() -> Iterator[None]:
-    """A fresh database at Alembic head, used by the app for the whole session.
+def _database_at_head() -> Iterator[str]:
+    """Create a database at Alembic head, point the app at it, and drop it afterwards.
 
     Tests that reach a module's tables go through the app's own settings, so this points
     DATABASE_URL at the new database (and drops the cached engine) instead of trusting
-    whatever state the configured database is in.
+    whatever state the configured database is in. Yields the database URL.
     """
     from sqlalchemy import create_engine, make_url
 
@@ -73,7 +72,7 @@ def migrated_database() -> Iterator[None]:
     os.environ["DATABASE_URL"] = url
     for cached in (get_settings, get_engine, get_sessionmaker):
         cached.cache_clear()
-    yield
+    yield url
 
     get_engine().dispose()
     if previous is None:
@@ -85,3 +84,20 @@ def migrated_database() -> Iterator[None]:
     with admin.connect() as conn:
         conn.exec_driver_sql(f'DROP DATABASE IF EXISTS "{name}" WITH (FORCE)')
     admin.dispose()
+
+
+@pytest.fixture(scope="session")
+def migrated_database() -> Iterator[None]:
+    """A fresh database at Alembic head, used by the app for the whole session."""
+    for _ in _database_at_head():
+        yield
+
+
+@pytest.fixture(scope="module")
+def isolated_database() -> Iterator[str]:
+    """A database of the test module's own, for code that reads every business's rows.
+
+    The nightly sync job (spec 15) syncs every connection in the database, so its tests
+    cannot share the session database with other tests' connections. Yields its URL.
+    """
+    yield from _database_at_head()

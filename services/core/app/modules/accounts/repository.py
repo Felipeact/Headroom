@@ -1,5 +1,5 @@
 import uuid
-from collections.abc import Mapping
+from collections.abc import Collection, Mapping
 
 from sqlalchemy import func, select, update
 from sqlalchemy.dialects.postgresql import insert
@@ -78,3 +78,12 @@ def update_business(
         .where(Business.id == business_id)
         .values(**changes, updated_at=func.now())
     )
+
+
+def time_zones(
+    session: Session, business_ids: Collection[uuid.UUID]
+) -> dict[uuid.UUID, str]:
+    rows = session.execute(
+        select(Business.id, Business.time_zone).where(Business.id.in_(business_ids))
+    )
+    return {business_id: time_zone for business_id, time_zone in rows}
