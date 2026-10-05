@@ -1,7 +1,7 @@
 # Spec 13: Choose cash accounts
 
 - **Milestone:** 3, bank data
-- **Status:** Not started
+- **Status:** In progress
 - **Depends on:** 12
 
 ## Goal
