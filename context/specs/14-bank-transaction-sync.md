@@ -1,7 +1,7 @@
 # Spec 14: Transaction sync
 
 - **Milestone:** 3, bank data
-- **Status:** Not started
+- **Status:** In progress
 - **Depends on:** 12 (can run alongside 13)
 
 ## Goal
