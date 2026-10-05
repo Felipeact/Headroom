@@ -52,12 +52,14 @@
 
 ## Handoff
 
-**Feature**: 12-bank-connect
-**Where**: C1-C46 all green; independent Verifier PASS 46/46 at round 2 over `1d3e771..afaecb7` (profile light), gate exit 0; spec Done. Not pushed
+**Feature**: 13-bank-cash-accounts
+**Where**: C1-C53 all green; independent Verifier PASS 53/53 at round 1 over `ed7529b..84a16bf` (profile light), gate exit 0; spec Done. Not pushed
 **In progress**: none
-**Next step**: run the-judge on spec 12 (AGENTS.md), preferably in a fresh session. Before pushing `development`, the user sets the staging `api` Railway variables `PLAID_CLIENT_ID`, `PLAID_SECRET`, `PLAID_ENV=sandbox` and a freshly generated `TOKEN_ENCRYPTION_KEYS`, or the API fails at startup (AD-001). Specs 13 and 14 are unblocked
-**Blockers**: none for v1 work. Go-live: Plaid OAuth institutions (`redirect_uri`) are unhandled (plan open question 1)
+**Next step**: run the-judge on spec 13 (AGENTS.md), preferably in a fresh session. Spec 14 (transaction sync) is unblocked. Before pushing `development`, staging still needs the spec 12 `api` Railway variables (`PLAID_CLIENT_ID`, `PLAID_SECRET`, `PLAID_ENV=sandbox`, `TOKEN_ENCRYPTION_KEYS`); migration `d546cee847e0` runs on deploy and backfills existing `bank_accounts`
+**Blockers**: none for v1 work. Go-live: Plaid OAuth institutions (spec 12 open question 1)
 **Uncommitted**: none
+**Also done**: 13 notes - the second sandbox bank is RBC Royal Bank (`ins_39`); `proofs.sh c31` runs the two-bank sandbox proof. The segmented control (shadcn `ToggleGroup`) is a Radix `radiogroup` with `aria-checked`, not the mockup's `aria-pressed` buttons (open with the user). The primary-account `RadioGroup` wraps the cards with `tabIndex={-1}` so it is not a tab stop. Flakes seen outside this change: spec 12 `test_connect_logged` (random `0001` in a timestamp or UUID), spec 10 `auth.spec.ts` C26 axe contrast on `/sign-up` while Clerk renders, and the Plaid sandbox e2e tests under a long parallel Playwright run; each passed when run again or alone
+**Also done**: 12-bank-connect - Verifier PASS 46/46 at round 2 over `1d3e771..afaecb7`
 **Also done**: 12 notes - sandbox keys live in `services/core/.env.local`; `proofs.sh c21` runs the real-sandbox test (marker `plaid_sandbox`, deselected by default). Plaid Link sandbox path for Playwright: Continue without phone number, search, TD Canada Trust (`ins_42`), `user_good` / `pass_good`, Continue, Finish without saving. Redaction now covers public tokens and any key containing `body` (doors 7, 8). Sentry still captures other frame locals by default (open with the user). Plaid warned "link-initialize.js embedded more than once" in dev; check in a production build
 **Also done**: 11-accounts-businesses-and-access - Verifier PASS 41/41 at round 2 over `e41a687..78b5790`
 **Also done**: 11 notes - Docker Desktop now runs the local Postgres on 5432 (`DATABASE_URL` in `services/core/.env.local`). The onboarding e2e creates and deletes a Clerk user per test through the Backend API (`createOnboardingUser` in `e2e/test-user.ts`); setup gives the `E2E_CLERK_USER_USERNAME` user a business on its first run. A stale `next dev` on port 3000 makes every e2e test show the load-error page: stop it first. Spec 07's e2e C42 needs `NEXT_PUBLIC_SENTRY_DSN=` to pass. Open with the user: C39's text says the existing e2e specs pass "unchanged in their assertions", but spec 07's C11 was rewritten for AC 35

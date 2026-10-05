@@ -46,3 +46,5 @@ Context used per request, measured against a context window of about 250,000 tok
 | Spec 12: connect a bank (checks, build S1-S5, sandbox and e2e proofs) | ~150,000 (~60%) | Medium (attention degrades) |
 | Spec 12: verifier sub-agents, rounds 1-2 (separate contexts) | ~152,000 + ~107,000 (~61%, ~43%) | Medium (attention degrades) |
 | Spec 13: choose cash accounts (plan) | ~75,000 (~30%) | High (smart zone) |
+| Spec 13: choose cash accounts (checks, build S1-S5, sandbox and e2e proofs) | ~185,000 (~74%) | Low (past 60%) |
+| Spec 13: verifier sub-agent, round 1 (separate context) | ~136,000 (~54%) | Medium (attention degrades) |
