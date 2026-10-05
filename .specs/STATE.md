@@ -64,12 +64,47 @@
 
 ## Handoff
 
-**Feature**: 14-bank-transaction-sync
-**Where**: C1-C47 all green; independent Verifier PASS 47/47 at round 2 over `cb8a360..d7b56f9` (profile light), gate exit 0; spec Done. Not pushed
-**In progress**: none
-**Next step**: run the-judge on spec 14 (AGENTS.md), preferably in a fresh session. Unblocked now: spec 15 (nightly sync job, also needs 05), 16 (labels), 18 (sample data). Open with the user: `sync_in_background` catches only `PlaidError`, so a database error in a background sync reaches uvicorn's log with its message (verifier note); C43 checks source text, not the query filter (verifier precision gap). Before pushing `development`: migration `de44856f468e` runs on deploy; `PLAID_WEBHOOK_URL` is set on staging `api`
+**Feature**: 15-bank-nightly-sync-job
+**Where**:
+- C1-C33 all green.
+- Independent Verifier round 2 (full) PASS 33/33 over `625ae6a..8071204` (profile light), gate exit 0, report committed (`971f184`).
+- Its first-ranked gap (the nightly tests depended on today's date) is fixed in `004dc46`.
+- Spec status stays **In progress** until the scoped round 3 passes.
+- Pushed to `origin/development`.
+
+**In progress**: Verifier round 3 (scoped) over `625ae6a..004dc46`. It was stopped before finishing, at the user's request, to move to another computer.
+**Next step**:
+1. On a machine with Postgres (`docker compose up -d postgres`), dispatch a fresh Verifier for round 3, scoped per `verify.md` "Re-verifying after a fix":
+   - re-run every proof at HEAD (`proofs.sh c29 c30 c31 c33`, plus the pytest selectors in `checks.md`)
+   - confirm the date gap is closed
+   - refresh the `tests/test_nightly_sync.py` citations, and carry the rest from `8071204`
+2. Run `validate_verification.py 15-bank-nightly-sync-job`.
+3. Then:
+   - set spec 15 to Done and tick its "Done when" items
+   - add the Roadmap row's done state
+   - run the-judge (AGENTS.md)
+   - distill lessons
+
+Round 2's non-blocking notes:
+- C8's "every row" is asserted only for `bank_transactions`
+- C21's 60 s bound is the subprocess timeout
+
 **Blockers**: none for v1 work. Go-live: Plaid OAuth institutions (spec 12 open question 1)
 **Uncommitted**: none
+**Also done**: 15 notes
+- **Staging:** the `jobs` service exists and runs hourly. First run at 2026-10-05T22:00:50Z, `jobs.run_finished` `due` 0.
+- **Railway:**
+  - `api`'s hand-set Plaid and token variables are now `preserve()` in `.railway/railway.ts`; without that, `config apply` would delete them.
+  - A push whose head commit touches only `.railway/` is SKIPPED for `api`; redeploy with `railway service redeploy --service api --environment staging --from-source --yes`.
+  - Read JSON logs with `railway logs --json` (the plain output shows `key=value`).
+- **tzdata:** 2026.4 keeps British Columbia on UTC-7 from 2026-11-01.
+- **Local machine:**
+  - No Docker here. The portable Postgres is at `.../34eb90c2-.../scratchpad/pgsql`, data in `.../scratchpad/pgdata`; start it with `pgsql/bin/pg_ctl.exe -D pgdata -o "-p 5432" -w start`.
+  - The `.../pgsql/pgdata` path in older notes is wrong.
+  - Three stray pytest processes from verifier round 1 (PIDs 21968, 22756, 29492) were left for the user to end.
+- **GitHub Actions:** a `web` CI job once waited 15 minutes for a runner and was cancelled; `gh run rerun <id> --failed` fixed it.
+
+**Also done**: 14-bank-transaction-sync - Verifier PASS 47/47 at round 2 over `cb8a360..d7b56f9`; spec Done; now pushed
 **Also done**: 14 notes - local Postgres is the portable 17.11 from an earlier session's scratchpad (`.../34eb90c2-.../scratchpad/pgsql`, `pg_ctl -D pgdata -o "-p 5432" start`); no Docker on this machine. Frontend deps needed `npm ci` (with an empty `npm_config_userconfig`). `PLAID_WEBHOOK_URL` is set on staging `api` (user, 2026-10-05)
 **Also done**: 13-bank-cash-accounts - Verifier PASS 53/53 at round 1 over `ed7529b..84a16bf`
 **Also done**: 13 notes - the second sandbox bank is RBC Royal Bank (`ins_39`); `proofs.sh c31` runs the two-bank sandbox proof. The segmented control (shadcn `ToggleGroup`) is a Radix `radiogroup` with `aria-checked`, not the mockup's `aria-pressed` buttons (open with the user). The primary-account `RadioGroup` wraps the cards with `tabIndex={-1}` so it is not a tab stop. Flakes seen outside this change: spec 12 `test_connect_logged` (random `0001` in a timestamp or UUID), spec 10 `auth.spec.ts` C26 axe contrast on `/sign-up` while Clerk renders, and the Plaid sandbox e2e tests under a long parallel Playwright run; each passed when run again or alone
