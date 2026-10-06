@@ -72,11 +72,11 @@
 **Where**: spec 16 **Done**.
 - Independent Verifier round 1 (full) PASS 28/28 over `06fe8df..f55b8c7` (profile light), gate exit 0; suite 419 passed.
 - Lesson L-022 (candidate): C21's same-`xmin` proof would also pass if relabelling ran in a second transaction, since that would rewrite both rows. The code relabels before the commit (`service.py:619`, `:682`).
-- Open for the user: `labels._pairs` ignores which side is a card, so a card purchase (-X on the card) and an unrelated +X deposit on checking within 3 business days pair as `card_payment`, hiding income. This is consistent with the approved AC 1, 5 and 13; changing it is a plan change.
+- Review finding F1 fixed in `c74f037` (user-approved AC 27, check C29): a card half pairs only as a payment received. Verifier round 2 (scoped) PASS 29/29 at `c74f037`, gate exit 0, suite 422 passed. Sampling notes: no paired `TRANSFER_IN` card payment and no card-out/credit-line-in case is tested.
 - Carried notes: C6 tests the tie-break only for one outflow with several inflows; the accounts lock is taken after the Plaid fetch and before any write (door 3 order kept).
 
 **In progress**: none
-**Next step**: the user's call on the card-pairing note; push `development` when the user asks; next spec in build order (17, bank connection settings).
+**Next step**: push `development` when the user asks (c74f037 and later are local); next spec in build order (17, bank connection settings).
 
 **Blockers**: none for v1 work. Go-live: Plaid OAuth institutions (spec 12 open question 1)
 **Uncommitted**: none

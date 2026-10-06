@@ -1,7 +1,7 @@
 # Spec 16: Transaction labels
 
 - **Milestone:** 3, bank data
-- **Status:** In progress
+- **Status:** Done
 - **Depends on:** 14
 
 ## Goal
