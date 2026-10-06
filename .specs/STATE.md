@@ -80,13 +80,13 @@
 
 ## Handoff
 
-**Feature**: 18-forecast-sample-data
-**Where**: spec 18 **Done**; Milestone 4 (forecast) started.
-- Commits: `b8b7e0b` (plan, checks), `10e89d5` (transactions route), `32fac2c` (sample data and loader), then the close-out.
-- Independent Verifier round 1 (full) PASS 37/37 over `3c2cf32..32fac2c` (profile light), gate exit 0; API 517 passed, web 224 passed; `proofs.sh c36 c37` green.
-- Verifier precision notes (not failures): C2 compares client-amount lists (would also pass on a length change); C23 subscribes its own handler instead of going through `subscriptions.register()`; C14 recomputes week ends in the test; C20 compares `last_synced_at` as an instant (the API writes the session offset, not `Z` - existing spec 17 behaviour, AD-063 says UTC); C7/C18 derive the day rule in the test; C26 checks the accepted hosts below `main`; C35 scans only the `200` body.
-- Lessons L-026, L-027, L-028 (candidates).
-- Door 3 amended with the user's approval: sample Plaid IDs carry the business ID.
+**Feature**: 19-forecast-recurring-payments
+**Where**: spec 19 **Done**.
+- Commits: `0bafd26` (plan, checks), `a191481` (forecasting module, detector, refresh, route, migration), `a659f4b` (C9 tie tests), then the close-out.
+- Independent Verifier round 1 (full) FAIL over `1d2904f..a191481`: 33/33 proven, one surviving mutant (C9 half-up rounding). Round 2 (scoped) PASS over `1d2904f..a659f4b`, gate exit 0; API 601 passed, web 224 passed.
+- Plan AC 4 amended twice with the user's approval: semimonthly days split at the midpoint of the band's days; exactly 3 hits must have no gap and no extra.
+- Verifier precision notes (not failures): C9's text names only one tie (the test now proves more); C13 uses a similar series, not C12's literal input; C19 plants its row with `session.add`, not the repository; AC 5's tie-break is proven only through C4; AC 21's disconnect case is proven by a sync that removes every transaction.
+- Lessons L-029, L-030, L-031 (candidates).
 
-**In progress**: 19-forecast-recurring-payments - plan approved, checks written (`validate_checks` exit 0), building with one builder; doors 1-3 are AD-070 to AD-072
-**Next step**: run `/the-judge` locally on spec 18 (AGENTS.md); push `development` when the user asks (`48f4c5f` onward is local); next spec in build order: 19 (recurring payments) or 20 (expected payments, which loads `expected_payments` from this fixture).
+**In progress**: none
+**Next step**: run `/the-judge` locally on spec 19 (AGENTS.md); push `development` when the user asks; next spec in build order: 20 (expected payments).

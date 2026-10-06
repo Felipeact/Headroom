@@ -3,7 +3,7 @@
   "promote_threshold": 2,
   "window_days": 45,
   "quarantine_threshold": 2,
-  "next_id": 29,
+  "next_id": 32,
   "lessons": [
     {
       "id": "L-001",
@@ -508,6 +508,60 @@
       ],
       "created": "2026-10-06T17:57:22Z",
       "last_seen": "2026-10-06T17:57:22Z"
+    },
+    {
+      "id": "L-029",
+      "key": "surviving_mutant::a rounding rule test needs a tie that the wrong rule rounds differently one tie both half even and half up agree on proves nothing",
+      "text": "A rounding-rule test needs a tie that the wrong rule rounds differently; one tie both half-even and half-up agree on proves nothing.",
+      "signal": "surviving_mutant",
+      "scope": "tests",
+      "status": "candidate",
+      "features": [
+        "19-forecast-recurring-payments"
+      ],
+      "recurrence": 1,
+      "harmful": 0,
+      "evidence": [
+        "C9 test_recurring_detection.py:292 (tests)"
+      ],
+      "created": "2026-10-06T22:43:27Z",
+      "last_seen": "2026-10-06T22:43:27Z"
+    },
+    {
+      "id": "L-030",
+      "key": "surviving_mutant::a lock test must hold the first transaction open after its write and before its commit a delay earlier lets it commit first and the race never happens",
+      "text": "A lock test must hold the first transaction open after its write and before its commit; a delay earlier lets it commit first and the race never happens.",
+      "signal": "surviving_mutant",
+      "scope": "concurrency",
+      "status": "candidate",
+      "features": [
+        "19-forecast-recurring-payments"
+      ],
+      "recurrence": 1,
+      "harmful": 0,
+      "evidence": [
+        "C21 test_recurring_refresh.py concurrent_refreshes (concurrency)"
+      ],
+      "created": "2026-10-06T22:43:27Z",
+      "last_seen": "2026-10-06T22:43:27Z"
+    },
+    {
+      "id": "L-031",
+      "key": "spec_deviation::before approving a numeric detection rule run it against every seed of the sample data and the check s own examples a fixed 15 16 split and a 75 share on 3 hits both failed on contact",
+      "text": "Before approving a numeric detection rule, run it against every seed of the sample data and the check's own examples; a fixed 15/16 split and a 75% share on 3 hits both failed on contact.",
+      "signal": "spec_deviation",
+      "scope": "forecasting",
+      "status": "candidate",
+      "features": [
+        "19-forecast-recurring-payments"
+      ],
+      "recurrence": 1,
+      "harmful": 0,
+      "evidence": [
+        "plan AC 4 (two amendments) (forecasting)"
+      ],
+      "created": "2026-10-06T22:43:28Z",
+      "last_seen": "2026-10-06T22:43:28Z"
     }
   ]
 }

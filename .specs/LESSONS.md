@@ -182,6 +182,24 @@ Seen once or not yet corroborated. Tracked, not trusted.
 - evidence: door 3 - plan.md Landing (fixtures)
 - last seen: 2026-10-06T17:57:22Z
 
+### L-029 - A rounding-rule test needs a tie that the wrong rule rounds differently; one tie both half-even and half-up agree on proves nothing.
+- signal: `surviving_mutant` · recurrence: 1 feature(s) · scope: `tests` · harmful: 0
+- features: 19-forecast-recurring-payments
+- evidence: C9 test_recurring_detection.py:292 (tests)
+- last seen: 2026-10-06T22:43:27Z
+
+### L-030 - A lock test must hold the first transaction open after its write and before its commit; a delay earlier lets it commit first and the race never happens.
+- signal: `surviving_mutant` · recurrence: 1 feature(s) · scope: `concurrency` · harmful: 0
+- features: 19-forecast-recurring-payments
+- evidence: C21 test_recurring_refresh.py concurrent_refreshes (concurrency)
+- last seen: 2026-10-06T22:43:27Z
+
+### L-031 - Before approving a numeric detection rule, run it against every seed of the sample data and the check's own examples; a fixed 15/16 split and a 75% share on 3 hits both failed on contact.
+- signal: `spec_deviation` · recurrence: 1 feature(s) · scope: `forecasting` · harmful: 0
+- features: 19-forecast-recurring-payments
+- evidence: plan AC 4 (two amendments) (forecasting)
+- last seen: 2026-10-06T22:43:28Z
+
 ## Quarantined (failed when applied - ignore)
 
 A confirmed lesson that recurred alongside failure. Kept for the maintainer to review.
