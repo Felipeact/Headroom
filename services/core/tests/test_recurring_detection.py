@@ -292,6 +292,23 @@ def test_median_amount_last_six() -> None:
     assert only(detection.detect(transactions)).amount_cents == -100_002
 
 
+@pytest.mark.parametrize(
+    ("amounts", "expected"),
+    [
+        # Median -100001.5: half to even gives -100002; half up would give -100001.
+        ([-100_000, -100_001, -100_001, -100_002, -100_002, -100_003], -100_002),
+        # Median 100002.5: half to even gives 100002; half up would give 100003.
+        ([100_001, 100_002, 100_002, 100_003, 100_003, 100_004], 100_002),
+    ],
+    ids=["odd-whole-negative", "even-whole-positive"],
+)
+def test_median_amount_ties_to_even(amounts: list[int], expected: int) -> None:
+    """C9: ties go to the even cent, whichever way the rounding direction would differ."""
+    days = months((2026, 1), 6, 15)
+    transactions = [tx(d, a) for d, a in zip(days, amounts, strict=True)]
+    assert only(detection.detect(transactions)).amount_cents == expected
+
+
 def test_median_amount_three() -> None:
     """C9."""
     days = months((2026, 1), 3, 15)
