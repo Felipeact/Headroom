@@ -433,6 +433,41 @@ def test_card_beats_credit_line(fake: SyncFake) -> None:
     assert_paired(rows(c.business_id), "draw", "paid", "card_payment")
 
 
+@pytest.mark.parametrize("case", ["purchase", "refund", "payment"])
+def test_card_side_pairing(fake: SyncFake, case: str) -> None:
+    """C29"""
+    visa, chq = card(), operating()
+    c = business([visa, chq])
+    if case == "purchase":
+        added = [
+            move(
+                "card", visa, -50_000, date(2026, 9, 14), category="GENERAL_MERCHANDISE"
+            ),
+            move("cash", chq, 50_000, date(2026, 9, 15), category="INCOME"),
+        ]
+    elif case == "refund":
+        added = [
+            move(
+                "card", visa, 30_000, date(2026, 9, 14), category="GENERAL_MERCHANDISE"
+            ),
+            move("cash", chq, -30_000, date(2026, 9, 15), category="GENERAL_SERVICES"),
+        ]
+    else:
+        added = [
+            move("card", visa, 30_000, date(2026, 9, 15), category="LOAN_PAYMENTS"),
+            move("cash", chq, -30_000, date(2026, 9, 14)),
+        ]
+
+    sync_once(fake, c, [visa, chq], added)
+
+    found = rows(c.business_id)
+    if case == "payment":
+        assert_paired(found, "cash", "card", "card_payment")
+    else:
+        assert_unpaired(found, "card", "card_purchase")
+        assert_unpaired(found, "cash", "normal")
+
+
 # S3 - everything no rule covers is normal
 
 

@@ -3,7 +3,7 @@
 Profile: light
 Plan: `.specs/features/16-bank-transaction-labels/plan.md`
 
-28 checks in 4 slices · 5 one-way doors · 0 open
+29 checks in 4 slices · 5 one-way doors · 0 open
 
 Commands run from `services/core/` (`uv run pytest ...`).
 
@@ -75,6 +75,14 @@ Proof: `uv run pytest tests/test_transaction_labels.py -k "credit_repayment"`
 
 **C13** - Credit line -90,000 dated 2026-09-14 and card +90,000 dated 2026-09-15 are `card_payment` and paired (AC 13)
 Proof: `uv run pytest tests/test_transaction_labels.py -k "card_beats_credit_line"`
+
+**C29** - Card-side pairing, table-driven over 3 cases (added 2026-10-06 with AC 27, review finding F1):
+- card -50,000 `GENERAL_MERCHANDISE` dated 2026-09-14 and checking +50,000 `INCOME` dated 2026-09-15: card row `card_purchase`, checking row `normal`, both unpaired
+- card +30,000 `GENERAL_MERCHANDISE` dated 2026-09-14 and checking -30,000 `GENERAL_SERVICES` dated 2026-09-15: card row `card_purchase`, checking row `normal`, both unpaired
+- card +30,000 `LOAN_PAYMENTS` dated 2026-09-15 and checking -30,000 dated 2026-09-14: both `card_payment` and paired
+
+(AC 27)
+Proof: `uv run pytest tests/test_transaction_labels.py -k "card_side_pairing"`
 
 ### S3 - A transfer whose other half hasn't arrived is in transit, then normal · 3 files · 60 KB · ~15k
 
@@ -166,6 +174,7 @@ Proof: `uv run pytest tests/test_transaction_labels.py -k "holidays_dependency"`
 | entities (1) | `bank_transactions` label and link C19, C28 | - |
 | labels (7) | `internal_transfer` C1 · `in_transit` C14 · `card_purchase` C7 · `card_payment` C8, C10, C13 · `credit_draw` C11 · `credit_repayment` C12 · `normal` C17 | - |
 | pair kinds by account types (4) | cash<->cash C1 · cash->card C8 · credit line->cash C11 · cash->credit line C12 (card beats credit line C13) | - |
+| card halves refused a pair (2) | money-out card half C29 · money-in card half with a non-payment category C29 | - |
 | unpaired rules by account side (5) | card negative C7 · card positive C9 · cash negative with card-payment category C10 · credit line negative C11 · credit line positive C12 | - |
 | pairing conditions (5) | amount C5 · currency C5 · different account C5 · same business C5 · window C4 | - |
 | window directions (2) | money in after C1, C4 · money in before C3 | - |

@@ -88,6 +88,8 @@ Credit card and line of credit activity never looks like cash spending or income
 12. WHEN money arrives on a `line_of_credit` account and the opposite amount left another account of the business, at most 3 business days apart THEN the system SHALL label both `credit_repayment` and link them. An unpaired positive transaction on a `line_of_credit` account SHALL be labelled `credit_repayment`.
 13. IF either half of a pair is on a `credit_card` account THEN the system SHALL label the pair `card_payment`, even when the other half is on a `line_of_credit` account.
 
+27. IF a candidate pair's money-out half is on a `credit_card` account, or its money-in half is on a `credit_card` account and has a Plaid primary category that is present and is neither `LOAN_PAYMENTS` nor `TRANSFER_IN` THEN the system SHALL not pair them, and SHALL label each half as unpaired by AC 7-17. (Added 2026-10-06 after review finding F1, approved by the user: a card purchase or refund must not pair with an unrelated cash amount.)
+
 **Independent test:** sync a fake page with a card purchase, a checking-to-card payment, and a credit line draw into checking, then read the labels.
 
 ### S3: A transfer whose other half hasn't arrived is in transit, then normal (P1)

@@ -77,12 +77,34 @@ def _pair_label(out_type: str, in_type: str) -> str:
     return "internal_transfer"
 
 
+def _is_card_payment(item: Item) -> bool:
+    """A credit on a card that is a payment, not a refund."""
+    return item.amount_cents > 0 and (
+        item.category is None or item.category in CARD_PAYMENT_CATEGORIES
+    )
+
+
+def _can_pair(
+    out: Item, incoming: Item, account_types: Mapping[uuid.UUID, str]
+) -> bool:
+    """Whether two opposite amounts may be the two halves of one move.
+
+    A card half must be a payment arriving on the card: a purchase or a refund on the
+    card never pairs with an unrelated cash amount (spec 16 AC 27).
+    """
+    if out.account_id == incoming.account_id:
+        return False
+    if account_types[out.account_id] == "credit_card":
+        return False
+    return account_types[incoming.account_id] != "credit_card" or _is_card_payment(
+        incoming
+    )
+
+
 def _unpaired_label(item: Item, account_type: str, today: date) -> str:
     amount = item.amount_cents
     if account_type == "credit_card":
-        if amount > 0 and (
-            item.category is None or item.category in CARD_PAYMENT_CATEGORIES
-        ):
+        if _is_card_payment(item):
             return "card_payment"
         return "card_purchase" if amount != 0 else "normal"
     if account_type == "line_of_credit":
@@ -100,12 +122,14 @@ def _unpaired_label(item: Item, account_type: str, today: date) -> str:
     return "normal"
 
 
-def _pairs(items: Iterable[Item]) -> list[tuple[Item, Item]]:
+def _pairs(
+    items: Iterable[Item], account_types: Mapping[uuid.UUID, str]
+) -> list[tuple[Item, Item]]:
     """Each transaction's other half, at most one each.
 
-    Halves have opposite amounts in the same currency, on different accounts, at most
-    `WINDOW_BUSINESS_DAYS` apart in either order. Closest first, then earliest, then
-    lowest ID.
+    Halves have opposite amounts in the same currency, on different accounts
+    (`_can_pair`), at most `WINDOW_BUSINESS_DAYS` apart in either order. Closest first,
+    then earliest, then lowest ID.
     """
     groups: dict[tuple[str, int], tuple[list[Item], list[Item]]] = defaultdict(
         lambda: ([], [])
@@ -119,7 +143,7 @@ def _pairs(items: Iterable[Item]) -> list[tuple[Item, Item]]:
     for outs, ins in groups.values():
         for out in outs:
             for incoming in ins:
-                if out.account_id == incoming.account_id:
+                if not _can_pair(out, incoming, account_types):
                     continue
                 earlier, later = sorted((out.date, incoming.date))
                 if (later - earlier).days > _WINDOW_CALENDAR_DAYS:
@@ -158,7 +182,7 @@ def label_all(
     """
     items = list(items)
     result: dict[uuid.UUID, Label] = {}
-    for out, incoming in _pairs(items):
+    for out, incoming in _pairs(items, account_types):
         label = _pair_label(
             account_types[out.account_id], account_types[incoming.account_id]
         )
