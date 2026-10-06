@@ -140,6 +140,12 @@ Seen once or not yet corroborated. Tracked, not trusted.
 - evidence: verification.md round 2 finding 1; fixed in 004dc46 (tests/test_nightly_sync.py:52,148) (tests, jobs)
 - last seen: 2026-10-06T02:18:12Z
 
+### L-022 - To prove a write commits in the same transaction as another, compare against a row only that transaction writes, not rows a later transaction would also rewrite
+- signal: `spec_precision_gap` · recurrence: 1 feature(s) · scope: `repo-layer` · harmful: 0
+- features: 16-bank-transaction-labels
+- evidence: C21 - services/core/tests/test_transaction_labels.py:583 (repo-layer)
+- last seen: 2026-10-06T02:52:38Z
+
 ## Quarantined (failed when applied - ignore)
 
 A confirmed lesson that recurred alongside failure. Kept for the maintainer to review.

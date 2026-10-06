@@ -68,44 +68,15 @@
 
 ## Handoff
 
-**Feature**: 15-bank-nightly-sync-job
-**Where**: spec 15 **Done**.
-- Independent Verifier round 3 (scoped) PASS 33/33 over `625ae6a..6143979` (profile light), gate exit 0. The wall-clock date gap from round 2 is closed by `004dc46`.
-- Lesson L-021 recorded (pin database-defaulted timestamps in simulated-clock tests).
-- the-judge (local, not posted): APPROVE, one nit F1. `nightly_attempts` resets only in `_end_night` (`bank_sync/service.py:742`). After a runner outage that crosses the next 02:00 while a retry is pending, the next night inherits the old count, and the missed night never adds to `failed_nights`. Left for the user to decide.
-- Carried notes: C8's "every row" is asserted only for `bank_transactions`; C21's 60 s bound is the subprocess timeout; test connections now share one `created_at`, so their processing order follows random IDs (no proof depends on it).
-- The Roadmap has no done column (spec 14 was not marked there either), so it is unchanged.
+**Feature**: 16-bank-transaction-labels
+**Where**: spec 16 **Done**.
+- Independent Verifier round 1 (full) PASS 28/28 over `06fe8df..f55b8c7` (profile light), gate exit 0; suite 419 passed.
+- Lesson L-022 (candidate): C21's same-`xmin` proof would also pass if relabelling ran in a second transaction, since that would rewrite both rows. The code relabels before the commit (`service.py:619`, `:682`).
+- Open for the user: `labels._pairs` ignores which side is a card, so a card purchase (-X on the card) and an unrelated +X deposit on checking within 3 business days pair as `card_payment`, hiding income. This is consistent with the approved AC 1, 5 and 13; changing it is a plan change.
+- Carried notes: C6 tests the tie-break only for one outflow with several inflows; the accounts lock is taken after the Plaid fetch and before any write (door 3 order kept).
 
 **In progress**: none
-**Next step**: push `development` when the user asks; next spec in build order (16, transaction labels).
+**Next step**: the user's call on the card-pairing note; push `development` when the user asks; next spec in build order (17, bank connection settings).
 
 **Blockers**: none for v1 work. Go-live: Plaid OAuth institutions (spec 12 open question 1)
 **Uncommitted**: none
-**Also done**: 15 notes
-- **Staging:** the `jobs` service exists and runs hourly. First run at 2026-10-05T22:00:50Z, `jobs.run_finished` `due` 0.
-- **Railway:**
-  - `api`'s hand-set Plaid and token variables are now `preserve()` in `.railway/railway.ts`; without that, `config apply` would delete them.
-  - A push whose head commit touches only `.railway/` is SKIPPED for `api`; redeploy with `railway service redeploy --service api --environment staging --from-source --yes`.
-  - Read JSON logs with `railway logs --json` (the plain output shows `key=value`).
-- **tzdata:** 2026.4 keeps British Columbia on UTC-7 from 2026-11-01.
-- **Local machine:**
-  - No Docker here. The portable Postgres is at `.../34eb90c2-.../scratchpad/pgsql`, data in `.../scratchpad/pgdata`; start it with `pgsql/bin/pg_ctl.exe -D pgdata -o "-p 5432" -w start`.
-  - The `.../pgsql/pgdata` path in older notes is wrong.
-  - Three stray pytest processes from verifier round 1 (PIDs 21968, 22756, 29492) were left for the user to end.
-- **GitHub Actions:** a `web` CI job once waited 15 minutes for a runner and was cancelled; `gh run rerun <id> --failed` fixed it.
-
-**Also done**: 14-bank-transaction-sync - Verifier PASS 47/47 at round 2 over `cb8a360..d7b56f9`; spec Done; now pushed
-**Also done**: 14 notes - local Postgres is the portable 17.11 from an earlier session's scratchpad (`.../34eb90c2-.../scratchpad/pgsql`, `pg_ctl -D pgdata -o "-p 5432" start`); no Docker on this machine. Frontend deps needed `npm ci` (with an empty `npm_config_userconfig`). `PLAID_WEBHOOK_URL` is set on staging `api` (user, 2026-10-05)
-**Also done**: 13-bank-cash-accounts - Verifier PASS 53/53 at round 1 over `ed7529b..84a16bf`
-**Also done**: 13 notes - the second sandbox bank is RBC Royal Bank (`ins_39`); `proofs.sh c31` runs the two-bank sandbox proof. The segmented control (shadcn `ToggleGroup`) is a Radix `radiogroup` with `aria-checked`, not the mockup's `aria-pressed` buttons (open with the user). The primary-account `RadioGroup` wraps the cards with `tabIndex={-1}` so it is not a tab stop. Flakes seen outside this change: spec 12 `test_connect_logged` (random `0001` in a timestamp or UUID), spec 10 `auth.spec.ts` C26 axe contrast on `/sign-up` while Clerk renders, and the Plaid sandbox e2e tests under a long parallel Playwright run; each passed when run again or alone
-**Also done**: 12-bank-connect - Verifier PASS 46/46 at round 2 over `1d3e771..afaecb7`
-**Also done**: 12 notes - sandbox keys live in `services/core/.env.local`; `proofs.sh c21` runs the real-sandbox test (marker `plaid_sandbox`, deselected by default). Plaid Link sandbox path for Playwright: Continue without phone number, search, TD Canada Trust (`ins_42`), `user_good` / `pass_good`, Continue, Finish without saving. Redaction now covers public tokens and any key containing `body` (doors 7, 8). Sentry still captures other frame locals by default (open with the user). Plaid warned "link-initialize.js embedded more than once" in dev; check in a production build
-**Also done**: 11-accounts-businesses-and-access - Verifier PASS 41/41 at round 2 over `e41a687..78b5790`
-**Also done**: 11 notes - Docker Desktop now runs the local Postgres on 5432 (`DATABASE_URL` in `services/core/.env.local`). The onboarding e2e creates and deletes a Clerk user per test through the Backend API (`createOnboardingUser` in `e2e/test-user.ts`); setup gives the `E2E_CLERK_USER_USERNAME` user a business on its first run. A stale `next dev` on port 3000 makes every e2e test show the load-error page: stop it first. Spec 07's e2e C42 needs `NEXT_PUBLIC_SENTRY_DSN=` to pass. Open with the user: C39's text says the existing e2e specs pass "unchanged in their assertions", but spec 07's C11 was rewritten for AC 35
-**Also done**: 10-accounts-login - Verifier PASS 34/34 over `c4aa31f..990e12a`. Staging works end to end at `e41a687` (2026-10-02): `/healthz` 200, `/` 307 to `/sign-in`, a Clerk sign-in-token sign-in shows the shell; staging Clerk variables are `preserve()` in `.railway/railway.ts`; `API_URL` is the public API domain (the private-network address is still unproven). Staging variables still to fix (user): `api` `CLERK_JWT_KEY` as a full PEM, `CLERK_AUTHORIZED_PARTIES=https://web-staging-4398.up.railway.app`, `web` `API_URL=https://api-staging-e068.up.railway.app`. Clerk dev instance `polite-trout-7592`; Playwright signs in with `@clerk/testing` sign-in tokens. Run the API with `uv run fastapi run app/main.py --port 8100 > api.log` to read its stdout during e2e
-**Also done**: 10 notes - this machine has no Postgres or Docker; a portable Postgres 17.11 runs from the session scratchpad (`pgsql/bin/pg_ctl.exe -D pgdata -o "-p 5432" start`, trust auth) and is gone when the scratchpad is cleared. Clerk dev instance `polite-trout-7592`; Playwright signs in with `@clerk/testing` sign-in tokens, because password sign-in stops at `needs_client_trust`. The API's stdout does not reach Playwright output; run `uv run fastapi run app/main.py --port 8100 > api.log` first to read it (Playwright reuses the server). Known flake outside this spec: dev-components toast timing (spec 06 C20) under full parallel load
-**Also done**: 08-api-errors-logging-monitoring - independent Verifier PASS 32/32 over `ec63c5f..1fa01d5` (profile light). `railway ssh` needs a registered SSH key (the temporary one for C22 was removed). `railway config` needs CLI >= 5.42.1 (`npx @railway/cli@5.63.1`)
-**Also done**: 06-web-design-system - independent Verifier PASS 37/37 over `f1bbdd2..2a08ab3` (profile light), merged into `development`; its decisions are AD-012 to AD-014. Spec 07 is now unblocked. npm 12 on this machine rejects the user-level `allow-scripts` in `~/.npmrc` for project installs: run `npm install` / `npx shadcn add` with `npm_config_userconfig=<empty file>`. Playwright reuses any server on port 3000, so stop other dev servers first
-**Also done**: 07-web-app-shell - independent Verifier PASS 43/43 at round 3 over `61cfae8..313bfd5` (profile light); spec Done. Sentry proofs read `frontend/.env.local` (`set -a; . frontend/.env.local; set +a`) with a personal `SENTRY_READ_TOKEN` and `SENTRY_API_URL=https://us.sentry.io`. Staging Sentry variables for `web` were not set: the auto-mode classifier denied `railway config plan` as an IaC action, so the user sets them (`railway variable set ... --stdin --service web --environment staging`)
-**Also done**: 09 notes - port 8000 on this machine is held by a system process (`Manager`), so Playwright runs the API on 8100. No local Postgres or Docker here: DB pytest tests hang locally, CI runs them. `gh` lives at `/c/Program Files/GitHub CLI`; no `jq`. C16/C17 proof used scratch PR #2 (closed, branch deleted)
-**Branch**: development

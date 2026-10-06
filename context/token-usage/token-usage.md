@@ -55,3 +55,5 @@ Context used per request, measured against a context window of about 250,000 tok
 | Spec 15: nightly sync job (checks, build S1-S5, staging, verifier rounds 1-2, date fix) | ~200,000 (~80%) | Low (past 60%) |
 | Spec 15: close-out (verifier round 3 sub-agent ~125,000 separate context, the-judge, lessons) | ~45,000 (~18%) | High (smart zone) |
 | Spec 16: transaction labels (plan) | ~70,000 (~28%) | High (smart zone) |
+| Spec 16: transaction labels (checks, build, proofs) | ~85,000 (~34%) | High (smart zone) |
+| Spec 16: verifier sub-agent, round 1 (separate context) | ~120,000 (~48%) | Medium (attention degrades) |

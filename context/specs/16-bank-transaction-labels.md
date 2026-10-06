@@ -1,7 +1,7 @@
 # Spec 16: Transaction labels
 
 - **Milestone:** 3, bank data
-- **Status:** In progress
+- **Status:** Done
 - **Depends on:** 14
 
 ## Goal
@@ -20,6 +20,6 @@ Give every transaction one of these labels:
 
 ## Done when
 
-- [ ] A $10,000 transfer from savings to checking is labeled an internal transfer on both sides.
-- [ ] Card purchases and card payments get the right labels.
-- [ ] A transfer with no match becomes normal after 3 business days.
+- [x] A $10,000 transfer from savings to checking is labeled an internal transfer on both sides.
+- [x] Card purchases and card payments get the right labels.
+- [x] A transfer with no match becomes normal after 3 business days.

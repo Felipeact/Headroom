@@ -3,7 +3,7 @@
   "promote_threshold": 2,
   "window_days": 45,
   "quarantine_threshold": 2,
-  "next_id": 22,
+  "next_id": 23,
   "lessons": [
     {
       "id": "L-001",
@@ -382,6 +382,24 @@
       ],
       "created": "2026-10-06T02:18:12Z",
       "last_seen": "2026-10-06T02:18:12Z"
+    },
+    {
+      "id": "L-022",
+      "key": "spec_precision_gap::to prove a write commits in the same transaction as another compare against a row only that transaction writes not rows a later transaction would also rewrite",
+      "text": "To prove a write commits in the same transaction as another, compare against a row only that transaction writes, not rows a later transaction would also rewrite",
+      "signal": "spec_precision_gap",
+      "scope": "repo-layer",
+      "status": "candidate",
+      "features": [
+        "16-bank-transaction-labels"
+      ],
+      "recurrence": 1,
+      "harmful": 0,
+      "evidence": [
+        "C21 - services/core/tests/test_transaction_labels.py:583 (repo-layer)"
+      ],
+      "created": "2026-10-06T02:52:38Z",
+      "last_seen": "2026-10-06T02:52:38Z"
     }
   ]
 }
