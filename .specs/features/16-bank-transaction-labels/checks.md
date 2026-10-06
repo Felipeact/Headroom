@@ -200,3 +200,12 @@ Proof: `uv run pytest tests/test_transaction_labels.py -k "holidays_dependency"`
 - Existing files touched: `bank_sync/{service,models,repository}.py` (42 KB), `tests/test_transaction_sync.py` (30 KB, for `SyncFake` and the payload assertion), `tests/test_nightly_sync.py` (21 KB, for `NightlyFake` and its helpers), `tests/test_migrations.py` (25 KB), `tests/conftest.py` (4 KB), `accounts/service.py` (5 KB, read only), `pyproject.toml` (1 KB): ~128 KB
 - New files: the migration, `tests/test_transaction_labels.py`, `tests/test_transaction_labels_nightly.py`: ~60 KB
 - Total: 188 KB / 4 = ~47k tokens, under the 150k budget - one builder
+
+- **Boundary:** C1-C28 closed at `bbc18f1`. Proofs green there: every named proof, the API suite (419 passed), ruff, mypy, spec 14 `proofs.sh c39` (real sandbox sync) and `c46` (generated files unchanged)
+- **Settled mid-build (builder decisions, none asked):**
+  - Labelling lives in `bank_sync/labels.py` as pure functions; `service._relabel` loads, compares and writes only changed rows, clearing old links before setting new ones because the link is unique.
+  - `sync_connection` gained an optional `now` (default the current UTC time); the nightly path passes its `now`, so "today" is business-local at the run's clock.
+  - The accounts lock is taken after the Plaid pages are fetched and before the first write, so a long Plaid call does not hold the business lock (C25's proof depends on this).
+  - Three test-setup fixes before the first green run, no assertion changed: reused transaction names across two businesses in one test (Plaid IDs are globally unique), and `move`'s first parameter renamed from `name` to `key` (it clashed with `tx`'s description keyword).
+  - Running `pytest -m "not sandbox"` overrides the project's `-m 'not plaid_sandbox'` default and runs the keyless sandbox tests; plain `uv run pytest` is the suite.
+- **Abandoned:** none
