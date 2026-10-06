@@ -1,7 +1,7 @@
 # Spec 18: Sample data
 
 - **Milestone:** 4, forecast
-- **Status:** Not started
+- **Status:** In progress
 - **Depends on:** 14
 
 ## Goal
