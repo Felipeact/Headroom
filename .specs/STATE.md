@@ -74,15 +74,13 @@
 
 ## Handoff
 
-**Feature**: 16-bank-transaction-labels
-**Where**: spec 16 **Done**.
-- Independent Verifier round 1 (full) PASS 28/28 over `06fe8df..f55b8c7` (profile light), gate exit 0; suite 419 passed.
-- Lesson L-022 (candidate): C21's same-`xmin` proof would also pass if relabelling ran in a second transaction, since that would rewrite both rows. The code relabels before the commit (`service.py:619`, `:682`).
-- Review finding F1 fixed in `c74f037` (user-approved AC 27, check C29): a card half pairs only as a payment received. Verifier round 2 (scoped) PASS 29/29 at `c74f037`, gate exit 0, suite 422 passed. Sampling notes: no paired `TRANSFER_IN` card payment and no card-out/credit-line-in case is tested.
-- Carried notes: C6 tests the tie-break only for one outflow with several inflows; the accounts lock is taken after the Plaid fetch and before any write (door 3 order kept).
+**Feature**: 17-bank-connection-settings
+**Where**: spec 17 **Done**; Milestone 3 (bank data) done.
+- Commits: `48f4c5f` (plan, checks), `ffc230a` (API), `e137301` (web).
+- Independent Verifier round 1 (full) PASS 55/55 over `8a8b2e9..e137301` (profile light), gate exit 0; API 467 passed, web 224 passed, e2e C13/C18/C35/C49 and sandbox C26/C48 green.
+- Verifier precision notes (not failures): C37 counts transactions through deleted accounts; C3 proves NOT NULL with an UPDATE; C2 compares instants, not the `Z`; C9 does not pin "available"/"owed" to the line below; the `PLAID_ENV` refusal in `tests/sandbox_reset_login.py` is untested.
+- Lessons L-023, L-024, L-025 (candidates).
+- Known outside spec 17: spec 13's choose-accounts `RadioGroup` (`tabIndex={-1}`) leaves its primary radios without a tab stop; `(app)/loading.tsx` has `aria-label` on a role-less div (axe `aria-prohibited-attr`).
 
 **In progress**: none
-**Next step**: push `development` when the user asks (c74f037 and later are local); next spec in build order (17, bank connection settings).
-
-**Blockers**: none for v1 work. Go-live: Plaid OAuth institutions (spec 12 open question 1)
-**Uncommitted**: none
+**Next step**: run `/the-judge` locally on spec 17 (AGENTS.md); push `development` when the user asks (`48f4c5f` onward is local); next spec in build order (18, sample data).

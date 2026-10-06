@@ -59,3 +59,5 @@ Context used per request, measured against a context window of about 250,000 tok
 | Spec 16: verifier sub-agent, round 1 (separate context) | ~120,000 (~48%) | Medium (attention degrades) |
 | Spec 16: close-out (gate check, the-judge local review, F1 repro) | ~35,000 (~14%) | High (smart zone) |
 | Spec 16: F1 fix (AC 27, C29) and verifier round 2 (sub-agent ~99,000 separate context) | ~20,000 (~8%) | High (smart zone) |
+| Spec 17: bank connection settings (plan, checks, build, proofs) | ~150,000 (~60%) | Medium (attention degrades) |
+| Spec 17: verifier sub-agent, round 1 (separate context) | ~154,000 (~62%) | Low (past 60%) |

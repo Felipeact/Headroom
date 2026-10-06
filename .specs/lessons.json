@@ -3,7 +3,7 @@
   "promote_threshold": 2,
   "window_days": 45,
   "quarantine_threshold": 2,
-  "next_id": 23,
+  "next_id": 26,
   "lessons": [
     {
       "id": "L-001",
@@ -400,6 +400,60 @@
       ],
       "created": "2026-10-06T02:52:38Z",
       "last_seen": "2026-10-06T02:52:38Z"
+    },
+    {
+      "id": "L-023",
+      "key": "spec_precision_gap::when proving rows were deleted count them by a key that survives the delete business id or saved ids never by joining through the parent rows that were deleted too",
+      "text": "When proving rows were deleted, count them by a key that survives the delete (business_id or saved IDs), never by joining through the parent rows that were deleted too.",
+      "signal": "spec_precision_gap",
+      "scope": "tests/bank_sync",
+      "status": "candidate",
+      "features": [
+        "17-bank-connection-settings"
+      ],
+      "recurrence": 1,
+      "harmful": 0,
+      "evidence": [
+        "services/core/tests/test_bank_connection_settings.py:173 (tests/bank_sync)"
+      ],
+      "created": "2026-10-06T16:43:23Z",
+      "last_seen": "2026-10-06T16:43:23Z"
+    },
+    {
+      "id": "L-024",
+      "key": "spec_deviation::before writing screen checks read the binding mockup s exact copy and controls a check that paraphrases them badge vs radio type labels forces a mid build amendment",
+      "text": "Before writing screen checks, read the binding mockup's exact copy and controls; a check that paraphrases them (badge vs radio, type labels) forces a mid-build amendment.",
+      "signal": "spec_deviation",
+      "scope": "web/checks",
+      "status": "candidate",
+      "features": [
+        "17-bank-connection-settings"
+      ],
+      "recurrence": 1,
+      "harmful": 0,
+      "evidence": [
+        "checks.md:C9,C16 (web/checks)"
+      ],
+      "created": "2026-10-06T16:43:23Z",
+      "last_seen": "2026-10-06T16:43:23Z"
+    },
+    {
+      "id": "L-025",
+      "key": "ac_gap::never set tabindex 1 on a radix radiogroup root no radio gets a tab stop give each group only its radios and prove reachability with an e2e tab walk",
+      "text": "Never set tabIndex=-1 on a Radix RadioGroup root: no radio gets a tab stop; give each group only its radios and prove reachability with an e2e Tab walk.",
+      "signal": "ac_gap",
+      "scope": "web/a11y",
+      "status": "candidate",
+      "features": [
+        "17-bank-connection-settings"
+      ],
+      "recurrence": 1,
+      "harmful": 0,
+      "evidence": [
+        "frontend/components/settings/account-row.tsx (web/a11y)"
+      ],
+      "created": "2026-10-06T16:43:23Z",
+      "last_seen": "2026-10-06T16:43:23Z"
     }
   ]
 }

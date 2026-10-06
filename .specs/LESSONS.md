@@ -146,6 +146,24 @@ Seen once or not yet corroborated. Tracked, not trusted.
 - evidence: C21 - services/core/tests/test_transaction_labels.py:583 (repo-layer)
 - last seen: 2026-10-06T02:52:38Z
 
+### L-023 - When proving rows were deleted, count them by a key that survives the delete (business_id or saved IDs), never by joining through the parent rows that were deleted too.
+- signal: `spec_precision_gap` · recurrence: 1 feature(s) · scope: `tests/bank_sync` · harmful: 0
+- features: 17-bank-connection-settings
+- evidence: services/core/tests/test_bank_connection_settings.py:173 (tests/bank_sync)
+- last seen: 2026-10-06T16:43:23Z
+
+### L-024 - Before writing screen checks, read the binding mockup's exact copy and controls; a check that paraphrases them (badge vs radio, type labels) forces a mid-build amendment.
+- signal: `spec_deviation` · recurrence: 1 feature(s) · scope: `web/checks` · harmful: 0
+- features: 17-bank-connection-settings
+- evidence: checks.md:C9,C16 (web/checks)
+- last seen: 2026-10-06T16:43:23Z
+
+### L-025 - Never set tabIndex=-1 on a Radix RadioGroup root: no radio gets a tab stop; give each group only its radios and prove reachability with an e2e Tab walk.
+- signal: `ac_gap` · recurrence: 1 feature(s) · scope: `web/a11y` · harmful: 0
+- features: 17-bank-connection-settings
+- evidence: frontend/components/settings/account-row.tsx (web/a11y)
+- last seen: 2026-10-06T16:43:23Z
+
 ## Quarantined (failed when applied - ignore)
 
 A confirmed lesson that recurred alongside failure. Kept for the maintainer to review.

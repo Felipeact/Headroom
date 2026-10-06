@@ -1,7 +1,7 @@
 # Spec 17: Bank connection settings
 
 - **Milestone:** 3, bank data
-- **Status:** In progress
+- **Status:** Done
 - **Depends on:** 13, 14
 
 ## Goal
@@ -17,5 +17,5 @@ Let owners manage their bank connections after onboarding.
 
 ## Done when
 
-- [ ] A sandbox connection forced into a "login required" state shows the banner, and can be repaired.
-- [ ] After a disconnect, syncing stops and the token is gone.
+- [x] A sandbox connection forced into a "login required" state shows the banner, and can be repaired.
+- [x] After a disconnect, syncing stops and the token is gone.

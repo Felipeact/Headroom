@@ -1,6 +1,6 @@
 # Headroom roadmap
 
-*Last updated: October 4, 2026. Update this file whenever a milestone or gate is passed.*
+*Last updated: October 6, 2026. Update this file whenever a milestone or gate is passed.*
 
 **The plan:** generate the project with official tools, then build Headroom one short spec at a time until it's ready for its first clients. Scale up only after they confirm the product is worth paying for.
 
@@ -46,7 +46,7 @@ Specs 01–05 are done. Staging runs on Railway, and its service settings live i
 | [10](specs/10-accounts-login.md) | Login with Clerk | 07, 08, 09 |
 | [11](specs/11-accounts-businesses-and-access.md) | Businesses and access (onboarding step 2) | 10 |
 
-### Milestone 3: Bank data (2–3 weeks)
+### Milestone 3: Bank data (2–3 weeks): done October 6, 2026
 
 | Spec | What it does | Depends on |
 |---|---|---|
