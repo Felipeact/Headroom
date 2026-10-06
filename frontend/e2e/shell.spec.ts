@@ -199,7 +199,8 @@ test.describe('phone', () => {
     await page.goto('/alerts')
     await page.getByRole('button', { name: 'Open menu' }).click()
     await page.getByRole('dialog', { name: 'Menu' }).getByRole('link', { name: 'Settings' }).click()
-    await expect(page).toHaveURL(/\/settings$/)
+    // Spec 17: Settings opens on Bank connections.
+    await expect(page).toHaveURL(/\/settings\/banks$/)
     await expect(page.locator('main h1')).toHaveText('Settings')
     await expect(page.getByRole('dialog')).toHaveCount(0)
   })

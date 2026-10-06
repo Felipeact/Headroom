@@ -1,6 +1,7 @@
 """Force a business's banks into Plaid's "login required" state, in the sandbox only.
 
-Spec 17's end-to-end test runs `uv run python -m tests.sandbox_reset_login <business_id>`.
+Spec 17's end-to-end test runs `uv run python -m tests.sandbox_reset_login <business>`, where
+`<business>` is the business's ID or its exact name (the browser test knows only the name).
 For each connection of the business it calls `/sandbox/item/reset_login`, then syncs the
 connection, so the API records the login problem the way it would in real use. It is
 never a route: the access token stays in the backend, and it refuses to run unless
@@ -16,6 +17,7 @@ from plaid.model.sandbox_item_reset_login_request import SandboxItemResetLoginRe
 from sqlalchemy import select
 
 from app.db import get_sessionmaker
+from app.modules.accounts.models import Business
 from app.modules.bank_sync import service
 from app.modules.bank_sync.models import BankConnection
 from app.modules.bank_sync.plaid import PlaidError, get_plaid_client
@@ -64,8 +66,25 @@ def reset_login(business_id: uuid.UUID) -> int:
     return len(connections)
 
 
+def business_id(business: str) -> uuid.UUID:
+    """The ID itself, or the ID of the one business with exactly this name."""
+    try:
+        return uuid.UUID(business)
+    except ValueError:
+        pass
+    with get_sessionmaker()() as session:
+        ids = list(
+            session.scalars(select(Business.id).where(Business.name == business))
+        )
+    if len(ids) != 1:
+        raise SystemExit(f"expected one business named {business!r}, found {len(ids)}")
+    return ids[0]
+
+
 if __name__ == "__main__":
     if len(sys.argv) != 2:
-        raise SystemExit("usage: python -m tests.sandbox_reset_login <business_id>")
-    count = reset_login(uuid.UUID(sys.argv[1]))
+        raise SystemExit(
+            "usage: python -m tests.sandbox_reset_login <business id or name>"
+        )
+    count = reset_login(business_id(sys.argv[1]))
     print(f"reset {count} connection(s)")

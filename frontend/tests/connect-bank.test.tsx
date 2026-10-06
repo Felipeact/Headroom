@@ -111,7 +111,7 @@ describe('connect bank view', () => {
 
     vi.mocked(connectBank).mockResolvedValue({ error: 'alreadyConnected' })
     await succeed()
-    expect(connectBank).toHaveBeenCalledWith(BUSINESS, 'public-sandbox-1')
+    expect(connectBank).toHaveBeenCalledWith(BUSINESS, 'public-sandbox-1', '/onboarding/accounts')
     expect(alert().textContent).toBe(BANK.errors.alreadyConnected)
     expect(button().disabled).toBe(false)
 

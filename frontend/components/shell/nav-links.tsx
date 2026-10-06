@@ -28,7 +28,8 @@ export function NavLinks({
         <li key={href}>
           <Link
             href={href}
-            aria-current={pathname === href ? "page" : undefined}
+            // A section stays current on its own pages, such as /settings/banks (spec 17).
+            aria-current={pathname === href || (href !== "/" && pathname.startsWith(`${href}/`)) ? "page" : undefined}
             onClick={onNavigate}
             className="flex min-h-11 items-center rounded-[10px] px-3.5 text-[15px] font-medium text-ink-2 transition-colors hover:bg-surface-muted aria-[current=page]:bg-surface-active aria-[current=page]:font-semibold aria-[current=page]:text-ink"
           >

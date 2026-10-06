@@ -52,3 +52,20 @@ export function formatDate(isoDate: string, style: 'short' | 'weekday' = 'short'
     ...(style === 'weekday' ? { weekday: 'short' } : {}),
   }).format(date)
 }
+
+/**
+ * When something happened, in the business's time zone (DESIGN.md "Dates and times"): "today at
+ * 2:04 AM", or "Oct 3 at 2:04 AM" on an earlier day. `now` decides what "today" is.
+ */
+export function formatSyncedAt(isoDateTime: string, timeZone: string, now: Date = new Date()): string {
+  const moment = new Date(isoDateTime)
+  if (Number.isNaN(moment.getTime())) {
+    throw new RangeError(`isoDateTime is not a date and time: "${isoDateTime}"`)
+  }
+  const day = new Intl.DateTimeFormat(LOCALE, { timeZone, month: 'short', day: 'numeric' })
+  // en-CA writes "2:04 a.m."; DESIGN.md writes "6:02 AM".
+  const time = new Intl.DateTimeFormat('en-US', { timeZone, hour: 'numeric', minute: '2-digit' }).format(moment)
+  const ymd = new Intl.DateTimeFormat('en-CA', { timeZone, year: 'numeric', month: '2-digit', day: '2-digit' })
+  const today = ymd.format(moment) === ymd.format(now)
+  return `${today ? 'today' : day.format(moment)} at ${time}`
+}

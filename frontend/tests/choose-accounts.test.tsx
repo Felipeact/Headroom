@@ -62,7 +62,14 @@ const LINE = account('Line of credit', {
 })
 
 function bank(name: string, accounts: Account[], id = `c-${name}`): Connection {
-  return { id, institution_name: name, created_at: '2026-10-04T15:00:00Z', accounts }
+  return {
+    id,
+    institution_name: name,
+    created_at: '2026-10-04T15:00:00Z',
+    accounts,
+    status: 'synced',
+    last_synced_at: '2026-10-04T15:05:00Z',
+  }
 }
 
 const HARBOR = bank('Harbor Community Bank', [CHECKING, SAVINGS, LINE])
@@ -283,7 +290,7 @@ describe('choose accounts view', () => {
 
     vi.mocked(connectBank).mockResolvedValue({ error: 'alreadyConnected' })
     await act(async () => link.options!.onSuccess('public-sandbox-2', {} as never))
-    expect(connectBank).toHaveBeenCalledWith(BUSINESS, 'public-sandbox-2')
+    expect(connectBank).toHaveBeenCalledWith(BUSINESS, 'public-sandbox-2', '/onboarding/accounts')
     expect(screen.getByRole('alert').textContent).toContain(BANK.errors.alreadyConnected)
 
     vi.mocked(connectBank).mockResolvedValue({ error: 'connectFailed' })

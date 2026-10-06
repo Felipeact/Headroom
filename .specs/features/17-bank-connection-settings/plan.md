@@ -46,7 +46,8 @@ Disconnect:
 | webhook | `POST /v1/webhooks/plaid` now acts on `ITEM` / `ERROR` and `ITEM` / `LOGIN_REPAIRED`. Every other webhook is still answered `200` with no action |
 | API contract | `Connection` (AD-039) gains `status` and `last_synced_at`. Onboarding steps 3 and 4 read `Connection` and ignore the new fields. `contracts/openapi.json` and `schema.d.ts` are regenerated |
 | event | `transactions.synced` is now also published by a disconnect, with `removed` = the deleted transactions and `balances_changed` true. No subscriber exists yet (AD-055's tuple is empty). Spec 21 recomputes on it |
-| web | `/settings` stops being one placeholder page. It becomes a layout with 5 sections and redirects to `/settings/banks`. The `Settings` link in the main navigation keeps `/settings` |
+| web | `/settings` stops being one placeholder page. It becomes a layout with 5 sections, and `next.config.ts` redirects `/settings` to `/settings/banks` with a 307 (a `redirect()` in a page under the streaming `(app)` layout becomes a client-side redirect after load). The `Settings` link in the main navigation keeps `/settings`, and now stays current on every `/settings/*` page |
+| web | `connectBank` and `useConnectBank` take where to go after a connect: `/onboarding/accounts` (the default, unchanged for onboarding) or `/settings/banks`. Any other value falls back to the default |
 | web | `lib/format.ts` gains a time formatter for "today at 2:04 AM" in the business's time zone (DESIGN.md "Show times in the business's time zone") |
 | stored data | `bank_connections` gains `login_required` (defaults to false on existing rows) and `last_synced_at` (null on existing rows, set by the next successful sync; the nightly run reaches every connection within a day). Local and staging only; no production data yet |
 
@@ -101,7 +102,7 @@ One-way constraints: a connection carries at most one login-required flag, never
 3. WHEN the owner opens `/settings` THEN the web app SHALL redirect to `/settings/banks`.
 4. The settings pages SHALL show a section navigation with, in order, Business, Bank connections, Members, Email preferences and Your data, marking the current one with `aria-current="page"`. Every section except Bank connections SHALL show the title and the "coming soon" text.
 5. WHEN `/settings/banks` loads with connections THEN it SHALL show, for each bank (oldest first), its name and a status line: "Synced today at 2:04 AM" (time in the business's time zone; "Synced Oct 3 at 2:04 AM" for an earlier date), "Syncing…" for `syncing`, or the `Needs attention` badge for `login_required` and `sync_failing`.
-6. WHEN `/settings/banks` loads THEN each account row SHALL show its name, `••` and mask, and type; the balance for a cash-side account ("$8,000"), "$20,000 available" for a line of credit, and "$2,450 owed" for a credit card; amounts formatted only through `lib/format.ts`.
+6. WHEN `/settings/banks` loads THEN each account row SHALL show its name, `••` and mask, and type ("Checking", "Savings", "Credit" for a line of credit, "Credit card"); the balance for a cash-side account ("$8,000"), "$20,000" over "available" for a line of credit, and "$2,450" over "owed" for a credit card; amounts formatted only through `lib/format.ts`. (Amended 2026-10-06 to match the mockup, approved by the user.)
 7. WHILE the page is loading THEN it SHALL show a skeleton of the bank cards.
 8. IF the business has no bank connection THEN the page SHALL show the empty state "No bank connected yet", "Connect your bank to see your 13-week forecast.", and a "Connect your bank" button that opens Plaid Link.
 9. IF the connections request fails THEN the page SHALL show "We couldn't load your bank connections. Check your connection and try again." with a "Try again" button, and SHALL report the failure to Sentry.
@@ -116,8 +117,8 @@ The same rules as onboarding step 3, from settings.
 **Acceptance Criteria**
 
 11. WHEN the owner toggles "Counts as cash" on a checking or savings account in CAD THEN the page SHALL send `PATCH .../bank/accounts/{id}` with `included` and show the saved state after the page re-renders.
-12. The page SHALL show "Credit never counts as cash" with no switch for a credit card or line of credit, and "Not available" in the Primary column for any account that doesn't count as cash.
-13. WHEN the owner chooses "Make primary" on an included account THEN the page SHALL send `PATCH` with `primary: true`, and the `Primary` badge SHALL move to that account.
+12. The page SHALL show "Credit never counts as cash" with no switch for a credit card or line of credit, and "Not available" with no radio in the Primary column for any account that doesn't count as cash.
+13. WHEN the owner chooses the "Make primary" radio on an included account THEN the page SHALL send `PATCH` with `primary: true`, and that account's radio SHALL read "Primary" and be checked. (Amended 2026-10-06 to match the mockup's radios, approved by the user.)
 14. IF a `PATCH` fails THEN the page SHALL keep the previous state and show "We couldn't save that change. Try again." (the existing `saveFailed` text).
 
 **Independent test:** in Playwright, toggle savings into cash and make it primary, then reload and see both persisted.

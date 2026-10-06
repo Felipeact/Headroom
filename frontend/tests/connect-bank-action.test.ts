@@ -47,6 +47,24 @@ describe('connect bank action', () => {
     })
   })
 
+  test('201 from bank settings redirects back to bank settings (spec 17)', async () => {
+    answers(201)
+
+    await expect(connectBank(BUSINESS, PUBLIC_TOKEN, '/settings/banks')).rejects.toThrow('NEXT_REDIRECT')
+
+    expect(redirect).toHaveBeenCalledWith('/settings/banks')
+  })
+
+  test('201 with a destination outside the list redirects to choosing accounts', async () => {
+    answers(201)
+
+    await expect(
+      connectBank(BUSINESS, PUBLIC_TOKEN, 'https://evil.example' as '/settings/banks'),
+    ).rejects.toThrow('NEXT_REDIRECT')
+
+    expect(redirect).toHaveBeenCalledWith('/onboarding/accounts')
+  })
+
   test('409 returns the duplicate result and does not redirect', async () => {
     answers(409)
 

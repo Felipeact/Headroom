@@ -55,10 +55,10 @@ Proof: `npx vitest run tests/format.test.ts -t "synced time"`
 
 **C9** - Account rows, table-driven over 3 accounts:
 - checking "Operating checking", mask `2381`, `balance_cents` 800000 -> "Operating checking", "••2381 · Checking", "$8,000"
-- line of credit, mask `7702`, `available_cents` 2000000 -> "••7702 · Line of credit", "$20,000 available"
-- credit card, mask `5530`, `balance_cents` 245000 -> "••5530 · Credit card", "$2,450 owed"
+- line of credit, mask `7702`, `available_cents` 2000000 -> "••7702 · Credit", "$20,000" with "available" on the line below
+- credit card, mask `5530`, `balance_cents` 245000 -> "••5530 · Credit card", "$2,450" with "owed" on the line below
 
-(AC 6)
+(AC 6) (amended 2026-10-06 to match the binding mockup, approved by the user)
 Proof: `npx vitest run tests/bank-settings-page.test.tsx -t "account rows"`
 
 **C10** - The `/settings/banks` loading component renders at least one skeleton card with `aria-busy="true"` (AC 7)
@@ -78,16 +78,16 @@ Proof: `bash .specs/features/17-bank-connection-settings/proofs.sh c13`
 **C14** - Turning on the "Counts as cash" switch of a savings account calls the update action with `{ included: true }` for that account. After the action resolves, the page re-renders from the API (AC 11)
 Proof: `npx vitest run tests/bank-settings-page.test.tsx -t "toggle counts as cash"`
 
-**C15** - A credit card and a line of credit row each show "Credit never counts as cash" and no switch. Every account with `included` false shows "Not available" in the Primary column and no "Make primary" button (AC 12)
+**C15** - A credit card and a line of credit row each show "Credit never counts as cash" and no switch. Every account with `included` false shows "Not available" in the Primary column and no primary radio (AC 12) (amended 2026-10-06 to match the binding mockup, approved by the user)
 Proof: `npx vitest run tests/bank-settings-page.test.tsx -t "credit rows"`
 
-**C16** - The primary account shows the "Primary" badge. Pressing "Make primary" on another included account calls the update action with `{ primary: true }` for it (AC 13)
+**C16** - The primary account's radio is labelled "Primary" and checked; every other included account has an unchecked radio labelled "Make primary". Choosing "Make primary" on another included account calls the update action with `{ primary: true }` for it (AC 13) (amended 2026-10-06 to match the binding mockup, approved by the user)
 Proof: `npx vitest run tests/bank-settings-page.test.tsx -t "make primary"`
 
 **C17** - When the update action returns `{ error: "saveFailed" }`, the switch returns to its previous state and the page shows "We couldn't save that change. Try again." (AC 14)
 Proof: `npx vitest run tests/bank-settings-page.test.tsx -t "save failed"`
 
-**C18** - In the running app, through the Plaid sandbox: an owner turns a savings account into cash and makes it primary on `/settings/banks`, reloads, and sees the switch on and the "Primary" badge on that account (AC 11, AC 13)
+**C18** - In the running app, through the Plaid sandbox: an owner turns a savings account into cash and makes it primary on `/settings/banks`, reloads, and sees the switch on and that account's "Primary" radio checked (AC 11, AC 13) (amended 2026-10-06 to match the binding mockup, approved by the user)
 Proof: `bash .specs/features/17-bank-connection-settings/proofs.sh c18`
 
 ### S3 - A bank that needs a login shows a banner and can be repaired · 16 files · 210 KB · ~53k
@@ -262,3 +262,14 @@ Proof: `bash .specs/features/17-bank-connection-settings/proofs.sh c54`
 
 - Estimate, from `wc -c` of the files each slice reads or writes, divided by 4: S1 = 38k (bank_sync service, api, models, migration, settings pages, format, en.json, tests); S2 = 11k (account card reuse, actions, tests); S3 = 53k (service sync paths, webhooks, plaid port, nightly tests, Link update mode, sandbox helper, e2e); S4 = 43k (service disconnect, repository, dialog, tests); S5 = 11k. Running total 156k, of which about 35k is the same service, api and test files counted again in S3 and S4. Counted once, about 121k, under the 150k budget - one builder.
 - Mechanism: one builder (fits; no ask).
+
+- **Boundary:** C1-C55 closed at the web commit after `ffc230a` (API at `ffc230a`). Proofs green there: every named pytest and vitest proof; `proofs.sh c13 c18 c26 c35 c48 c49 c53 c54` (c26, c48 and the four e2e against the real Plaid sandbox); API suite 467 passed; web 224 passed; lint, typecheck, build. Regression e2e green with `--workers=1`: shell, choose-accounts, bank-connect, onboarding (spec 07's C42 left out, as specs 12 and 13 did)
+- **Settled mid-build:**
+  - User-approved (2026-10-06): C9, C15, C16, C18 and plan AC 6, 12, 13 amended to the binding mockup - primary is a radio labelled "Primary" / "Make primary", a line of credit reads "Credit", and "available" / "owed" sit under the amount.
+  - Each account row's primary radio is a Radix `RadioGroup` of its own. One group around the table (spec 13's pattern, with the root at `tabIndex={-1}`) left no radio reachable by Tab, which C13 caught.
+  - Existing tests changed to the approved contract, no assertion loosened: two exact `Connection` key sets gain `status` and `last_synced_at`; spec 15's three-failed-nights test fails with a non-login error (AD-061); two onboarding tests expect `connectBank`'s new third argument; spec 07's shell C9 expects `/settings/banks`; spec 13's `Connection` fixture gains the two fields.
+  - Test-setup fixes, no assertion changed: per-test Plaid transaction IDs; the empty-state test looks for no table instead of no region (sonner's Toaster is a region); e2e waits for the first sync by reloading, uses the visible Link iframe, skips Link's phone screen, and fills the username only when update mode asks for it.
+  - `Toaster` gets `customAriaLabel` from messages, and the skeleton gets `role="status"`, for spec 07's C20 and C18.
+  - The C8 proof lives in `tests/format.test.ts`, as named, beside the older `lib/format.test.ts`.
+- **Abandoned:** a single radio group per bank (above)
+

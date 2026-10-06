@@ -123,5 +123,72 @@
         "noneIncluded": "Choose at least one account that counts as cash."
       }
     }
+  },
+  "Settings": {
+    "title": "Settings",
+    "navLabel": "Settings",
+    "sections": {
+      "business": "Business",
+      "banks": "Bank connections",
+      "members": "Members",
+      "email": "Email preferences",
+      "data": "Your data"
+    },
+    "Banks": {
+      "title": "Bank connections",
+      "intro": "Choose which accounts count as cash, and which one is your primary account.",
+      "connectAnother": "Connect another bank",
+      "connecting": "Connecting your bank…",
+      "synced": "Synced {when}",
+      "syncing": "Syncing…",
+      "needsAttention": "Needs attention",
+      "columns": {
+        "account": "Account",
+        "balance": "Balance",
+        "countsAsCash": "Counts as cash",
+        "primary": "Primary"
+      },
+      "details": "••{mask} · {type}",
+      "types": {
+        "checking": "Checking",
+        "savings": "Savings",
+        "credit_card": "Credit card",
+        "line_of_credit": "Credit",
+        "other": "Other"
+      },
+      "available": "available",
+      "owed": "owed",
+      "countsAsCashLabel": "{name} counts as cash",
+      "creditNote": "Credit never counts as cash",
+      "otherNote": "This type of account can't count as cash",
+      "currencyNote": "Only Canadian dollar accounts count as cash for now",
+      "notAvailable": "Not available",
+      "primary": "Primary",
+      "makePrimary": "Make primary",
+      "primaryGroupLabel": "Primary account",
+      "loginBanner": "{bank} asked you to log in again. Until you do, your forecast is missing this bank's latest data.",
+      "syncFailingBanner": "We couldn't sync {bank} for 3 nights. Until it works again, your forecast is missing this bank's latest data.",
+      "reconnect": "Reconnect",
+      "reconnecting": "Reconnecting…",
+      "disconnect": "Disconnect",
+      "disconnecting": "Disconnecting…",
+      "disconnectTitle": "Disconnect {bank}?",
+      "disconnectBody": "Headroom stops syncing this bank and removes its accounts and transactions. This can't be undone.",
+      "cancel": "Cancel",
+      "disconnected": "{bank} disconnected",
+      "notifications": "Notifications",
+      "readOnlyNote": "Headroom has read-only access. Disconnecting a bank stops syncing and removes its data.",
+      "emptyTitle": "No bank connected yet",
+      "emptyBody": "Connect your bank to see your 13-week forecast.",
+      "connect": "Connect your bank",
+      "errors": {
+        "load": "We couldn't load your bank connections. Check your connection and try again.",
+        "saveFailed": "We couldn't save that change. Try again.",
+        "reconnectFailed": "We couldn't reconnect {bank}. Try again.",
+        "disconnectFailed": "We couldn't disconnect {bank}. Try again.",
+        "alreadyConnected": "This bank is already connected.",
+        "connectFailed": "We couldn't connect your bank. Try again."
+      }
+    }
   }
 }

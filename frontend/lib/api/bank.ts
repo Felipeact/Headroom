@@ -38,3 +38,26 @@ export async function loadConnections(businessId: string): Promise<Connection[] 
   }
   return null
 }
+
+/**
+ * A Plaid Link token in update mode for one connection (spec 17), to repair its bank login, or
+ * null when the API call fails.
+ */
+export async function createUpdateLinkToken(businessId: string, connectionId: string): Promise<string | null> {
+  try {
+    const { data, response } = await api.POST(
+      "/v1/businesses/{business_id}/bank/connections/{connection_id}/link-token",
+      {
+        params: { path: { business_id: businessId, connection_id: connectionId } },
+        headers: await authHeaders(),
+      },
+    )
+    if (data) return data.link_token
+    Sentry.captureMessage(
+      `POST /v1/businesses/{business_id}/bank/connections/{connection_id}/link-token returned ${response.status}`,
+    )
+  } catch (error) {
+    Sentry.captureException(error)
+  }
+  return null
+}
