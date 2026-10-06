@@ -178,3 +178,9 @@ Proof: `bash .specs/features/18-forecast-sample-data/proofs.sh c37`
 
 - Estimate, from `wc -c` of the files each slice reads or writes, divided by 4: S1 = 8k (new generator, new test); S2 = 8k (same two files); S3 = 30k (loader, fake Plaid, `bank_sync.service`, `accounts.service`, `subscriptions.py`, new test); S4 = 18k (`bank_sync/api.py`, `repository.py`, new test, generated files). Running total 64k, under the 150k budget - one builder.
 - Mechanism: one builder (fits; no ask).
+
+- **Boundary:** C1-C37 closed at the sample-data commit after `10e89d5` (route at `10e89d5`). Proofs green there: `tests/test_fixture_harbor_street.py` (27), `tests/test_fixture_load.py` (13), `tests/test_bank_transactions_api.py` (10); `proofs.sh c36 c37` (API 517 passed; web 224 passed; lint, typecheck, build). The real command also ran against a throwaway local database: loaded in under 2 s, a second run printed "already loaded", an unknown name exited 2.
+- **Settled mid-build:**
+  - User-approved (2026-10-06): door 3's Plaid IDs are `sample-<business_id>-<key>` instead of `sample-harbor_street-<seed>-<bank key>`, because the unique Plaid ID columns made a second load of one seed fail.
+  - C20's `last_synced_at` is compared as an instant. The API writes it with the database session's offset (`-07:00` locally), not `Z`; that is existing spec 17 behaviour (its Verifier noted the same of C2), left untouched.
+- **Abandoned:** none
