@@ -77,13 +77,13 @@
 
 ## Handoff
 
-**Feature**: 17-bank-connection-settings
-**Where**: spec 17 **Done**; Milestone 3 (bank data) done.
-- Commits: `48f4c5f` (plan, checks), `ffc230a` (API), `e137301` (web).
-- Independent Verifier round 1 (full) PASS 55/55 over `8a8b2e9..e137301` (profile light), gate exit 0; API 467 passed, web 224 passed, e2e C13/C18/C35/C49 and sandbox C26/C48 green.
-- Verifier precision notes (not failures): C37 counts transactions through deleted accounts; C3 proves NOT NULL with an UPDATE; C2 compares instants, not the `Z`; C9 does not pin "available"/"owed" to the line below; the `PLAID_ENV` refusal in `tests/sandbox_reset_login.py` is untested.
-- Lessons L-023, L-024, L-025 (candidates).
-- Known outside spec 17: spec 13's choose-accounts `RadioGroup` (`tabIndex={-1}`) leaves its primary radios without a tab stop; `(app)/loading.tsx` has `aria-label` on a role-less div (axe `aria-prohibited-attr`).
+**Feature**: 18-forecast-sample-data
+**Where**: spec 18 **Done**; Milestone 4 (forecast) started.
+- Commits: `b8b7e0b` (plan, checks), `10e89d5` (transactions route), `32fac2c` (sample data and loader), then the close-out.
+- Independent Verifier round 1 (full) PASS 37/37 over `3c2cf32..32fac2c` (profile light), gate exit 0; API 517 passed, web 224 passed; `proofs.sh c36 c37` green.
+- Verifier precision notes (not failures): C2 compares client-amount lists (would also pass on a length change); C23 subscribes its own handler instead of going through `subscriptions.register()`; C14 recomputes week ends in the test; C20 compares `last_synced_at` as an instant (the API writes the session offset, not `Z` - existing spec 17 behaviour, AD-063 says UTC); C7/C18 derive the day rule in the test; C26 checks the accepted hosts below `main`; C35 scans only the `200` body.
+- Lessons L-026, L-027, L-028 (candidates).
+- Door 3 amended with the user's approval: sample Plaid IDs carry the business ID.
 
 **In progress**: none
-**Next step**: run `/the-judge` locally on spec 17 (AGENTS.md); push `development` when the user asks (`48f4c5f` onward is local); next spec in build order (18, sample data).
+**Next step**: run `/the-judge` locally on spec 18 (AGENTS.md); push `development` when the user asks (`48f4c5f` onward is local); next spec in build order: 19 (recurring payments) or 20 (expected payments, which loads `expected_payments` from this fixture).

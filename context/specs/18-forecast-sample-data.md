@@ -1,7 +1,7 @@
 # Spec 18: Sample data
 
 - **Milestone:** 4, forecast
-- **Status:** In progress
+- **Status:** Done
 - **Depends on:** 14
 
 ## Goal
@@ -21,5 +21,5 @@ Create a synthetic business for tests, demos, and backtests, so nothing ever nee
 
 ## Done when
 
-- [ ] Generating the data twice with the same seed gives identical results.
-- [ ] Once loaded, the sample business's accounts and transactions are available through the API.
+- [x] Generating the data twice with the same seed gives identical results.
+- [x] Once loaded, the sample business's accounts and transactions are available through the API.

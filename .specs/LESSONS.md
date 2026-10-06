@@ -164,6 +164,24 @@ Seen once or not yet corroborated. Tracked, not trusted.
 - evidence: frontend/components/settings/account-row.tsx (web/a11y)
 - last seen: 2026-10-06T16:43:23Z
 
+### L-026 - To prove two generated lists differ in a value, compare paired elements; list inequality also passes when only the length changes.
+- signal: `spec_precision_gap` · recurrence: 1 feature(s) · scope: `tests` · harmful: 0
+- features: 18-forecast-sample-data
+- evidence: C2 - tests/test_fixture_harbor_street.py:66 (tests)
+- last seen: 2026-10-06T17:57:22Z
+
+### L-027 - When a criterion names production wiring (subscriptions.register), the proof must go through that wiring, not a handler the test subscribes itself.
+- signal: `ac_gap` · recurrence: 1 feature(s) · scope: `events` · harmful: 0
+- features: 18-forecast-sample-data
+- evidence: C23 - tests/test_fixture_load.py:114 (events)
+- last seen: 2026-10-06T17:57:22Z
+
+### L-028 - Identifiers a fixture writes into globally unique columns must include the tenant or load ID, or a second load of the same fixture fails.
+- signal: `spec_deviation` · recurrence: 1 feature(s) · scope: `fixtures` · harmful: 0
+- features: 18-forecast-sample-data
+- evidence: door 3 - plan.md Landing (fixtures)
+- last seen: 2026-10-06T17:57:22Z
+
 ## Quarantined (failed when applied - ignore)
 
 A confirmed lesson that recurred alongside failure. Kept for the maintainer to review.
