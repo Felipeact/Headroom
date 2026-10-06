@@ -772,6 +772,8 @@ def test_event_published(
                 "modified": 1,
                 "removed": 1,
                 "balances_changed": False,
+                # "d" is an unpaired credit line outflow: `credit_draw` (spec 16).
+                "relabeled": 1,
             },
         )
     ]
@@ -789,6 +791,7 @@ def test_event_published(
                 "modified": 0,
                 "removed": 0,
                 "balances_changed": True,
+                "relabeled": 0,
             },
         )
     ]

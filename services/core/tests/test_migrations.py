@@ -616,3 +616,69 @@ def test_nightly_state_upgrade_downgrade_and_check(empty_database_url: str) -> N
     for args in (("upgrade", "head"), ("check",)):
         result = alembic_run(*args, database_url=empty_database_url)
         assert result.returncode == 0, result.stdout + result.stderr
+
+
+NIGHTLY_STATE = "c183e89c1a74"
+
+
+def test_transaction_labels_upgrade_downgrade_and_check(
+    empty_database_url: str,
+) -> None:
+    """Spec 16 C28: existing transactions become `normal` with no link (doors 1, 2)."""
+    result = alembic_run("upgrade", NIGHTLY_STATE, database_url=empty_database_url)
+    assert result.returncode == 0, result.stderr
+    engine = create_engine(empty_database_url)
+    try:
+        with engine.begin() as conn:
+            conn.exec_driver_sql(
+                "INSERT INTO bank_connections (id, business_id, plaid_item_id,"
+                " plaid_institution_id, institution_name, access_token_ciphertext)"
+                " VALUES ('00000000-0000-0000-0000-00000000c001',"
+                " '00000000-0000-0000-0000-00000000b001', 'item-existing', 'ins_1',"
+                " 'TD Canada Trust', 'ciphertext')"
+            )
+            conn.exec_driver_sql(
+                "INSERT INTO bank_accounts (id, business_id, connection_id,"
+                " plaid_account_id, name, type, currency, included)"
+                " VALUES ('00000000-0000-0000-0000-00000000a001',"
+                " '00000000-0000-0000-0000-00000000b001',"
+                " '00000000-0000-0000-0000-00000000c001', 'acc-existing', 'Savings',"
+                " 'savings', 'CAD', false)"
+            )
+            conn.exec_driver_sql(
+                "INSERT INTO bank_transactions (id, business_id, account_id,"
+                " plaid_transaction_id, amount_cents, currency, date, pending,"
+                " description) VALUES (gen_random_uuid(),"
+                " '00000000-0000-0000-0000-00000000b001',"
+                " '00000000-0000-0000-0000-00000000a001', 'tx-existing', -1000000,"
+                " 'CAD', '2026-09-14', false, 'Transfer')"
+            )
+    finally:
+        engine.dispose()
+
+    result = alembic_run("upgrade", "head", database_url=empty_database_url)
+    assert result.returncode == 0, result.stderr
+    engine = create_engine(empty_database_url)
+    try:
+        with engine.connect() as conn:
+            existing = conn.exec_driver_sql(
+                "SELECT label, linked_transaction_id FROM bank_transactions"
+            ).one()
+    finally:
+        engine.dispose()
+    assert tuple(existing) == ("normal", None)
+
+    result = alembic_run("downgrade", NIGHTLY_STATE, database_url=empty_database_url)
+    assert result.returncode == 0, result.stderr
+    engine = create_engine(empty_database_url)
+    try:
+        remaining = {
+            c["name"] for c in inspect(engine).get_columns("bank_transactions")
+        }
+    finally:
+        engine.dispose()
+    assert remaining.isdisjoint({"label", "linked_transaction_id"})
+
+    for args in (("upgrade", "head"), ("check",)):
+        result = alembic_run(*args, database_url=empty_database_url)
+        assert result.returncode == 0, result.stdout + result.stderr

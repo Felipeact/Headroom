@@ -149,6 +149,23 @@ def transactions_by_plaid_id(
     return {row.plaid_transaction_id: row for row in rows}
 
 
+def business_transactions(
+    session: Session, *, business_id: uuid.UUID
+) -> list[BankTransaction]:
+    """Every transaction of the business, freshly read.
+
+    `populate_existing`: rows already in the session are reloaded, so links that Postgres
+    cleared when a half was deleted (`ON DELETE SET NULL`) are seen.
+    """
+    return list(
+        session.scalars(
+            select(BankTransaction)
+            .where(BankTransaction.business_id == business_id)
+            .execution_options(populate_existing=True)
+        )
+    )
+
+
 def insert_transaction(
     session: Session, *, business_id: uuid.UUID, transaction: BankTransaction
 ) -> None:

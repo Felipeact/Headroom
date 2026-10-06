@@ -1,7 +1,7 @@
 import uuid
 from collections.abc import Iterable
-from dataclasses import dataclass
-from datetime import date, datetime, timedelta
+from dataclasses import dataclass, replace
+from datetime import UTC, date, datetime, timedelta
 from decimal import ROUND_HALF_EVEN, Decimal
 from typing import Literal
 from zoneinfo import ZoneInfo
@@ -15,7 +15,7 @@ from sqlalchemy.orm import Session
 from app import audit, events
 from app.db import get_sessionmaker
 from app.modules.accounts import service as accounts_service
-from app.modules.bank_sync import repository
+from app.modules.bank_sync import labels, repository
 from app.modules.bank_sync.events import TRANSACTIONS_SYNCED
 from app.modules.bank_sync.models import (
     CASH_CURRENCY,
@@ -101,11 +101,17 @@ class SyncResult:
     modified: int
     removed: int
     balances_changed: bool
+    # Transactions whose label or link changed (spec 16).
+    relabeled: int = 0
 
     @property
     def changed(self) -> bool:
         return bool(
-            self.added or self.modified or self.removed or self.balances_changed
+            self.added
+            or self.modified
+            or self.removed
+            or self.relabeled
+            or self.balances_changed
         )
 
 
@@ -544,20 +550,73 @@ def _apply(
     )
 
 
+def _relabel(session: Session, business_id: uuid.UUID, now: datetime) -> int:
+    """Recompute every label and link of the business; returns how many rows changed.
+
+    The caller holds the business's account locks, so no other sync of the business
+    relabels at the same time.
+    """
+    time_zone = accounts_service.business_time_zones(session, {business_id})[
+        business_id
+    ]
+    today = now.astimezone(ZoneInfo(time_zone)).date()
+    rows = repository.business_transactions(session, business_id=business_id)
+    account_types = {
+        a.id: a.type for a in repository.accounts(session, business_id=business_id)
+    }
+    wanted = labels.label_all(
+        (
+            labels.Item(
+                id=r.id,
+                account_id=r.account_id,
+                amount_cents=r.amount_cents,
+                currency=r.currency,
+                date=r.date,
+                category=r.category,
+                category_detailed=r.category_detailed,
+            )
+            for r in rows
+        ),
+        account_types,
+        today,
+    )
+    changed = [
+        r
+        for r in rows
+        if (r.label, r.linked_transaction_id)
+        != (wanted[r.id].label, wanted[r.id].linked_transaction_id)
+    ]
+    # Clear the old links first: a new pair may reuse a row another link still points
+    # at, and the link is unique.
+    for row in changed:
+        row.linked_transaction_id = None
+    session.flush()
+    for row in changed:
+        row.label = wanted[row.id].label
+        row.linked_transaction_id = wanted[row.id].linked_transaction_id
+        row.updated_at = func.now()
+    session.flush()
+    return len(changed)
+
+
 def _sync_locked(
-    session: Session, plaid: PlaidClient, connection: BankConnection
+    session: Session, plaid: PlaidClient, connection: BankConnection, now: datetime
 ) -> SyncResult:
     """Fetch and apply every change since the cursor, inside the caller's transaction.
 
-    The caller holds the connection's row lock, and commits or rolls back. A sync that
-    succeeds also clears the connection's run of failed nights (spec 15).
+    The caller holds the connection's row lock, and commits or rolls back. Before any
+    write this also locks every account of the business (lock order: connection, then
+    accounts), because relabelling touches the business's other connections' rows. A
+    sync that succeeds also clears the connection's run of failed nights (spec 15).
     """
     pages = _fetch_pages(
         plaid,
         decrypt_access_token(connection.access_token_ciphertext),
         connection.transactions_cursor,
     )
+    repository.lock_accounts(session, business_id=connection.business_id)
     result = _apply(session, connection, pages)
+    result = replace(result, relabeled=_relabel(session, connection.business_id, now))
     connection.failed_nights = 0
     return result
 
@@ -573,6 +632,7 @@ def _announce(
         added=result.added,
         modified=result.modified,
         removed=result.removed,
+        relabeled=result.relabeled,
         balances_changed=result.balances_changed,
     )
     if result.changed:
@@ -586,6 +646,7 @@ def _announce(
                     "modified": result.modified,
                     "removed": result.removed,
                     "balances_changed": result.balances_changed,
+                    "relabeled": result.relabeled,
                 },
             )
         )
@@ -597,6 +658,7 @@ def sync_connection(
     *,
     business_id: uuid.UUID,
     connection_id: uuid.UUID,
+    now: datetime | None = None,
 ) -> SyncResult:
     """Bring in every transaction and balance change since the connection's last sync.
 
@@ -604,8 +666,10 @@ def sync_connection(
     and the second starts from the cursor the first stored. Every page is fetched first;
     then the changes, the balances and the new cursor are stored in one transaction, and
     on any failure nothing is. A success resets the connection's failed nights, so it no
-    longer needs attention. Publishes `transactions.synced` after the commit when
-    something changed. Commits the session.
+    longer needs attention. Every label of the business is recomputed in the same
+    transaction, for the business-local date at `now` (default: the current time).
+    Publishes `transactions.synced` after the commit when something changed. Commits
+    the session.
     Raises `ConnectionNotFoundError`, and `PlaidError` when Plaid fails.
     """
     try:
@@ -614,7 +678,7 @@ def sync_connection(
         )
         if connection is None:
             raise ConnectionNotFoundError
-        result = _sync_locked(session, plaid, connection)
+        result = _sync_locked(session, plaid, connection, now or datetime.now(UTC))
         session.commit()
     except BaseException:
         session.rollback()
@@ -735,7 +799,7 @@ def _nightly_sync(
             # A savepoint: a failed sync rolls back to here and keeps the lock, so the
             # failure is recorded before any other run can take the connection.
             with session.begin_nested():
-                result = _sync_locked(session, plaid, connection)
+                result = _sync_locked(session, plaid, connection, now)
                 _end_night(connection, night)
         except Exception as exc:  # noqa: BLE001 - any failure is one failed attempt
             _log_failure(business_id, connection_id, exc)

@@ -8,6 +8,7 @@ dependencies = [
     "alembic>=1.20.0",
     "cryptography>=50.0.2",
     "fastapi[standard]>=0.142.2",
+    "holidays>=0.106",
     "plaid-python>=45.0.0",
     "psycopg[binary]>=3.3.6",
     "pydantic-settings>=2.15.0",

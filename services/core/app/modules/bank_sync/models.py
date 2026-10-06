@@ -28,6 +28,19 @@ ACCOUNT_TYPES: tuple[str, ...] = get_args(AccountType)
 CASH_TYPES = ("checking", "savings")
 CASH_CURRENCY = "CAD"
 
+TransactionLabel = Literal[
+    "internal_transfer",
+    "in_transit",
+    "card_purchase",
+    "card_payment",
+    "credit_draw",
+    "credit_repayment",
+    "normal",
+]
+TRANSACTION_LABELS: tuple[str, ...] = get_args(TransactionLabel)
+# The labels of a transaction paired with its other half (spec 16).
+LINKED_LABELS = ("internal_transfer", "card_payment", "credit_draw", "credit_repayment")
+
 
 class BankConnection(Base):
     """One Plaid item: one login at one bank, for one business.
@@ -127,9 +140,22 @@ class BankTransaction(Base):
     """One bank transaction, stored once per Plaid transaction ID (spec 14).
 
     `amount_cents` is signed our way: money in is positive, money out negative.
+    `label` and `linked_transaction_id` are recomputed by every sync (spec 16).
     """
 
     __tablename__ = "bank_transactions"
+    __table_args__ = (
+        CheckConstraint(
+            f"label IN ({', '.join(repr(t) for t in TRANSACTION_LABELS)})",
+            name="label",
+        ),
+        CheckConstraint(
+            "linked_transaction_id IS NULL OR label IN "
+            f"({', '.join(repr(t) for t in LINKED_LABELS)})",
+            name="linked_label",
+        ),
+        CheckConstraint("linked_transaction_id <> id", name="linked_not_self"),
+    )
 
     id: Mapped[uuid.UUID] = mapped_column(Uuid, primary_key=True, default=uuid.uuid4)
     business_id: Mapped[uuid.UUID] = mapped_column(Uuid)
@@ -143,6 +169,13 @@ class BankTransaction(Base):
     counterparty: Mapped[str | None] = mapped_column(Text)
     category: Mapped[str | None] = mapped_column(Text)
     category_detailed: Mapped[str | None] = mapped_column(Text)
+    label: Mapped[str] = mapped_column(
+        Text, default="normal", server_default=text("'normal'")
+    )
+    # The other half of a pair; both halves point at each other.
+    linked_transaction_id: Mapped[uuid.UUID | None] = mapped_column(
+        ForeignKey("bank_transactions.id", ondelete="SET NULL"), unique=True
+    )
     created_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True), server_default=func.now()
     )
