@@ -57,3 +57,4 @@ Context used per request, measured against a context window of about 250,000 tok
 | Spec 16: transaction labels (plan) | ~70,000 (~28%) | High (smart zone) |
 | Spec 16: transaction labels (checks, build, proofs) | ~85,000 (~34%) | High (smart zone) |
 | Spec 16: verifier sub-agent, round 1 (separate context) | ~120,000 (~48%) | Medium (attention degrades) |
+| Spec 16: close-out (gate check, the-judge local review, F1 repro) | ~35,000 (~14%) | High (smart zone) |
