@@ -65,29 +65,15 @@
 ## Handoff
 
 **Feature**: 15-bank-nightly-sync-job
-**Where**:
-- C1-C33 all green.
-- Independent Verifier round 2 (full) PASS 33/33 over `625ae6a..8071204` (profile light), gate exit 0, report committed (`971f184`).
-- Its first-ranked gap (the nightly tests depended on today's date) is fixed in `004dc46`.
-- Spec status stays **In progress** until the scoped round 3 passes.
-- Pushed to `origin/development`.
+**Where**: spec 15 **Done**.
+- Independent Verifier round 3 (scoped) PASS 33/33 over `625ae6a..6143979` (profile light), gate exit 0. The wall-clock date gap from round 2 is closed by `004dc46`.
+- Lesson L-021 recorded (pin database-defaulted timestamps in simulated-clock tests).
+- the-judge (local, not posted): APPROVE, one nit F1. `nightly_attempts` resets only in `_end_night` (`bank_sync/service.py:742`). After a runner outage that crosses the next 02:00 while a retry is pending, the next night inherits the old count, and the missed night never adds to `failed_nights`. Left for the user to decide.
+- Carried notes: C8's "every row" is asserted only for `bank_transactions`; C21's 60 s bound is the subprocess timeout; test connections now share one `created_at`, so their processing order follows random IDs (no proof depends on it).
+- The Roadmap has no done column (spec 14 was not marked there either), so it is unchanged.
 
-**In progress**: Verifier round 3 (scoped) over `625ae6a..004dc46`. It was stopped before finishing, at the user's request, to move to another computer.
-**Next step**:
-1. On a machine with Postgres (`docker compose up -d postgres`), dispatch a fresh Verifier for round 3, scoped per `verify.md` "Re-verifying after a fix":
-   - re-run every proof at HEAD (`proofs.sh c29 c30 c31 c33`, plus the pytest selectors in `checks.md`)
-   - confirm the date gap is closed
-   - refresh the `tests/test_nightly_sync.py` citations, and carry the rest from `8071204`
-2. Run `validate_verification.py 15-bank-nightly-sync-job`.
-3. Then:
-   - set spec 15 to Done and tick its "Done when" items
-   - add the Roadmap row's done state
-   - run the-judge (AGENTS.md)
-   - distill lessons
-
-Round 2's non-blocking notes:
-- C8's "every row" is asserted only for `bank_transactions`
-- C21's 60 s bound is the subprocess timeout
+**In progress**: none
+**Next step**: push `development` when the user asks; next spec in build order (16, transaction labels).
 
 **Blockers**: none for v1 work. Go-live: Plaid OAuth institutions (spec 12 open question 1)
 **Uncommitted**: none

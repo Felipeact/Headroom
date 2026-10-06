@@ -1,7 +1,7 @@
 # Spec 15: Nightly sync job
 
 - **Milestone:** 3, bank data
-- **Status:** In progress
+- **Status:** Done
 - **Depends on:** 05, 14
 
 ## Goal
@@ -20,5 +20,5 @@ Keep every bank up to date automatically, even if a Plaid webhook is missed.
 
 ## Done when
 
-- [ ] With a simulated clock, businesses in Pacific and Newfoundland time each sync once a night.
-- [ ] Overlapping runs never sync the same connection twice.
+- [x] With a simulated clock, businesses in Pacific and Newfoundland time each sync once a night.
+- [x] Overlapping runs never sync the same connection twice.

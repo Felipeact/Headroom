@@ -134,6 +134,12 @@ Seen once or not yet corroborated. Tracked, not trusted.
 - evidence: C38 - services/core/tests/conftest.py:29 (api/tests)
 - last seen: 2026-10-05T19:49:03Z
 
+### L-021 - Pin every database-defaulted timestamp a time-based rule reads in tests; a server now() default makes simulated-clock tests depend on the real date
+- signal: `spec_precision_gap` · recurrence: 1 feature(s) · scope: `tests, jobs` · harmful: 0
+- features: 15-bank-nightly-sync-job
+- evidence: verification.md round 2 finding 1; fixed in 004dc46 (tests/test_nightly_sync.py:52,148) (tests, jobs)
+- last seen: 2026-10-06T02:18:12Z
+
 ## Quarantined (failed when applied - ignore)
 
 A confirmed lesson that recurred alongside failure. Kept for the maintainer to review.
