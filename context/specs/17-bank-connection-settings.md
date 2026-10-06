@@ -1,7 +1,7 @@
 # Spec 17: Bank connection settings
 
 - **Milestone:** 3, bank data
-- **Status:** Not started
+- **Status:** In progress
 - **Depends on:** 13, 14
 
 ## Goal
