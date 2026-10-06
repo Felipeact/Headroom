@@ -682,3 +682,65 @@ def test_transaction_labels_upgrade_downgrade_and_check(
     for args in (("upgrade", "head"), ("check",)):
         result = alembic_run(*args, database_url=empty_database_url)
         assert result.returncode == 0, result.stdout + result.stderr
+
+
+TRANSACTION_LABELS = "b8f2b4520a41"
+
+
+def test_connection_settings_upgrade_downgrade_and_check(
+    empty_database_url: str,
+) -> None:
+    """Spec 17 C3: `login_required` and `last_synced_at` on bank_connections."""
+    result = alembic_run("upgrade", TRANSACTION_LABELS, database_url=empty_database_url)
+    assert result.returncode == 0, result.stderr
+    engine = create_engine(empty_database_url)
+    try:
+        with engine.begin() as conn:
+            conn.exec_driver_sql(
+                "INSERT INTO bank_connections (id, business_id, plaid_item_id,"
+                " plaid_institution_id, institution_name, access_token_ciphertext)"
+                " VALUES (gen_random_uuid(), gen_random_uuid(), 'item-existing',"
+                " 'ins_1', 'TD Canada Trust', 'ciphertext')"
+            )
+    finally:
+        engine.dispose()
+
+    result = alembic_run("upgrade", "head", database_url=empty_database_url)
+    assert result.returncode == 0, result.stderr
+    engine = create_engine(empty_database_url)
+    try:
+        with engine.connect() as conn:
+            columns = {
+                name: (kind, nullable)
+                for name, kind, nullable in conn.exec_driver_sql(
+                    "SELECT column_name, data_type, is_nullable"
+                    " FROM information_schema.columns"
+                    " WHERE table_name = 'bank_connections'"
+                )
+            }
+            existing = conn.exec_driver_sql(
+                "SELECT login_required, last_synced_at FROM bank_connections"
+            ).one()
+        with pytest.raises(IntegrityError), engine.begin() as conn:
+            conn.exec_driver_sql("UPDATE bank_connections SET login_required = NULL")
+    finally:
+        engine.dispose()
+
+    assert columns["login_required"] == ("boolean", "NO")
+    assert columns["last_synced_at"] == ("timestamp with time zone", "YES")
+    assert tuple(existing) == (False, None)
+
+    result = alembic_run(
+        "downgrade", TRANSACTION_LABELS, database_url=empty_database_url
+    )
+    assert result.returncode == 0, result.stderr
+    engine = create_engine(empty_database_url)
+    try:
+        remaining = {c["name"] for c in inspect(engine).get_columns("bank_connections")}
+    finally:
+        engine.dispose()
+    assert remaining.isdisjoint({"login_required", "last_synced_at"})
+
+    for args in (("upgrade", "head"), ("check",)):
+        result = alembic_run(*args, database_url=empty_database_url)
+        assert result.returncode == 0, result.stdout + result.stderr

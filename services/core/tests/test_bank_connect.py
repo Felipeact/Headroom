@@ -56,7 +56,15 @@ INSTITUTION_ID = "ins_42"
 INSTITUTION_NAME = "TD Canada Trust"
 LINK_EXPIRATION = datetime(2026, 10, 4, 16, 0, tzinfo=UTC)
 PROVIDER_UNAVAILABLE = "We couldn't reach our bank connection provider. Try again."
-CONNECTION_KEYS = {"id", "institution_name", "created_at", "accounts"}
+# Spec 17 added status and last_synced_at (AD-063).
+CONNECTION_KEYS = {
+    "id",
+    "institution_name",
+    "created_at",
+    "accounts",
+    "status",
+    "last_synced_at",
+}
 # Spec 13 added available_cents, included and primary (AD-044).
 ACCOUNT_KEYS = {
     "id",

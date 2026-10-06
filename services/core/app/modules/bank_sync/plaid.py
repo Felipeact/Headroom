@@ -63,10 +63,13 @@ class LinkTokenRequest:
     client_name: str
     language: str
     country_codes: tuple[str, ...]
+    # Empty, with no `days_requested`, for update mode (spec 17).
     products: tuple[str, ...]
-    days_requested: int
+    days_requested: int | None
     # Where Plaid sends this item's webhooks; None sends none (spec 14).
     webhook: str | None = None
+    # Set only for update mode: the item to repair (spec 17).
+    access_token: str | None = field(default=None, repr=False)
 
 
 @dataclass(frozen=True)
@@ -220,11 +223,27 @@ class SdkPlaidClient:
                 client_name=request.client_name,
                 language=request.language,
                 country_codes=[CountryCode(c) for c in request.country_codes],
-                products=[Products(p) for p in request.products],
-                transactions=LinkTokenTransactions(
-                    days_requested=request.days_requested
+                # Update mode takes no products and no product parameters (Plaid docs).
+                **(
+                    {"products": [Products(p) for p in request.products]}
+                    if request.products
+                    else {}
+                ),
+                **(
+                    {}
+                    if request.days_requested is None
+                    else {
+                        "transactions": LinkTokenTransactions(
+                            days_requested=request.days_requested
+                        )
+                    }
                 ),
                 **({} if request.webhook is None else {"webhook": request.webhook}),
+                **(
+                    {}
+                    if request.access_token is None
+                    else {"access_token": request.access_token}
+                ),
             ),
         )
         return LinkToken(link_token=response.link_token, expiration=response.expiration)

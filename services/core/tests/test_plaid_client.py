@@ -333,3 +333,22 @@ def test_webhook_verification_key() -> None:
     assert result == key
     assert isinstance(result, dict)
     assert "expired_at" in result
+
+
+def test_update_mode_link_token() -> None:
+    """Spec 17: update mode sends the access token, and no products or product options."""
+    api = sdk()
+
+    SdkPlaidClient(api).create_link_token(
+        dataclasses.replace(
+            REQUEST, products=(), days_requested=None, access_token="access-sandbox-1"
+        )
+    )
+
+    request = api.link_token_create.call_args.args[0]
+    assert request.access_token == "access-sandbox-1"
+    assert "products" not in request
+    assert "transactions" not in request
+    assert "access-sandbox-1" not in repr(
+        dataclasses.replace(REQUEST, access_token="access-sandbox-1")
+    )

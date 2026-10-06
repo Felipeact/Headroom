@@ -545,6 +545,11 @@ def test_fourth_failure_ends_night(fake: NightlyFake) -> None:
 
 def test_three_failed_nights_need_attention(fake: NightlyFake) -> None:
     c = seeded_failing(fake)
+    # Since spec 17 a login error needs attention at once (AD-061); this test is about
+    # repeated failures of any other kind.
+    fake.raises[c.token] = PlaidError(
+        error_type="API_ERROR", error_code="INTERNAL_SERVER_ERROR", request_id="req-n2"
+    )
     seen: list[tuple[int, bool]] = []
     for day in (20, 21, 22):
         for now in hourly(

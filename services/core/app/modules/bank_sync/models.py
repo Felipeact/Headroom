@@ -81,6 +81,13 @@ class BankConnection(Base):
     failed_nights: Mapped[int] = mapped_column(
         Integer, default=0, server_default=text("0")
     )
+    # The bank asked the owner to log in again (Plaid ITEM_LOGIN_REQUIRED, spec 17).
+    # Cleared only by a sync that succeeds.
+    login_required: Mapped[bool] = mapped_column(
+        Boolean, default=False, server_default=false()
+    )
+    # When a sync last succeeded; None until the first one (spec 17).
+    last_synced_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
     created_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True), server_default=func.now()
     )

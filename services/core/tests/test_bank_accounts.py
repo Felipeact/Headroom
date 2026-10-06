@@ -637,7 +637,15 @@ def test_list_connections(owner_a: tuple[Caller, str], fake: FakePlaid) -> None:
     assert set(body) == {"items"}
     assert [c["id"] for c in body["items"]] == [first["id"], second["id"]]
     for connection in body["items"]:
-        assert set(connection) == {"id", "institution_name", "created_at", "accounts"}
+        # Spec 17 added status and last_synced_at (AD-063).
+        assert set(connection) == {
+            "id",
+            "institution_name",
+            "created_at",
+            "accounts",
+            "status",
+            "last_synced_at",
+        }
     assert [a["name"] for a in body["items"][0]["accounts"]] == ["Alpha", "Zed"]
 
 

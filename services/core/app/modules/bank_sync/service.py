@@ -44,6 +44,9 @@ DAYS_REQUESTED = 730
 # Plaid asks for the whole update to restart when the data changes while paging.
 MUTATION_DURING_PAGINATION = "TRANSACTIONS_SYNC_MUTATION_DURING_PAGINATION"
 SYNC_ATTEMPTS = 3
+# The Plaid error codes this module acts on (spec 17).
+LOGIN_REQUIRED = "ITEM_LOGIN_REQUIRED"
+ITEM_NOT_FOUND = "ITEM_NOT_FOUND"
 
 # Plaid (type, subtype) -> our account type. Anything not listed is `other`.
 ACCOUNT_TYPES: dict[tuple[str, str | None], str] = {
@@ -67,6 +70,14 @@ class AccountNotFoundError(Exception):
 
 class ConnectionNotFoundError(Exception):
     """The business has no connection with this ID."""
+
+
+class LoginRequiredError(Exception):
+    """The bank still wants the owner to log in again (Plaid ITEM_LOGIN_REQUIRED)."""
+
+
+# What the owner sees about a connection (spec 17 door 3).
+ConnectionStatus = Literal["syncing", "synced", "login_required", "sync_failing"]
 
 
 AccountConflict = Literal[
@@ -121,6 +132,8 @@ class ConnectionView:
     institution_name: str
     created_at: datetime
     accounts: list[AccountView]
+    status: ConnectionStatus
+    last_synced_at: datetime | None
 
 
 def account_type(plaid_type: str, plaid_subtype: str | None) -> str:
@@ -151,6 +164,15 @@ def _view(row: BankAccount) -> AccountView:
     )
 
 
+def _status(connection: BankConnection) -> ConnectionStatus:
+    """A login problem first, then repeated failed nights, then whether it ever synced."""
+    if connection.login_required:
+        return "login_required"
+    if connection.failed_nights >= ATTENTION_AFTER_FAILED_NIGHTS:
+        return "sync_failing"
+    return "synced" if connection.last_synced_at is not None else "syncing"
+
+
 def _connection_view(
     connection: BankConnection, accounts: Iterable[BankAccount]
 ) -> ConnectionView:
@@ -159,6 +181,8 @@ def _connection_view(
         institution_name=connection.institution_name,
         created_at=connection.created_at,
         accounts=sorted((_view(a) for a in accounts), key=lambda a: (a.name, a.id)),
+        status=_status(connection),
+        last_synced_at=connection.last_synced_at,
     )
 
 
@@ -176,6 +200,38 @@ def create_link_token(plaid: PlaidClient, *, user_id: uuid.UUID) -> LinkToken:
             products=("transactions",),
             days_requested=DAYS_REQUESTED,
             webhook=get_settings().plaid_webhook_url,
+        )
+    )
+
+
+def create_update_link_token(
+    session: Session,
+    plaid: PlaidClient,
+    *,
+    business_id: uuid.UUID,
+    connection_id: uuid.UUID,
+    user_id: uuid.UUID,
+) -> LinkToken:
+    """A Plaid Link token in update mode, to repair the connection's bank login.
+
+    Update mode takes the item's access token and no products (Plaid docs). Raises
+    `ConnectionNotFoundError`, and `PlaidError` when Plaid fails or times out.
+    """
+    connection = repository.get_connection(
+        session, business_id=business_id, connection_id=connection_id
+    )
+    if connection is None:
+        raise ConnectionNotFoundError
+    return plaid.create_link_token(
+        LinkTokenRequest(
+            client_user_id=str(user_id),
+            client_name="Headroom",
+            language="en",
+            country_codes=("CA",),
+            products=(),
+            days_requested=None,
+            webhook=get_settings().plaid_webhook_url,
+            access_token=decrypt_access_token(connection.access_token_ciphertext),
         )
     )
 
@@ -607,7 +663,8 @@ def _sync_locked(
     The caller holds the connection's row lock, and commits or rolls back. Before any
     write this also locks every account of the business (lock order: connection, then
     accounts), because relabelling touches the business's other connections' rows. A
-    sync that succeeds also clears the connection's run of failed nights (spec 15).
+    sync that succeeds also clears the connection's run of failed nights (spec 15) and
+    its login problem, and records `now` as when it last synced (spec 17).
     """
     pages = _fetch_pages(
         plaid,
@@ -618,6 +675,8 @@ def _sync_locked(
     result = _apply(session, connection, pages)
     result = replace(result, relabeled=_relabel(session, connection.business_id, now))
     connection.failed_nights = 0
+    connection.login_required = False
+    connection.last_synced_at = now
     return result
 
 
@@ -668,8 +727,9 @@ def sync_connection(
     on any failure nothing is. A success resets the connection's failed nights, so it no
     longer needs attention. Every label of the business is recomputed in the same
     transaction, for the business-local date at `now` (default: the current time).
-    Publishes `transactions.synced` after the commit when something changed. Commits
-    the session.
+    Publishes `transactions.synced` after the commit when something changed. When Plaid
+    answers that the bank wants a new login, records that on the connection, in a
+    transaction of its own, before raising. Commits the session.
     Raises `ConnectionNotFoundError`, and `PlaidError` when Plaid fails.
     """
     try:
@@ -680,6 +740,13 @@ def sync_connection(
             raise ConnectionNotFoundError
         result = _sync_locked(session, plaid, connection, now or datetime.now(UTC))
         session.commit()
+    except PlaidError as exc:
+        session.rollback()
+        if exc.error_code == LOGIN_REQUIRED:
+            _record_login_required(
+                session, business_id=business_id, connection_id=connection_id
+            )
+        raise
     except BaseException:
         session.rollback()
         raise
@@ -693,12 +760,19 @@ def sync_in_background(
     """`sync_connection` in a session of its own, for work that runs after a response.
 
     A Plaid failure is logged as `bank_sync.sync_failed` rather than raised: the response
-    has gone, and the next webhook or the nightly sync (spec 15) tries again.
+    has gone, and the next webhook or the nightly sync (spec 15) tries again. A
+    connection disconnected before this ran is logged as `bank_sync.sync_skipped`.
     """
     with get_sessionmaker()() as session:
         try:
             sync_connection(
                 session, plaid, business_id=business_id, connection_id=connection_id
+            )
+        except ConnectionNotFoundError:
+            log.info(
+                "bank_sync.sync_skipped",
+                business_id=str(business_id),
+                connection_id=str(connection_id),
             )
         except PlaidError as exc:
             log.warning(
@@ -803,6 +877,8 @@ def _nightly_sync(
                 _end_night(connection, night)
         except Exception as exc:  # noqa: BLE001 - any failure is one failed attempt
             _log_failure(business_id, connection_id, exc)
+            if isinstance(exc, PlaidError) and exc.error_code == LOGIN_REQUIRED:
+                connection.login_required = True
             attempts = connection.nightly_attempts + 1
             if attempts > len(RETRY_DELAYS):
                 _end_night(connection, night)
@@ -851,7 +927,7 @@ def run_nightly_syncs(plaid: PlaidClient, now: datetime) -> NightlyCounts:
 def needs_attention(
     session: Session, *, business_id: uuid.UUID, connection_id: uuid.UUID
 ) -> bool:
-    """Whether the connection's nightly sync has failed 3 nights in a row.
+    """Whether the bank wants a new login, or its nightly sync failed 3 nights in a row.
 
     Raises `ConnectionNotFoundError`.
     """
@@ -860,4 +936,160 @@ def needs_attention(
     )
     if connection is None:
         raise ConnectionNotFoundError
-    return connection.failed_nights >= ATTENTION_AFTER_FAILED_NIGHTS
+    return _status(connection) in ("login_required", "sync_failing")
+
+
+def _record_login_required(
+    session: Session, *, business_id: uuid.UUID, connection_id: uuid.UUID
+) -> bool:
+    """Mark the connection as needing a new bank login, and commit; False if it is gone."""
+    try:
+        connection = repository.lock_connection(
+            session, business_id=business_id, connection_id=connection_id
+        )
+        if connection is None:
+            session.rollback()
+            return False
+        connection.login_required = True
+        session.commit()
+    except BaseException:
+        session.rollback()
+        raise
+    log.info(
+        "bank_connection.login_required",
+        business_id=str(business_id),
+        connection_id=str(connection_id),
+    )
+    return True
+
+
+def record_login_required(session: Session, *, plaid_item_id: str) -> bool:
+    """Mark a Plaid item's connection as needing a new bank login (`ITEM` / `ERROR`).
+
+    Returns False when no stored connection has this item. Commits the session.
+    """
+    found = connection_for_item(session, plaid_item_id=plaid_item_id)
+    if found is None:
+        return False
+    business_id, connection_id = found
+    return _record_login_required(
+        session, business_id=business_id, connection_id=connection_id
+    )
+
+
+def repair_connection(
+    session: Session,
+    plaid: PlaidClient,
+    *,
+    business_id: uuid.UUID,
+    connection_id: uuid.UUID,
+    now: datetime | None = None,
+) -> ConnectionView:
+    """Sync the connection after the owner logged in again through Link's update mode.
+
+    The sync proves the repair: it clears the login problem only when it succeeds.
+    Commits the session. Raises `ConnectionNotFoundError`, `LoginRequiredError` when the
+    bank still wants a login, and `PlaidError` when Plaid fails otherwise.
+    """
+    try:
+        sync_connection(
+            session,
+            plaid,
+            business_id=business_id,
+            connection_id=connection_id,
+            now=now,
+        )
+    except PlaidError as exc:
+        if exc.error_code == LOGIN_REQUIRED:
+            raise LoginRequiredError from None
+        raise
+    connection = repository.get_connection(
+        session, business_id=business_id, connection_id=connection_id
+    )
+    if connection is None:
+        raise ConnectionNotFoundError  # disconnected right after the sync
+    return _connection_view(
+        connection,
+        repository.connection_accounts(
+            session, business_id=business_id, connection_id=connection_id
+        ),
+    )
+
+
+def disconnect_bank(
+    session: Session,
+    plaid: PlaidClient,
+    *,
+    business_id: uuid.UUID,
+    connection_id: uuid.UUID,
+    user_id: uuid.UUID,
+    now: datetime | None = None,
+) -> None:
+    """Remove the bank at Plaid, then delete its token, accounts and transactions.
+
+    Waits for a sync of the connection in progress (the connection lock, then the
+    business's accounts, as every sync takes them). Plaid's item is removed first, so a
+    Plaid failure deletes nothing; an item Plaid no longer has counts as removed. In
+    one transaction it then deletes the connection with its accounts and transactions,
+    chooses a new primary account if this bank held it, relabels the business's other
+    transactions, and writes an audit entry. Publishes `transactions.synced` after the
+    commit. Commits the session.
+    Raises `ConnectionNotFoundError`, and `PlaidError` when Plaid fails.
+    """
+    try:
+        connection = repository.lock_connection(
+            session, business_id=business_id, connection_id=connection_id
+        )
+        if connection is None:
+            raise ConnectionNotFoundError
+        try:
+            plaid.remove_item(decrypt_access_token(connection.access_token_ciphertext))
+        except PlaidError as exc:
+            if exc.error_code != ITEM_NOT_FOUND:
+                raise
+        institution_id = connection.plaid_institution_id
+        accounts = repository.lock_accounts(session, business_id=business_id)
+        removed_accounts = [a for a in accounts if a.connection_id == connection_id]
+        remaining = [a for a in accounts if a.connection_id != connection_id]
+        had_primary = any(a.is_primary for a in removed_accounts)
+        removed = repository.delete_connection(
+            session, business_id=business_id, connection_id=connection_id
+        )
+        if had_primary:
+            _choose_primary(session, remaining, business_id=business_id)
+        relabeled = _relabel(session, business_id, now or datetime.now(UTC))
+        audit.record(
+            session,
+            action="bank_connection.disconnected",
+            business_id=business_id,
+            actor_user_id=str(user_id),
+            target_type="bank_connection",
+            target_id=str(connection_id),
+            details={
+                "institution_id": institution_id,
+                "account_count": len(removed_accounts),
+            },
+        )
+        session.commit()
+    except BaseException:
+        session.rollback()
+        raise
+    log.info(
+        "bank_connection.disconnected",
+        business_id=str(business_id),
+        connection_id=str(connection_id),
+        institution_id=institution_id,
+        account_count=len(removed_accounts),
+        removed=removed,
+    )
+    _announce(
+        business_id,
+        connection_id,
+        SyncResult(
+            added=0,
+            modified=0,
+            removed=removed,
+            balances_changed=True,
+            relabeled=relabeled,
+        ),
+    )

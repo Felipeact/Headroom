@@ -37,6 +37,8 @@ PROVIDER_UNAVAILABLE = "We couldn't reach our bank connection provider. Try agai
 CONNECT_FAILED = "We couldn't finish connecting your bank. Try again."
 ALREADY_CONNECTED = "This bank is already connected."
 ACCOUNT_NOT_FOUND = "Account not found."
+CONNECTION_NOT_FOUND = "Bank connection not found."
+STILL_LOGIN_REQUIRED = "Your bank still needs you to log in."
 INVALID_SIGNATURE = "Invalid webhook signature."
 ACCOUNT_CONFLICTS: dict[service.AccountConflict, str] = {
     "credit": "Credit cards and lines of credit can't count as cash.",
@@ -94,6 +96,8 @@ class Connection(BaseModel):
     institution_name: str
     created_at: datetime
     accounts: list[Account]
+    status: service.ConnectionStatus
+    last_synced_at: datetime | None
 
 
 class ConnectionList(BaseModel):
@@ -127,6 +131,10 @@ def _plaid_failed(exc: PlaidError, *, business_id: uuid.UUID) -> None:
 
 def _unavailable() -> HTTPException:
     return HTTPException(status.HTTP_502_BAD_GATEWAY, detail=PROVIDER_UNAVAILABLE)
+
+
+def _connection_not_found() -> HTTPException:
+    return HTTPException(status.HTTP_404_NOT_FOUND, detail=CONNECTION_NOT_FOUND)
 
 
 @router.post(
@@ -233,11 +241,92 @@ def update_account(
     return Account.model_validate(account, from_attributes=True)
 
 
+@router.post(
+    "/businesses/{business_id}/bank/connections/{connection_id}/link-token",
+    response_model=LinkToken,
+    responses=OWNER_ERRORS,
+)
+def create_update_link_token(
+    connection_id: uuid.UUID, member: OwnerDep, plaid: PlaidDep, session: SessionDep
+) -> LinkToken:
+    try:
+        token = service.create_update_link_token(
+            session,
+            plaid,
+            business_id=member.business_id,
+            connection_id=connection_id,
+            user_id=member.user_id,
+        )
+    except service.ConnectionNotFoundError:
+        raise _connection_not_found() from None
+    except PlaidError as exc:
+        _plaid_failed(exc, business_id=member.business_id)
+        raise _unavailable() from None
+    return LinkToken(link_token=token.link_token, expiration=token.expiration)
+
+
+@router.post(
+    "/businesses/{business_id}/bank/connections/{connection_id}/repair",
+    response_model=Connection,
+    responses={**OWNER_ERRORS, status.HTTP_409_CONFLICT: {"model": ProblemDetails}},
+)
+def repair_connection(
+    connection_id: uuid.UUID, member: OwnerDep, plaid: PlaidDep, session: SessionDep
+) -> Connection:
+    try:
+        connection = service.repair_connection(
+            session,
+            plaid,
+            business_id=member.business_id,
+            connection_id=connection_id,
+        )
+    except service.ConnectionNotFoundError:
+        raise _connection_not_found() from None
+    except service.LoginRequiredError:
+        raise HTTPException(
+            status.HTTP_409_CONFLICT, detail=STILL_LOGIN_REQUIRED
+        ) from None
+    except PlaidError as exc:
+        _plaid_failed(exc, business_id=member.business_id)
+        raise _unavailable() from None
+    return Connection.model_validate(connection, from_attributes=True)
+
+
+@router.delete(
+    "/businesses/{business_id}/bank/connections/{connection_id}",
+    status_code=status.HTTP_204_NO_CONTENT,
+    responses=OWNER_ERRORS,
+)
+def disconnect_bank(
+    connection_id: uuid.UUID, member: OwnerDep, plaid: PlaidDep, session: SessionDep
+) -> None:
+    try:
+        service.disconnect_bank(
+            session,
+            plaid,
+            business_id=member.business_id,
+            connection_id=connection_id,
+            user_id=member.user_id,
+        )
+    except service.ConnectionNotFoundError:
+        raise _connection_not_found() from None
+    except PlaidError as exc:
+        _plaid_failed(exc, business_id=member.business_id)
+        raise _unavailable() from None
+
+
+class PlaidWebhookError(BaseModel):
+    # Plaid's error object carries more fields; only the code decides anything here.
+    error_code: StrictStr | None = None
+
+
 class PlaidWebhook(BaseModel):
-    # Plaid adds fields per webhook type; only these three decide anything here.
+    # Plaid adds fields per webhook type; only these decide anything here.
     webhook_type: StrictStr
     webhook_code: StrictStr
     item_id: StrictStr
+    # Only on `ITEM` / `ERROR` (spec 17).
+    error: PlaidWebhookError | None = None
 
 
 class WebhookAck(BaseModel):
@@ -291,9 +380,22 @@ def plaid_webhook(
             ]
         ) from None
 
-    if (webhook.webhook_type, webhook.webhook_code) != (
-        "TRANSACTIONS",
-        "SYNC_UPDATES_AVAILABLE",
+    kind = (webhook.webhook_type, webhook.webhook_code)
+    if kind == ("ITEM", "ERROR"):
+        # The bank wants the owner to log in again; the settings page shows it (spec 17).
+        login_required = (
+            webhook.error is not None
+            and webhook.error.error_code == service.LOGIN_REQUIRED
+        )
+        if login_required and not service.record_login_required(
+            session, plaid_item_id=webhook.item_id
+        ):
+            log.info("plaid.webhook_unknown_item", plaid_item_id=webhook.item_id)
+        return WebhookAck(status="ok")
+    # A login repaired anywhere: the next sync proves it and clears the problem.
+    if kind not in (
+        ("TRANSACTIONS", "SYNC_UPDATES_AVAILABLE"),
+        ("ITEM", "LOGIN_REPAIRED"),
     ):
         return WebhookAck(status="ok")
     found = service.connection_for_item(session, plaid_item_id=webhook.item_id)

@@ -190,6 +190,39 @@ def delete_transactions(
     return int(result.rowcount)  # type: ignore[attr-defined]
 
 
+def delete_connection(
+    session: Session, *, business_id: uuid.UUID, connection_id: uuid.UUID
+) -> int:
+    """Delete the connection, its accounts and their transactions.
+
+    Returns how many transactions were deleted. A link from another transaction to a
+    deleted one is cleared by its foreign key (`ON DELETE SET NULL`).
+    """
+    account_ids = select(BankAccount.id).where(
+        BankAccount.business_id == business_id,
+        BankAccount.connection_id == connection_id,
+    )
+    result = session.execute(
+        delete(BankTransaction).where(
+            BankTransaction.business_id == business_id,
+            BankTransaction.account_id.in_(account_ids),
+        )
+    )
+    session.execute(
+        delete(BankAccount).where(
+            BankAccount.business_id == business_id,
+            BankAccount.connection_id == connection_id,
+        )
+    )
+    session.execute(
+        delete(BankConnection).where(
+            BankConnection.business_id == business_id,
+            BankConnection.id == connection_id,
+        )
+    )
+    return int(result.rowcount)  # type: ignore[attr-defined]
+
+
 def nightly_candidates(session: Session) -> list[BankConnection]:
     """Every connection of every business, oldest first, for the nightly sync job.
 
