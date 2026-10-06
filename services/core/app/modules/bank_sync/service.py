@@ -402,6 +402,35 @@ def list_connections(
     ]
 
 
+def _transaction_view(row: BankTransaction) -> TransactionView:
+    return TransactionView(
+        id=row.id,
+        account_id=row.account_id,
+        date=row.date,
+        amount_cents=row.amount_cents,
+        currency=row.currency,
+        pending=row.pending,
+        description=row.description,
+        counterparty=row.counterparty,
+        label=row.label,
+    )
+
+
+def all_transactions(
+    session: Session, *, business_id: uuid.UUID
+) -> list[TransactionView]:
+    """Every transaction of the business, in no particular order (spec 19 reads them all)."""
+    return [
+        _transaction_view(r)
+        for r in repository.business_transactions(session, business_id=business_id)
+    ]
+
+
+def is_business_day(day: date) -> bool:
+    """Monday to Friday and not a Canadian federal holiday (AD-059)."""
+    return labels.is_business_day(day)
+
+
 def list_transactions(
     session: Session,
     *,
@@ -417,20 +446,7 @@ def list_transactions(
     rows = repository.transactions_page(
         session, business_id=business_id, limit=limit + 1, after=after
     )
-    items = [
-        TransactionView(
-            id=r.id,
-            account_id=r.account_id,
-            date=r.date,
-            amount_cents=r.amount_cents,
-            currency=r.currency,
-            pending=r.pending,
-            description=r.description,
-            counterparty=r.counterparty,
-            label=r.label,
-        )
-        for r in rows[:limit]
-    ]
+    items = [_transaction_view(r) for r in rows[:limit]]
     more = len(rows) > limit
     return TransactionPage(
         items=items, next_after=(items[-1].date, items[-1].id) if more else None

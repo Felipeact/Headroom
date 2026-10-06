@@ -744,3 +744,48 @@ def test_connection_settings_upgrade_downgrade_and_check(
     for args in (("upgrade", "head"), ("check",)):
         result = alembic_run(*args, database_url=empty_database_url)
         assert result.returncode == 0, result.stdout + result.stderr
+
+
+CONNECTION_SETTINGS = "bf5cd9dfe9df"
+
+
+def test_recurring_patterns_upgrade_downgrade_and_check(
+    empty_database_url: str,
+) -> None:
+    """Spec 19 C27: the `recurring_patterns` table, and back."""
+    result = alembic_run(
+        "upgrade", CONNECTION_SETTINGS, database_url=empty_database_url
+    )
+    assert result.returncode == 0, result.stderr
+
+    result = alembic_run("upgrade", "head", database_url=empty_database_url)
+    assert result.returncode == 0, result.stderr
+    engine = create_engine(empty_database_url)
+    try:
+        with engine.connect() as conn:
+            columns = {
+                name: (kind, udt)
+                for name, kind, udt in conn.exec_driver_sql(
+                    "SELECT column_name, data_type, udt_name"
+                    " FROM information_schema.columns"
+                    " WHERE table_name = 'recurring_patterns'"
+                )
+            }
+    finally:
+        engine.dispose()
+    assert columns["transaction_ids"] == ("ARRAY", "_uuid")
+    assert columns["confidence"][0] == "smallint"
+
+    result = alembic_run(
+        "downgrade", CONNECTION_SETTINGS, database_url=empty_database_url
+    )
+    assert result.returncode == 0, result.stderr
+    engine = create_engine(empty_database_url)
+    try:
+        assert "recurring_patterns" not in inspect(engine).get_table_names()
+    finally:
+        engine.dispose()
+
+    for args in (("upgrade", "head"), ("check",)):
+        result = alembic_run(*args, database_url=empty_database_url)
+        assert result.returncode == 0, result.stdout + result.stderr

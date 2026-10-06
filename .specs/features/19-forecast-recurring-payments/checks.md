@@ -177,3 +177,10 @@ Proof: `bash .specs/features/19-forecast-recurring-payments/proofs.sh c33`
 
 - Estimate, from `wc -c` of the files each slice reads or writes, divided by 4: S1 = 8k (new detector, new test, `labels.py` for `is_business_day`); S2 = 15k (`fixtures/load.py`, `harbor_street.py`, new test, the transactions test helpers); S3 = 28k (`bank_sync/service.py` 45 KB, `repository.py`, `subscriptions.py`, `app/events.py`, new `forecasting` module, migration, new test, `test_transaction_sync.py` helpers); S4 = 15k (`bank_sync/api.py` as the route model, `main.py`, new test, generated files). Running total 66k, under the 150k budget - one builder.
 - Mechanism: one builder (fits; no ask).
+
+- **Boundary:** C1-C33 closed at the `feat(forecasting): detect recurring payments (spec 19)` commit. Proofs green there: `tests/test_recurring_detection.py` (51), `tests/test_recurring_refresh.py` (12), `tests/test_recurring_sample.py` (14), `tests/test_recurring_patterns_api.py` (4), `tests/test_migrations.py -k recurring_patterns` (1); `proofs.sh c33` (API 599 passed; web 224 passed; lint, typecheck, build); `proofs.sh c32` once the regenerated files are committed.
+- **Settled mid-build:**
+  - User-approved (2026-10-06), plan AC 4 amended: the two semimonthly days split at the midpoint between the band's smallest and largest day of the month, not at 15/16. The 15/16 split put the 1st and the 15th on the same side, so C4's own semimonthly example could never fit.
+  - User-approved (2026-10-06), plan AC 4 amended: with exactly 3 hits, every expected date must be hit and the band must hold nothing else. C17 failed on seeds 1 and 2: Acme Co and Coastal Supply Co payments hit 3 of 4 quarterly dates by chance. `test_three_hits_need_no_gap` covers the rule.
+  - C21's test sleeps after the first refresh's write as well as in the detector. With the detector delay alone, a refresh with the lock removed still passed, because the first refresh committed before the second deleted. With both delays, removing the lock fails the test.
+- **Abandoned:** none

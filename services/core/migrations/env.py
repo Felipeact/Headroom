@@ -5,7 +5,8 @@ from sqlalchemy import create_engine, pool
 
 import app.audit
 import app.modules.accounts.models
-import app.modules.bank_sync.models  # noqa: F401  (registers bank_connections, bank_accounts)
+import app.modules.bank_sync.models
+import app.modules.forecasting.models  # noqa: F401  (registers recurring_patterns)
 from app.db import Base
 from app.settings import get_settings
 
