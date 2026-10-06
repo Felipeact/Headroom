@@ -1,7 +1,7 @@
 # Spec 20: Expected payments
 
 - **Milestone:** 4, forecast
-- **Status:** Not started
+- **Status:** In progress
 - **Depends on:** 13, 14
 
 ## Goal
