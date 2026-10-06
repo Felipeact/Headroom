@@ -1,5 +1,7 @@
+import base64
+import binascii
 import uuid
-from datetime import datetime
+from datetime import date, datetime
 from typing import Annotated, Literal
 
 import structlog
@@ -9,6 +11,7 @@ from fastapi import (
     Depends,
     Header,
     HTTPException,
+    Query,
     Request,
     status,
 )
@@ -29,7 +32,7 @@ from app.auth import Member, require_member
 from app.db import get_session
 from app.modules.accounts.service import Role
 from app.modules.bank_sync import service, webhooks
-from app.modules.bank_sync.models import AccountType
+from app.modules.bank_sync.models import AccountType, TransactionLabel
 from app.modules.bank_sync.plaid import PlaidClient, PlaidError, get_plaid_client
 from app.problems import ProblemDetails, ValidationProblemDetails
 
@@ -102,6 +105,25 @@ class Connection(BaseModel):
 
 class ConnectionList(BaseModel):
     items: list[Connection]
+
+
+class Transaction(BaseModel):
+    id: uuid.UUID
+    account_id: uuid.UUID
+    date: date
+    # Our sign: money in positive, money out negative.
+    amount_cents: int
+    currency: str
+    pending: bool
+    description: str
+    counterparty: str | None
+    label: TransactionLabel
+
+
+class TransactionList(BaseModel):
+    items: list[Transaction]
+    # Pass back as `cursor` for the next page; null on the last page.
+    next_cursor: str | None
 
 
 class AccountUpdate(BaseModel):
@@ -208,6 +230,52 @@ def create_connection(
 def list_connections(member: OwnerDep, session: SessionDep) -> ConnectionList:
     connections = service.list_connections(session, business_id=member.business_id)
     return ConnectionList.model_validate({"items": connections}, from_attributes=True)
+
+
+def _encode_cursor(after: tuple[date, uuid.UUID]) -> str:
+    return base64.urlsafe_b64encode(f"{after[0]}/{after[1]}".encode()).decode()
+
+
+def _decode_cursor(cursor: str) -> tuple[date, uuid.UUID]:
+    """The last item a cursor points after; an undecodable cursor is a `422` (AD-067)."""
+    try:
+        day, _, transaction_id = (
+            base64.urlsafe_b64decode(cursor.encode("ascii")).decode().partition("/")
+        )
+        return date.fromisoformat(day), uuid.UUID(transaction_id)
+    except (binascii.Error, UnicodeError, ValueError):
+        raise RequestValidationError(
+            [
+                {
+                    "loc": ("query", "cursor"),
+                    "msg": "Invalid cursor.",
+                    "type": "value_error",
+                }
+            ]
+        ) from None
+
+
+@router.get(
+    "/businesses/{business_id}/bank/transactions",
+    response_model=TransactionList,
+    responses={
+        k: v for k, v in OWNER_ERRORS.items() if k != status.HTTP_502_BAD_GATEWAY
+    },
+)
+def list_transactions(
+    member: OwnerDep,
+    session: SessionDep,
+    limit: Annotated[int, Query(ge=1, le=500)] = 100,
+    cursor: Annotated[str | None, Query(min_length=1)] = None,
+) -> TransactionList:
+    after = _decode_cursor(cursor) if cursor is not None else None
+    page = service.list_transactions(
+        session, business_id=member.business_id, limit=limit, after=after
+    )
+    return TransactionList(
+        items=[Transaction.model_validate(t, from_attributes=True) for t in page.items],
+        next_cursor=_encode_cursor(page.next_after) if page.next_after else None,
+    )
 
 
 @router.patch(

@@ -136,6 +136,26 @@ class ConnectionView:
     last_synced_at: datetime | None
 
 
+@dataclass(frozen=True)
+class TransactionView:
+    id: uuid.UUID
+    account_id: uuid.UUID
+    date: date
+    amount_cents: int
+    currency: str
+    pending: bool
+    description: str
+    counterparty: str | None
+    label: str
+
+
+@dataclass(frozen=True)
+class TransactionPage:
+    items: list[TransactionView]
+    # The last item's date and ID when more may follow; None on the last page.
+    next_after: tuple[date, uuid.UUID] | None
+
+
 def account_type(plaid_type: str, plaid_subtype: str | None) -> str:
     """Our account type for a Plaid type and subtype; `other` when there is no match."""
     return ACCOUNT_TYPES.get((plaid_type, plaid_subtype), "other")
@@ -380,6 +400,41 @@ def list_connections(
         _connection_view(c, (a for a in accounts if a.connection_id == c.id))
         for c in repository.connections(session, business_id=business_id)
     ]
+
+
+def list_transactions(
+    session: Session,
+    *,
+    business_id: uuid.UUID,
+    limit: int,
+    after: tuple[date, uuid.UUID] | None = None,
+) -> TransactionPage:
+    """A page of the business's transactions, newest first by date then ID.
+
+    `after` is the previous page's `next_after`; `next_after` is None once no
+    transaction is left after this page.
+    """
+    rows = repository.transactions_page(
+        session, business_id=business_id, limit=limit + 1, after=after
+    )
+    items = [
+        TransactionView(
+            id=r.id,
+            account_id=r.account_id,
+            date=r.date,
+            amount_cents=r.amount_cents,
+            currency=r.currency,
+            pending=r.pending,
+            description=r.description,
+            counterparty=r.counterparty,
+            label=r.label,
+        )
+        for r in rows[:limit]
+    ]
+    more = len(rows) > limit
+    return TransactionPage(
+        items=items, next_after=(items[-1].date, items[-1].id) if more else None
+    )
 
 
 def _cash_conflict(account: BankAccount) -> AccountConflict | None:

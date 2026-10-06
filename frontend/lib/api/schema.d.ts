@@ -92,6 +92,23 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/v1/businesses/{business_id}/bank/transactions": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** List Transactions */
+        get: operations["list_transactions_v1_businesses__business_id__bank_transactions_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/v1/businesses/{business_id}/bank/accounts/{account_id}": {
         parameters: {
             query?: never;
@@ -416,6 +433,46 @@ export interface components {
          * @enum {string}
          */
         Role: "owner";
+        /** Transaction */
+        Transaction: {
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /**
+             * Account Id
+             * Format: uuid
+             */
+            account_id: string;
+            /**
+             * Date
+             * Format: date
+             */
+            date: string;
+            /** Amount Cents */
+            amount_cents: number;
+            /** Currency */
+            currency: string;
+            /** Pending */
+            pending: boolean;
+            /** Description */
+            description: string;
+            /** Counterparty */
+            counterparty: string | null;
+            /**
+             * Label
+             * @enum {string}
+             */
+            label: "internal_transfer" | "in_transit" | "card_purchase" | "card_payment" | "credit_draw" | "credit_repayment" | "normal";
+        };
+        /** TransactionList */
+        TransactionList: {
+            /** Items */
+            items: components["schemas"]["Transaction"][];
+            /** Next Cursor */
+            next_cursor: string | null;
+        };
         /** ValidationProblemDetails */
         ValidationProblemDetails: {
             /**
@@ -872,6 +929,67 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["ProblemDetails"];
+                };
+            };
+        };
+    };
+    list_transactions_v1_businesses__business_id__bank_transactions_get: {
+        parameters: {
+            query?: {
+                limit?: number;
+                cursor?: string | null;
+            };
+            header?: never;
+            path: {
+                business_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["TransactionList"];
+                };
+            };
+            /** @description Unauthorized */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ProblemDetails"];
+                };
+            };
+            /** @description Forbidden */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ProblemDetails"];
+                };
+            };
+            /** @description Not Found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ProblemDetails"];
+                };
+            };
+            /** @description Unprocessable Entity */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ValidationProblemDetails"];
                 };
             };
         };

@@ -1,7 +1,8 @@
 import uuid
 from collections.abc import Sequence
+from datetime import date
 
-from sqlalchemy import delete, select
+from sqlalchemy import delete, select, tuple_
 from sqlalchemy.orm import Session
 
 from app.modules.bank_sync.models import BankAccount, BankConnection, BankTransaction
@@ -164,6 +165,23 @@ def business_transactions(
             .execution_options(populate_existing=True)
         )
     )
+
+
+def transactions_page(
+    session: Session,
+    *,
+    business_id: uuid.UUID,
+    limit: int,
+    after: tuple[date, uuid.UUID] | None,
+) -> list[BankTransaction]:
+    """Up to `limit` transactions, newest first by date then ID, after `after` if set."""
+    query = select(BankTransaction).where(BankTransaction.business_id == business_id)
+    if after is not None:
+        query = query.where(
+            tuple_(BankTransaction.date, BankTransaction.id) < tuple_(*after)
+        )
+    query = query.order_by(BankTransaction.date.desc(), BankTransaction.id.desc())
+    return list(session.scalars(query.limit(limit)))
 
 
 def insert_transaction(
