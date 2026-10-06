@@ -190,5 +190,74 @@
         "connectFailed": "We couldn't connect your bank. Try again."
       }
     }
+  },
+  "ExpectedPayments": {
+    "title": "Expected payments",
+    "intro": "Payments you know are coming that Headroom can't predict from your bank data.",
+    "add": "Add expected payment",
+    "tableLabel": "Expected payments",
+    "columns": {
+      "date": "Date",
+      "description": "Description",
+      "account": "Account",
+      "repeats": "Repeats",
+      "amount": "Amount",
+      "actions": "Actions"
+    },
+    "repeats": {
+      "once": "Doesn't repeat",
+      "weekly": "Every week",
+      "biweekly": "Every 2 weeks",
+      "monthly": "Every month",
+      "quarterly": "Every 3 months"
+    },
+    "overdue": "Overdue",
+    "accountRemoved": "Account removed",
+    "edit": "Edit {description}",
+    "delete": "Delete {description}",
+    "emptyTitle": "No expected payments yet",
+    "emptyBody": "Add a payment you know is coming, such as a large invoice, so your forecast includes it.",
+    "loadFailed": "We couldn't load your expected payments.",
+    "notifications": "Notifications",
+    "dialog": {
+      "addTitle": "Add expected payment",
+      "editTitle": "Edit expected payment",
+      "description": "Headroom counts it in your forecast until a matching payment shows up in your bank.",
+      "direction": "Direction",
+      "moneyOut": "Money out",
+      "moneyIn": "Money in",
+      "amount": "Amount",
+      "date": "Date",
+      "descriptionLabel": "Description",
+      "account": "Account",
+      "repeats": "Repeats",
+      "cancel": "Cancel",
+      "add": "Add payment",
+      "adding": "Adding…",
+      "save": "Save changes",
+      "saving": "Saving…",
+      "saveFailed": "We couldn't save this payment. Check the details and try again.",
+      "errors": {
+        "amountRequired": "Enter an amount.",
+        "amountInvalid": "Enter an amount in dollars, such as 2,300.50.",
+        "amountZero": "Enter an amount greater than $0.",
+        "amountTooLarge": "Enter an amount up to $99,999,999.99.",
+        "dateRequired": "Choose a date.",
+        "descriptionRequired": "Enter a description."
+      }
+    },
+    "deleteDialog": {
+      "title": "Delete {description}?",
+      "body": "Headroom stops counting this payment in your forecast. This can't be undone.",
+      "cancel": "Cancel",
+      "confirm": "Delete payment",
+      "deleting": "Deleting…",
+      "failed": "We couldn't delete this payment. Try again."
+    },
+    "toasts": {
+      "added": "Expected payment added",
+      "updated": "Expected payment updated",
+      "deleted": "Expected payment deleted"
+    }
   }
 }

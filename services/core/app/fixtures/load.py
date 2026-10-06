@@ -2,8 +2,9 @@
 
 Spec 18, AD-069. The sample goes through the real services: the owner and business
 through `accounts`, each bank through `bank_sync`'s connect and sync with
-`FixturePlaidClient` in place of Plaid. So the sign flip, labels, audit entries and
-`transactions.synced` events are the ones a real bank gets. Exit codes: 0 loaded or
+`FixturePlaidClient` in place of Plaid, and the expected payments through `forecasting`
+(spec 20). So the sign flip, labels, audit entries and events are the ones a real bank
+and a real owner produce. Exit codes: 0 loaded or
 already loaded, 1 refused or failed, 2 usage.
 """
 
@@ -27,6 +28,8 @@ from app.fixtures.plaid import ACCESS_TOKEN, FixturePlaidClient
 from app.log import configure_logging
 from app.modules.accounts import service as accounts_service
 from app.modules.bank_sync import service as bank_service
+from app.modules.forecasting import service as forecasting_service
+from app.modules.forecasting.models import Repeats
 from app.settings import get_settings
 
 __all__ = ["ACCESS_TOKEN", "is_local_database", "load", "main"]
@@ -42,6 +45,10 @@ REFUSED_REMOTE = "Refusing to load sample data into a non-local database."
 # 6:02 AM in Toronto on the reference day: the dashboard's "Updated today at 6:02 AM".
 SYNCED_AT = datetime(2026, 9, 26, 10, 2, tzinfo=UTC)
 PUBLIC_TOKEN = "sample-public-token"
+REPEATS: dict[harbor_street.Repeats, Repeats | None] = {
+    "once": None,
+    "every_3_months": "quarterly",
+}
 
 
 class LoadRefusedError(Exception):
@@ -128,6 +135,23 @@ def load(
             plaid,
             business_id=business.id,
             connection_id=connection.id,
+            now=SYNCED_AT,
+        )
+    account_ids = {
+        a.name: a.id for _, connection in connected for a in connection.accounts
+    }
+    names = {a.key: a.name for bank in sample.banks for a in bank.accounts}
+    for payment in sample.expected_payments:
+        forecasting_service.save_expected_payment(
+            session,
+            business_id=business.id,
+            user_id=user.id,
+            payment_id=None,
+            account_id=account_ids[names[payment.account_key]],
+            description=payment.description,
+            amount_cents=payment.amount_cents,
+            day=payment.date,
+            repeats=REPEATS[payment.repeats],
             now=SYNCED_AT,
         )
     return business.id, True

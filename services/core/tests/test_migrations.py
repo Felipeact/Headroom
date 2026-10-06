@@ -789,3 +789,37 @@ def test_recurring_patterns_upgrade_downgrade_and_check(
     for args in (("upgrade", "head"), ("check",)):
         result = alembic_run(*args, database_url=empty_database_url)
         assert result.returncode == 0, result.stdout + result.stderr
+
+
+RECURRING_PATTERNS = "94a2c06f7ede"
+
+
+def test_expected_payments_upgrade_downgrade_and_check(
+    empty_database_url: str,
+) -> None:
+    """Spec 20 C15: `expected_payments` and `expected_payment_matches`, and back."""
+    tables = {"expected_payments", "expected_payment_matches"}
+    result = alembic_run("upgrade", RECURRING_PATTERNS, database_url=empty_database_url)
+    assert result.returncode == 0, result.stderr
+
+    result = alembic_run("upgrade", "head", database_url=empty_database_url)
+    assert result.returncode == 0, result.stderr
+    engine = create_engine(empty_database_url)
+    try:
+        assert tables <= set(inspect(engine).get_table_names())
+    finally:
+        engine.dispose()
+
+    result = alembic_run(
+        "downgrade", RECURRING_PATTERNS, database_url=empty_database_url
+    )
+    assert result.returncode == 0, result.stderr
+    engine = create_engine(empty_database_url)
+    try:
+        assert not tables & set(inspect(engine).get_table_names())
+    finally:
+        engine.dispose()
+
+    for args in (("upgrade", "head"), ("check",)):
+        result = alembic_run(*args, database_url=empty_database_url)
+        assert result.returncode == 0, result.stdout + result.stderr

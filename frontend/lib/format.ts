@@ -69,3 +69,29 @@ export function formatSyncedAt(isoDateTime: string, timeZone: string, now: Date 
   const today = ymd.format(moment) === ymd.format(now)
   return `${today ? 'today' : day.format(moment)} at ${time}`
 }
+
+// The largest amount an expected payment can hold: $99,999,999.99 (spec 20, AC 5).
+export const MAX_AMOUNT_CENTS = 9_999_999_999
+const AMOUNT_INPUT = /^\d+(\.\d{1,2})?$/
+
+/** An amount for an input field, unsigned with cents: "8,000.00", "2,300.50". */
+export function formatAmountInput(amountCents: number): string {
+  if (!Number.isSafeInteger(amountCents)) {
+    throw new RangeError(`amountCents must be a safe integer, got ${amountCents}`)
+  }
+  return new Intl.NumberFormat(LOCALE, { minimumFractionDigits: 2, maximumFractionDigits: 2 }).format(
+    Math.abs(amountCents) / 100,
+  )
+}
+
+/**
+ * What someone typed as an amount, in whole cents, or null when it isn't one: digits with an
+ * optional "$", thousands commas and up to 2 decimals. "2,300.50" is 230050.
+ */
+export function parseAmountInput(text: string): number | null {
+  const plain = text.trim().replace(/^\$/, '').replaceAll(',', '').trim()
+  if (!AMOUNT_INPUT.test(plain)) return null
+  const [dollars, cents = ''] = plain.split('.')
+  const total = Number(dollars) * 100 + Number(cents.padEnd(2, '0'))
+  return Number.isSafeInteger(total) ? total : null
+}

@@ -4,7 +4,11 @@ from collections.abc import Sequence
 from sqlalchemy import delete, func, select
 from sqlalchemy.orm import Session
 
-from app.modules.forecasting.models import RecurringPattern
+from app.modules.forecasting.models import (
+    ExpectedPayment,
+    ExpectedPaymentMatch,
+    RecurringPattern,
+)
 
 
 def lock_patterns(session: Session, *, business_id: uuid.UUID) -> None:
@@ -49,3 +53,68 @@ def patterns(session: Session, *, business_id: uuid.UUID) -> list[RecurringPatte
             )
         )
     )
+
+
+def lock_expected_payments(session: Session, *, business_id: uuid.UUID) -> None:
+    """Hold the business's expected-payments lock until the transaction ends (AD-074).
+
+    Every write of a payment and every rematch takes it, so two of them never leave two
+    sets of matches.
+    """
+    session.execute(
+        select(
+            func.pg_advisory_xact_lock(
+                func.hashtextextended(f"expected_payments:{business_id}", 0)
+            )
+        )
+    )
+
+
+def expected_payments(
+    session: Session, *, business_id: uuid.UUID
+) -> list[ExpectedPayment]:
+    """Every expected payment of the business, in no particular order."""
+    return list(
+        session.scalars(
+            select(ExpectedPayment).where(ExpectedPayment.business_id == business_id)
+        )
+    )
+
+
+def expected_payment(
+    session: Session, *, business_id: uuid.UUID, payment_id: uuid.UUID
+) -> ExpectedPayment | None:
+    """The business's payment with this ID, or None."""
+    return session.scalar(
+        select(ExpectedPayment).where(
+            ExpectedPayment.business_id == business_id,
+            ExpectedPayment.id == payment_id,
+        )
+    )
+
+
+def matches(session: Session, *, business_id: uuid.UUID) -> list[ExpectedPaymentMatch]:
+    """Every match of the business."""
+    return list(
+        session.scalars(
+            select(ExpectedPaymentMatch).where(
+                ExpectedPaymentMatch.business_id == business_id
+            )
+        )
+    )
+
+
+def replace_matches(
+    session: Session,
+    *,
+    business_id: uuid.UUID,
+    matches: Sequence[ExpectedPaymentMatch],
+) -> None:
+    """Delete every match of the business, then add `matches`."""
+    session.execute(
+        delete(ExpectedPaymentMatch).where(
+            ExpectedPaymentMatch.business_id == business_id
+        )
+    )
+    session.add_all(matches)
+    session.flush()
