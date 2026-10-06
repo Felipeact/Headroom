@@ -1,7 +1,7 @@
 # Spec 19: Recurring payments
 
 - **Milestone:** 4, forecast
-- **Status:** Not started
+- **Status:** In progress
 - **Depends on:** 16, 18
 
 ## Goal

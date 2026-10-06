@@ -63,3 +63,4 @@ Context used per request, measured against a context window of about 250,000 tok
 | Spec 17: verifier sub-agent, round 1 (separate context) | ~154,000 (~62%) | Low (past 60%) |
 | Spec 18: sample data (plan, checks, build, proofs) | ~135,000 (~54%) | Medium (attention degrades) |
 | Spec 18: verifier sub-agent, round 1 (separate context) | ~129,000 (~52%) | Medium (attention degrades) |
+| Spec 19: recurring payments (plan) | ~80,000 (~32%) | High (smart zone) |
