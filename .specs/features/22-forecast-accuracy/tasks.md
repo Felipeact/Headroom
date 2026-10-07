@@ -67,8 +67,8 @@ T5 → T6 → T7 → T8
 
 **Done when**:
 
-- [ ] Returns `(label, linked_id)` per item, equal to `label_all` on the same input, including `in_transit` depending on `today`
-- [ ] Gate check passes: `uv run pytest tests/test_transaction_labels.py -q`
+- [x] Returns `(label, linked_id)` per item, equal to `label_all` on the same input, including `in_transit` depending on `today`
+- [x] Gate check passes: `uv run pytest tests/test_transaction_labels.py -q`
 
 **Tests**: unit
 **Gate**: quick

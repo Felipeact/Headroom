@@ -1,5 +1,5 @@
 import uuid
-from collections.abc import Iterable
+from collections.abc import Iterable, Mapping
 from dataclasses import dataclass, replace
 from datetime import UTC, date, datetime, timedelta
 from decimal import ROUND_HALF_EVEN, Decimal
@@ -433,6 +433,22 @@ def all_transactions(
 def is_business_day(day: date) -> bool:
     """Monday to Friday and not a Canadian federal holiday (AD-059)."""
     return labels.is_business_day(day)
+
+
+LabelItem = labels.Item
+
+
+def label_transactions(
+    items: Iterable[LabelItem], account_types: Mapping[uuid.UUID, str], today: date
+) -> dict[uuid.UUID, tuple[str, uuid.UUID | None]]:
+    """The label and linked transaction of each item, as they would be on `today`.
+
+    Pure: spec 22's backtest labels a replayed history as of each past day.
+    """
+    return {
+        item_id: (found.label, found.linked_transaction_id)
+        for item_id, found in labels.label_all(items, account_types, today).items()
+    }
 
 
 def list_transactions(

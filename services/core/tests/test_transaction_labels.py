@@ -857,3 +857,34 @@ def test_labels_are_the_seven() -> None:
     from app.modules.bank_sync.models import TRANSACTION_LABELS
 
     assert set(TRANSACTION_LABELS) == LABELS
+
+
+def test_label_transactions_as_of_a_day() -> None:
+    """Spec 22 ACC-03: the backtest labels a past history as of its own day."""
+    checking, savings = uuid.uuid4(), uuid.uuid4()
+    types = {checking: "checking", savings: "savings"}
+
+    def item(
+        account: uuid.UUID, cents: int, day: date, detailed: str | None
+    ) -> service.LabelItem:
+        return service.LabelItem(
+            id=uuid.uuid4(),
+            account_id=account,
+            amount_cents=cents,
+            currency="CAD",
+            date=day,
+            category="TRANSFER_OUT" if detailed else None,
+            category_detailed=detailed,
+        )
+
+    out = item(savings, -50_000, date(2026, 9, 21), "TRANSFER_OUT_SAVINGS")
+    back = item(checking, 50_000, date(2026, 9, 22), None)
+    lone = item(checking, -20_000, date(2026, 9, 21), "TRANSFER_OUT_SAVINGS")
+    items = [out, back, lone]
+
+    on_day = service.label_transactions(items, types, date(2026, 9, 24))
+    assert on_day[out.id] == ("internal_transfer", back.id)
+    assert on_day[back.id] == ("internal_transfer", out.id)
+    assert on_day[lone.id] == ("in_transit", None)
+    later = service.label_transactions(items, types, date(2026, 9, 25))
+    assert later[lone.id] == ("normal", None)
