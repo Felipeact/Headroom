@@ -133,6 +133,8 @@ test.describe('expected payments', () => {
     await tabTo(page, add)
     await page.keyboard.press('Enter')
     await expect(dialog(page)).toBeVisible()
+    // Measure once the open animation has settled; mid-zoom the box is a fraction smaller.
+    await dialog(page).evaluate((el) => Promise.all(el.getAnimations().map((animation) => animation.finished)))
     const box = await dialog(page).boundingBox()
     expect(box).toMatchObject({ x: 0, y: 0, width: 375, height: 812 })
     for (const control of await dialog(page).locator('button, input, [role="combobox"]').all()) {
@@ -198,8 +200,11 @@ test.describe('expected payments', () => {
     await expect(dialog(page)).toBeHidden()
     await expect(remove).toBeFocused()
 
-    await page.locator('body').focus()
-    await tabTo(page, add)
+    // Back up to Add: forward Tab from Delete enters the toast list, which sends focus back.
+    await page.keyboard.press('Shift+Tab')
+    await expect(edit).toBeFocused()
+    await page.keyboard.press('Shift+Tab')
+    await expect(add).toBeFocused()
     await page.keyboard.press('Enter')
     await expect(dialog(page).getByRole('heading', { name: 'Add expected payment' })).toBeVisible()
     await page.keyboard.press('Escape')
