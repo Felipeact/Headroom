@@ -114,7 +114,7 @@ The primary keys are the idempotency keys (ACC-16). Index: `ix_forecast_accuracy
 - **Purpose**: One hourly pass over every business that has a snapshot (ACC-11 to ACC-18).
 - **Location**: `app/modules/forecasting/service.py`; queries in `repository.py`
 - **Interfaces**:
-  - `record_forecast_accuracy(now: datetime) -> dict[str, int]`: returns `{"pinned": n, "recorded": m, "failed": f}`
+  - `record_forecast_accuracy(now: datetime) -> dict[str, int]`: returns `{"pinned": n, "recorded": m, "accuracy_failed": f}`
 - **Flow per business** (its own session and transaction; on any exception it rolls back, logs `forecast.accuracy_failed` with `business_id` and `error_type`, and continues):
   1. `today` is the business-local date, and `monday = today − weekday`. If `(business, monday)` has no pin and a latest snapshot exists, it inserts a pin with ON CONFLICT DO NOTHING.
   2. For each pin with `week_start ≥ monday − 14 weeks` and each h in (1, 4, 13), it sets `target = week_start + 7(h−1)`. The row is due when `today ≥ target + 8 days` (the Tuesday after the target's Sunday) and no row exists. The forecast is the pinned snapshot's week with `starts_on == target`; if there is none, it skips. The actual is the sum over included CAD accounts of `balance_cents or 0`, minus those accounts' transactions dated after `target + 6`. It inserts with ON CONFLICT DO NOTHING.
@@ -136,7 +136,7 @@ The primary keys are the idempotency keys (ACC-16). Index: `ix_forecast_accuracy
 
 | Error Scenario | Handling | User Impact |
 | --- | --- | --- |
-| One business's recording raises | Roll back that business, log `forecast.accuracy_failed`, continue, count `failed` | None; it retries next hour (write-once rows) |
+| One business's recording raises | Roll back that business, log `forecast.accuracy_failed`, continue, count `accuracy_failed` | None; it retries next hour (write-once rows) |
 | Bad `--seed` | argparse usage message, exit 2 | Developer sees usage |
 | Actual balance 0 | Row stored; `error_percent` is null; the backtest counts it in `zero_actual` | None |
 | Pinned snapshot lacks the target week | No row for that horizon | Gap in history, by design (ACC-15) |

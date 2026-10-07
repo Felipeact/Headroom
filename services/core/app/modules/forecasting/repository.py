@@ -1,5 +1,6 @@
 import uuid
 from collections.abc import Sequence
+from datetime import date
 
 from sqlalchemy import delete, func, literal_column, select
 from sqlalchemy.dialects.postgresql import insert
@@ -8,7 +9,9 @@ from sqlalchemy.orm import Session
 from app.modules.forecasting.models import (
     ExpectedPayment,
     ExpectedPaymentMatch,
+    ForecastAccuracy,
     ForecastItem,
+    ForecastPin,
     ForecastSnapshot,
     ForecastWeek,
     RecurringPattern,
@@ -212,3 +215,80 @@ def snapshot_items(session: Session, *, snapshot_id: uuid.UUID) -> list[Forecast
             .order_by(ForecastItem.date, ForecastItem.source, ForecastItem.id)
         )
     )
+
+
+def snapshot_business_ids(session: Session) -> list[uuid.UUID]:
+    """Every business with a stored forecast, for the accuracy job (AD-085)."""
+    return list(
+        session.scalars(
+            select(ForecastSnapshot.business_id)
+            .distinct()
+            .order_by(ForecastSnapshot.business_id)
+        )
+    )
+
+
+def add_pin(
+    session: Session,
+    *,
+    business_id: uuid.UUID,
+    week_start: date,
+    snapshot_id: uuid.UUID,
+) -> bool:
+    """Pin `snapshot_id` to the week unless the week has a pin; True when inserted."""
+    inserted = session.execute(
+        insert(ForecastPin)
+        .values(business_id=business_id, week_start=week_start, snapshot_id=snapshot_id)
+        .on_conflict_do_nothing()
+        .returning(ForecastPin.week_start)
+    ).first()
+    return inserted is not None
+
+
+def pins_since(
+    session: Session, *, business_id: uuid.UUID, since: date
+) -> list[ForecastPin]:
+    """The business's pins from `since` on, oldest first."""
+    return list(
+        session.scalars(
+            select(ForecastPin)
+            .where(ForecastPin.business_id == business_id)
+            .where(ForecastPin.week_start >= since)
+            .order_by(ForecastPin.week_start)
+        )
+    )
+
+
+def recorded_horizons(
+    session: Session, *, business_id: uuid.UUID, since: date
+) -> set[tuple[date, int]]:
+    """`(week_start, horizon)` of the business's accuracy rows from `since` on."""
+    return {
+        (week_start, horizon)
+        for week_start, horizon in session.execute(
+            select(ForecastAccuracy.week_start, ForecastAccuracy.horizon)
+            .where(ForecastAccuracy.business_id == business_id)
+            .where(ForecastAccuracy.week_start >= since)
+        )
+    }
+
+
+def add_accuracy(session: Session, *, row: ForecastAccuracy) -> bool:
+    """Store `row` unless its pin and horizon have one; True when inserted."""
+    inserted = session.execute(
+        insert(ForecastAccuracy)
+        .values(
+            business_id=row.business_id,
+            week_start=row.week_start,
+            horizon=row.horizon,
+            target_week_start=row.target_week_start,
+            snapshot_id=row.snapshot_id,
+            currency=row.currency,
+            forecast_cents=row.forecast_cents,
+            actual_cents=row.actual_cents,
+            error_cents=row.error_cents,
+        )
+        .on_conflict_do_nothing()
+        .returning(ForecastAccuracy.horizon)
+    ).first()
+    return inserted is not None

@@ -20,7 +20,7 @@ Implement these tasks with the `tlc-spec-driven` skill: **activate it by name an
 | Code Layer | Required Test Type | Coverage Expectation | Location Pattern | Run Command |
 | --- | --- | --- | --- | --- |
 | Pure domain (`backtest.py`, `labels` wrapper) | unit | Every AC 1:1; edge cases (short history, zero actual, bad seed) | `services/core/tests/test_forecast_backtest.py`, `tests/test_transaction_labels.py` | `uv run pytest tests/<file> -q` |
-| Service + repository (`record_forecast_accuracy`, `accuracy_history`) | integration (local Postgres) | Every AC 1:1, plus idempotency, failure isolation and the edge cases | `services/core/tests/test_forecast_accuracy.py` | `uv run pytest tests/test_forecast_accuracy.py -q` |
+| Service + repository (`record_forecast_accuracy`, `accuracy_history`) | integration (local Postgres) | Every AC 1:1, plus idempotency, failure isolation and the edge cases | `services/core/tests/test_forecast_accuracy*.py` | `uv run pytest tests/test_forecast_accuracy.py tests/test_forecast_accuracy_history.py -q` |
 | Models / migration | integration via the existing `test_migrations.py` | Upgrade to head works; constraint names follow AD-003 | `services/core/tests/test_migrations.py` | `uv run pytest tests/test_migrations.py -q` |
 | Job wiring | unit | `JOBS` order | `services/core/tests/test_run_due.py` | `uv run pytest tests/test_run_due.py -q` |
 | Docs | none | - | - | build gate only |
@@ -173,9 +173,9 @@ T5 → T6 → T7 → T8
 
 **Done when**:
 
-- [ ] Monday pin; no snapshot means no pin; the Tuesday-after rule; a row equal to forecast − reconstructed actual; skip when the week is missing; rerun is a no-op; one failing business is isolated and logged without amounts; counts returned
-- [ ] Edge cases: null balance counts as 0; accounts included at record time; time-zone Monday; no back-dated pins
-- [ ] Gate check passes: `uv run pytest -q`
+- [x] Monday pin; no snapshot means no pin; the Tuesday-after rule; a row equal to forecast − reconstructed actual; skip when the week is missing; rerun is a no-op; one failing business is isolated and logged without amounts; counts returned
+- [x] Edge cases: null balance counts as 0; accounts included at record time; time-zone Monday; no back-dated pins
+- [x] Gate check passes: `uv run pytest -q`
 
 **Tests**: integration
 **Gate**: full

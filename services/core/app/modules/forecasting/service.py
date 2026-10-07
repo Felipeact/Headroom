@@ -26,8 +26,10 @@ from app.modules.forecasting import (
 )
 from app.modules.forecasting.events import FORECAST_INPUTS_CHANGED, FORECAST_UPDATED
 from app.modules.forecasting.models import (
+    ACCURACY_HORIZONS,
     ExpectedPayment,
     ExpectedPaymentMatch,
+    ForecastAccuracy,
     ForecastItem,
     ForecastSnapshot,
     ForecastWeek,
@@ -726,3 +728,135 @@ def upcoming_items(
         for r in repository.snapshot_items(session, snapshot_id=snapshot.id)
         if r.source != "estimate" and today <= r.date <= last
     ]
+
+
+# Older pins have every horizon recorded or skipped (AD-085).
+ACCURACY_LOOKBACK = timedelta(weeks=14)
+# A week's error is recorded from the Tuesday after it ends, so late postings land.
+RECORD_AFTER = timedelta(days=8)
+
+
+class _Actuals:
+    """The included cash accounts and their transactions, read once per business."""
+
+    def __init__(self, session: Session, business_id: uuid.UUID) -> None:
+        accounts = [
+            a
+            for c in bank_sync_service.list_connections(
+                session, business_id=business_id
+            )
+            for a in c.accounts
+            if a.included and a.currency == strategies.CASH_CURRENCY
+        ]
+        ids = {a.id for a in accounts}
+        self.balance = sum(a.balance_cents or 0 for a in accounts)
+        self.transactions = [
+            t
+            for t in bank_sync_service.all_transactions(
+                session, business_id=business_id
+            )
+            if t.account_id in ids
+        ]
+
+    def at_end_of(self, day: date) -> int:
+        """The cash balance at the end of `day`: today's minus what came after."""
+        return self.balance - sum(
+            t.amount_cents for t in self.transactions if t.date > day
+        )
+
+
+def _record_business(
+    session: Session, business_id: uuid.UUID, today: date
+) -> tuple[int, int]:
+    """Pin this week's forecast and record the errors now due; (pinned, recorded)."""
+    monday = today - timedelta(days=today.weekday())
+    pinned = 0
+    latest = repository.latest_snapshot(session, business_id=business_id)
+    if latest is not None:
+        pinned = int(
+            repository.add_pin(
+                session,
+                business_id=business_id,
+                week_start=monday,
+                snapshot_id=latest.id,
+            )
+        )
+    since = monday - ACCURACY_LOOKBACK
+    done = repository.recorded_horizons(session, business_id=business_id, since=since)
+    due = [
+        (pin, horizon, target)
+        for pin in repository.pins_since(session, business_id=business_id, since=since)
+        for horizon in ACCURACY_HORIZONS
+        if (pin.week_start, horizon) not in done
+        and today
+        >= (target := pin.week_start + timedelta(weeks=horizon - 1)) + RECORD_AFTER
+    ]
+    if not due:
+        return pinned, 0
+    actuals = _Actuals(session, business_id)
+    weeks: dict[uuid.UUID, dict[date, ForecastWeek]] = {}
+    recorded = 0
+    for pin, horizon, target in due:
+        if pin.snapshot_id not in weeks:
+            weeks[pin.snapshot_id] = {
+                w.starts_on: w
+                for w in repository.snapshot_weeks(session, snapshot_id=pin.snapshot_id)
+            }
+        week = weeks[pin.snapshot_id].get(target)
+        if week is None:
+            continue
+        actual = actuals.at_end_of(target + timedelta(days=6))
+        recorded += repository.add_accuracy(
+            session,
+            row=ForecastAccuracy(
+                business_id=business_id,
+                week_start=pin.week_start,
+                horizon=horizon,
+                target_week_start=target,
+                snapshot_id=pin.snapshot_id,
+                currency=strategies.CASH_CURRENCY,
+                forecast_cents=week.end_balance_cents,
+                actual_cents=actual,
+                error_cents=week.end_balance_cents - actual,
+            ),
+        )
+    return pinned, recorded
+
+
+def record_forecast_accuracy(now: datetime) -> dict[str, int]:
+    """Pin each business's current forecast and record the forecast errors now due.
+
+    The hourly job of spec 22 (AD-085). Each business runs in its own transaction: on
+    the business-local Monday or later, its latest snapshot is pinned to the week.
+    From the Tuesday after a target week, each pin's forecast for that week (1, 4 or
+    13 weeks on) is compared with the actual cash balance and stored once. A failing
+    business is logged and rolled back, and the others go on. Returns the counts.
+    """
+    # Distinct from the nightly job's `failed`: `jobs.run_finished` merges the counts.
+    counts = {"pinned": 0, "recorded": 0, "accuracy_failed": 0}
+    with get_sessionmaker()() as session:
+        business_ids = repository.snapshot_business_ids(session)
+        zones = accounts_service.business_time_zones(session, business_ids)
+    for business_id in business_ids:
+        if business_id not in zones:
+            continue
+        try:
+            with get_sessionmaker()() as session:
+                pinned, recorded = _record_business(
+                    session,
+                    business_id,
+                    engine.business_today(now, zones[business_id]),
+                )
+                session.commit()
+        except Exception as exc:  # noqa: BLE001 - one business never stops the rest
+            log.error(
+                "forecast.accuracy_failed",
+                business_id=str(business_id),
+                error_type=type(exc).__name__,
+            )
+            counts["accuracy_failed"] += 1
+            continue
+        counts["pinned"] += pinned
+        counts["recorded"] += recorded
+    log.info("forecast.accuracy_recorded", **counts)
+    return counts
