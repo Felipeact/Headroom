@@ -91,9 +91,9 @@
 ## Handoff
 
 **Feature**: 21-forecast-engine
-**Where**: plan approved; checks.md written (44 checks, validate_checks exit 0); AD-077 to AD-082 recorded
-**In progress**: none - build not started
-**Next step**: build S1-S5 from checks.md (one builder, ~92k), then dispatch the Verifier
+**Where**: done - built in 4b52b50, Verifier PASS (44/44, light), validate_verification exit 0
+**In progress**: none
+**Next step**: spec 22 (forecast accuracy / backtest) once its dependencies are Done
 **Blockers**: none
 **Uncommitted**: none
 **Branch**: development

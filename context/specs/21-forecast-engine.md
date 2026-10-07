@@ -1,7 +1,7 @@
 # Spec 21: The 13-week forecast
 
 - **Milestone:** 4, forecast
-- **Status:** In progress
+- **Status:** Done
 - **Depends on:** 19, 20
 
 ## Goal
@@ -24,6 +24,6 @@ Project the business's cash balance week by week for the next 13 weeks.
 
 ## Done when
 
-- [ ] The forecast returns 13 weeks for a business with no history, with 2 weeks of history, and with 2 years of history.
-- [ ] Processing the same event twice produces only one snapshot.
-- [ ] A forecast for 2 years of history takes under 2 seconds.
+- [x] The forecast returns 13 weeks for a business with no history, with 2 weeks of history, and with 2 years of history.
+- [x] Processing the same event twice produces only one snapshot.
+- [x] A forecast for 2 years of history takes under 2 seconds.

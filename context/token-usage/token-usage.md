@@ -69,3 +69,5 @@ Context used per request, measured against a context window of about 250,000 tok
 | Spec 20: expected payments (resume: proofs, local DB upgrade, 3 e2e fixes, C45 amendment) | ~85,000 (~34%) | High (smart zone) |
 | Spec 20: verifier sub-agents, rounds 1-2 (separate contexts) | ~153,000 + ~86,000 (~61%, ~34%) | Low (past 60%) |
 | Spec 21: the 13-week forecast (plan, 2 user decisions) | ~180,000 (~72%) | Low (past 60%) |
+| Spec 21: the 13-week forecast (build, proofs, 44 checks) | ~140,000 (~56%) | Medium (attention degrades) |
+| Spec 21: verifier sub-agent, round 1 (separate context) | ~139,000 (~56%) | Medium (attention degrades) |
