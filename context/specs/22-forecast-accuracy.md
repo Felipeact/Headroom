@@ -1,7 +1,7 @@
 # Spec 22: Forecast accuracy
 
 - **Milestone:** 4, forecast
-- **Status:** Not started
+- **Status:** In progress
 - **Depends on:** 21
 
 ## Goal
