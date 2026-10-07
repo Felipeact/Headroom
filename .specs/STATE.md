@@ -85,9 +85,9 @@
 ## Handoff
 
 **Feature**: 20-forecast-expected-payments
-**Where**: plan and checks approved; building C1-C48 with one builder.
-**In progress**: none yet
-**Next step**: S1 (table, routes), then S2-S6
+**Where**: Done. Verifier round 2 PASS (48/48), validate_verification.py exit 0.
+**In progress**: none
+**Next step**: the-judge review of spec 20, then spec 21
 **Blockers**: none
 **Uncommitted**: none
 **Branch**: development

@@ -200,6 +200,24 @@ Seen once or not yet corroborated. Tracked, not trusted.
 - evidence: plan AC 4 (two amendments) (forecasting)
 - last seen: 2026-10-06T22:43:28Z
 
+### L-032 - When a check quotes a displayed money value, write it as lib/format.ts renders it (whole dollars), not as the amount entered.
+- signal: `spec_precision_gap` · recurrence: 1 feature(s) · scope: `frontend/e2e` · harmful: 0
+- features: 20-forecast-expected-payments
+- evidence: checks.md:341 (C45) (frontend/e2e)
+- last seen: 2026-10-07T04:33:46Z
+
+### L-033 - In a keyboard-only e2e step, type values into the focused input; locator.fill() bypasses the keyboard and does not prove the claim.
+- signal: `ac_gap` · recurrence: 1 feature(s) · scope: `frontend/e2e` · harmful: 0
+- features: 20-forecast-expected-payments
+- evidence: frontend/e2e/expected-payments.spec.ts:157 (C46) (frontend/e2e)
+- last seen: 2026-10-07T04:33:47Z
+
+### L-034 - Forward Tab from the last control before a visible Sonner toast bounces back; reach earlier controls with Shift+Tab, since body.focus() does not reset the tab start.
+- signal: `gate_fail` · recurrence: 1 feature(s) · scope: `frontend/e2e` · harmful: 0
+- features: 20-forecast-expected-payments
+- evidence: frontend/e2e/expected-payments.spec.ts:202 (C46) (frontend/e2e)
+- last seen: 2026-10-07T04:33:48Z
+
 ## Quarantined (failed when applied - ignore)
 
 A confirmed lesson that recurred alongside failure. Kept for the maintainer to review.

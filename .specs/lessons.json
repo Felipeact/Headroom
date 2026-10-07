@@ -3,7 +3,7 @@
   "promote_threshold": 2,
   "window_days": 45,
   "quarantine_threshold": 2,
-  "next_id": 32,
+  "next_id": 35,
   "lessons": [
     {
       "id": "L-001",
@@ -562,6 +562,60 @@
       ],
       "created": "2026-10-06T22:43:28Z",
       "last_seen": "2026-10-06T22:43:28Z"
+    },
+    {
+      "id": "L-032",
+      "key": "spec_precision_gap::when a check quotes a displayed money value write it as lib format ts renders it whole dollars not as the amount entered",
+      "text": "When a check quotes a displayed money value, write it as lib/format.ts renders it (whole dollars), not as the amount entered.",
+      "signal": "spec_precision_gap",
+      "scope": "frontend/e2e",
+      "status": "candidate",
+      "features": [
+        "20-forecast-expected-payments"
+      ],
+      "recurrence": 1,
+      "harmful": 0,
+      "evidence": [
+        "checks.md:341 (C45) (frontend/e2e)"
+      ],
+      "created": "2026-10-07T04:33:46Z",
+      "last_seen": "2026-10-07T04:33:46Z"
+    },
+    {
+      "id": "L-033",
+      "key": "ac_gap::in a keyboard only e2e step type values into the focused input locator fill bypasses the keyboard and does not prove the claim",
+      "text": "In a keyboard-only e2e step, type values into the focused input; locator.fill() bypasses the keyboard and does not prove the claim.",
+      "signal": "ac_gap",
+      "scope": "frontend/e2e",
+      "status": "candidate",
+      "features": [
+        "20-forecast-expected-payments"
+      ],
+      "recurrence": 1,
+      "harmful": 0,
+      "evidence": [
+        "frontend/e2e/expected-payments.spec.ts:157 (C46) (frontend/e2e)"
+      ],
+      "created": "2026-10-07T04:33:47Z",
+      "last_seen": "2026-10-07T04:33:47Z"
+    },
+    {
+      "id": "L-034",
+      "key": "gate_fail::forward tab from the last control before a visible sonner toast bounces back reach earlier controls with shift tab since body focus does not reset the tab start",
+      "text": "Forward Tab from the last control before a visible Sonner toast bounces back; reach earlier controls with Shift+Tab, since body.focus() does not reset the tab start.",
+      "signal": "gate_fail",
+      "scope": "frontend/e2e",
+      "status": "candidate",
+      "features": [
+        "20-forecast-expected-payments"
+      ],
+      "recurrence": 1,
+      "harmful": 0,
+      "evidence": [
+        "frontend/e2e/expected-payments.spec.ts:202 (C46) (frontend/e2e)"
+      ],
+      "created": "2026-10-07T04:33:48Z",
+      "last_seen": "2026-10-07T04:33:48Z"
     }
   ]
 }
