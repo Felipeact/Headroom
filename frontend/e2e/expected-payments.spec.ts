@@ -154,7 +154,11 @@ test.describe('expected payments', () => {
     await page.keyboard.type('500')
     await page.keyboard.press('Tab')
     await expect(dialog(page).getByLabel('Date')).toBeFocused()
-    await dialog(page).getByLabel('Date').fill(await isoDay(page, 5))
+    // Typed, not filled: the en-US date input takes month, day, then year.
+    const keyboardDay = await isoDay(page, 5)
+    const [year, month, dayOfMonth] = keyboardDay.split('-')
+    await page.keyboard.type(`${month}${dayOfMonth}${year}`)
+    await expect(dialog(page).getByLabel('Date')).toHaveValue(keyboardDay)
     await page.keyboard.press('Tab')
     await tabTo(page, dialog(page).getByLabel('Description'), 5)
     await page.keyboard.type('Keyboard invoice')

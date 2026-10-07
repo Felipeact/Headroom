@@ -338,7 +338,7 @@ Proof: `npx vitest run tests/expected-payments-actions.test.ts -t "server action
 
 **C45** - In Playwright against the local API, a fresh owner with a sandbox bank (spec 17's e2e helpers) uses only the mouse to:
 - add "E2E deposit" for $1,234.56, Money out, Doesn't repeat, today + 10 days
-- reload: the row reads "−$1,234.56"
+- reload: the row reads "−$1,235" (whole dollars, as `lib/format.ts` shows money; amended with the user after verifier round 1)
 - edit it to $2,000.00, Every month
 - reload: the row reads "−$2,000" and "Every month"
 - delete it
