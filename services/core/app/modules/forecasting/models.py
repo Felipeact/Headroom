@@ -10,6 +10,7 @@ from sqlalchemy import (
     Date,
     DateTime,
     ForeignKey,
+    Index,
     SmallInteger,
     Text,
     UniqueConstraint,
@@ -207,3 +208,61 @@ class ForecastItem(Base):
     description: Mapped[str | None] = mapped_column(Text)
     counterparty: Mapped[str | None] = mapped_column(Text)
     schedule: Mapped[str | None] = mapped_column(Text)
+
+
+# The weeks ahead whose error is recorded (spec 22).
+ACCURACY_HORIZONS: tuple[int, ...] = (1, 4, 13)
+
+
+class ForecastPin(Base):
+    """The snapshot that was current at the start of a business-local week (AD-084).
+
+    Written once: snapshots are reused when inputs revert, so what was current on a
+    Monday can't be worked out later.
+    """
+
+    __tablename__ = "forecast_pins"
+
+    business_id: Mapped[uuid.UUID] = mapped_column(Uuid, primary_key=True)
+    # The business-local Monday.
+    week_start: Mapped[date] = mapped_column(Date, primary_key=True)
+    snapshot_id: Mapped[uuid.UUID] = mapped_column(
+        Uuid, ForeignKey("forecast_snapshots.id", ondelete="CASCADE")
+    )
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), server_default=func.now()
+    )
+
+
+class ForecastAccuracy(Base):
+    """How far a pinned forecast was from the actual balance, `horizon` weeks on.
+
+    Written once, after the target week is over (AD-084, AD-085).
+    """
+
+    __tablename__ = "forecast_accuracy"
+    __table_args__ = (
+        CheckConstraint(
+            f"horizon IN ({', '.join(str(h) for h in ACCURACY_HORIZONS)})",
+            name="horizon",
+        ),
+        Index("ix_forecast_accuracy_horizon_week_start", "horizon", "week_start"),
+    )
+
+    business_id: Mapped[uuid.UUID] = mapped_column(Uuid, primary_key=True)
+    # The pin's Monday.
+    week_start: Mapped[date] = mapped_column(Date, primary_key=True)
+    horizon: Mapped[int] = mapped_column(SmallInteger, primary_key=True)
+    # week_start + 7 (horizon - 1) days.
+    target_week_start: Mapped[date] = mapped_column(Date)
+    snapshot_id: Mapped[uuid.UUID] = mapped_column(
+        Uuid, ForeignKey("forecast_snapshots.id", ondelete="CASCADE")
+    )
+    currency: Mapped[str] = mapped_column(Text)
+    forecast_cents: Mapped[int] = mapped_column(BigInteger)
+    actual_cents: Mapped[int] = mapped_column(BigInteger)
+    # forecast - actual.
+    error_cents: Mapped[int] = mapped_column(BigInteger)
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), server_default=func.now()
+    )

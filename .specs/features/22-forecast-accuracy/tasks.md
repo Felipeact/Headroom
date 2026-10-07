@@ -152,9 +152,9 @@ T5 → T6 → T7 → T8
 
 **Done when**:
 
-- [ ] Migration created with `uv run alembic revision --autogenerate`, then read; it upgrades and downgrades cleanly
-- [ ] `ck_forecast_accuracy_horizon` rejects horizon 2
-- [ ] Gate check passes: `uv run pytest -q`
+- [x] Migration created with `uv run alembic revision --autogenerate`, then read; it upgrades and downgrades cleanly
+- [x] `ck_forecast_accuracy_horizon` rejects horizon 2
+- [x] Gate check passes: `uv run pytest -q`
 
 **Tests**: integration
 **Gate**: full

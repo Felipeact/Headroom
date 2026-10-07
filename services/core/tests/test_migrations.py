@@ -897,3 +897,74 @@ def test_forecast_snapshots_upgrade_downgrade_and_check(
     for args in (("upgrade", "head"), ("check",)):
         result = alembic_run(*args, database_url=empty_database_url)
         assert result.returncode == 0, result.stdout + result.stderr
+
+
+FORECAST_SNAPSHOTS = "294491c9bea1"
+
+
+def test_forecast_accuracy_upgrade_downgrade_and_check(
+    empty_database_url: str,
+) -> None:
+    """Spec 22 ACC-13, ACC-16: pins and accuracy rows, their keys and cascade, and back."""
+    tables = {"forecast_pins", "forecast_accuracy"}
+    result = alembic_run("upgrade", FORECAST_SNAPSHOTS, database_url=empty_database_url)
+    assert result.returncode == 0, result.stderr
+
+    result = alembic_run("upgrade", "head", database_url=empty_database_url)
+    assert result.returncode == 0, result.stderr
+    engine = create_engine(empty_database_url)
+    pin = (
+        "INSERT INTO forecast_pins (business_id, week_start, snapshot_id)"
+        " VALUES (%s, '2026-09-28', %s)"
+    )
+    row = (
+        "INSERT INTO forecast_accuracy (business_id, week_start, horizon,"
+        " target_week_start, snapshot_id, currency, forecast_cents, actual_cents,"
+        " error_cents) VALUES (%s, '2026-09-28', %s, '2026-10-19', %s, 'CAD', 5, 3, 2)"
+    )
+    business, snapshot_id = str(uuid.uuid4()), str(uuid.uuid4())
+    try:
+        assert tables <= set(inspect(engine).get_table_names())
+        with engine.begin() as conn:
+            conn.exec_driver_sql(
+                "INSERT INTO forecast_snapshots (id, business_id, inputs_sha256,"
+                " strategy, as_of, currency, opening_balance_cents, last_computed_at)"
+                " VALUES (%s, %s, %s, 'recurring_pattern', '2026-09-26', 'CAD', 0,"
+                " now())",
+                (snapshot_id, business, "a" * 64),
+            )
+            conn.exec_driver_sql(pin, (business, snapshot_id))
+            for horizon in (1, 4, 13):
+                conn.exec_driver_sql(row, (business, horizon, snapshot_id))
+        rejected = [
+            (pin, (business, snapshot_id)),
+            (pin, (str(uuid.uuid4()), str(uuid.uuid4()))),
+            (row, (business, 4, snapshot_id)),
+            (row, (business, 2, snapshot_id)),
+        ]
+        for statement, values in rejected:
+            with pytest.raises(IntegrityError), engine.begin() as conn:
+                conn.exec_driver_sql(statement, values)
+        with engine.begin() as conn:
+            conn.exec_driver_sql(
+                "DELETE FROM forecast_snapshots WHERE id = %s", (snapshot_id,)
+            )
+            for table in tables:
+                count = conn.exec_driver_sql(f"SELECT count(*) FROM {table}").scalar()
+                assert count == 0, table
+    finally:
+        engine.dispose()
+
+    result = alembic_run(
+        "downgrade", FORECAST_SNAPSHOTS, database_url=empty_database_url
+    )
+    assert result.returncode == 0, result.stderr
+    engine = create_engine(empty_database_url)
+    try:
+        assert not tables & set(inspect(engine).get_table_names())
+    finally:
+        engine.dispose()
+
+    for args in (("upgrade", "head"), ("check",)):
+        result = alembic_run(*args, database_url=empty_database_url)
+        assert result.returncode == 0, result.stdout + result.stderr
