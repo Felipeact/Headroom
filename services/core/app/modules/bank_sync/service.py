@@ -35,6 +35,7 @@ from app.modules.bank_sync.plaid import (
     SyncPage,
 )
 from app.modules.bank_sync.tokens import decrypt_access_token, encrypt_access_token
+from app.modules.forecasting.events import FORECAST_INPUTS_CHANGED
 from app.settings import get_settings
 
 INSTITUTION_INDEX = "uq_bank_connections_business_id_plaid_institution_id"
@@ -147,6 +148,8 @@ class TransactionView:
     description: str
     counterparty: str | None
     label: str
+    # The other half of a paired transaction (AD-057); spec 21 reads a card's payer.
+    linked_transaction_id: uuid.UUID | None = None
 
 
 @dataclass(frozen=True)
@@ -413,6 +416,7 @@ def _transaction_view(row: BankTransaction) -> TransactionView:
         description=row.description,
         counterparty=row.counterparty,
         label=row.label,
+        linked_transaction_id=row.linked_transaction_id,
     )
 
 
@@ -477,7 +481,8 @@ def update_account(
     `included` None leaves inclusion as it is; `primary` True moves the primary account
     here. Including an account when the business has no primary makes it primary. Locks
     the business's accounts, so concurrent changes run one after the other. Writes an
-    audit entry when something changed, and commits the session.
+    audit entry when something changed, and commits the session. After the commit, a
+    change of inclusion publishes `forecast_inputs.changed` (AD-081).
     Raises `AccountNotFoundError`, and `AccountRuleError` when a rule forbids the change.
     """
     try:
@@ -529,6 +534,15 @@ def update_account(
             business_id=str(business_id),
             account_id=str(account_id),
             **changes,
+        )
+    if "included" in changes:
+        # What counts as cash changed, so the forecast must recompute (AD-081).
+        events.publish(
+            events.Event(
+                name=FORECAST_INPUTS_CHANGED,
+                business_id=business_id,
+                payload={"source": "bank_accounts", "account_id": str(account_id)},
+            )
         )
     return view
 

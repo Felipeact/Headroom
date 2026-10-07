@@ -1,9 +1,11 @@
+import dataclasses
 import datetime as dt
+import time
 import uuid
 from collections import defaultdict
 from collections.abc import Sequence
 from dataclasses import dataclass
-from datetime import date, datetime, timedelta
+from datetime import UTC, date, datetime, timedelta
 from typing import Literal
 from zoneinfo import ZoneInfo
 
@@ -15,15 +17,26 @@ from app import audit, events
 from app.db import get_sessionmaker
 from app.modules.accounts import service as accounts_service
 from app.modules.bank_sync import service as bank_sync_service
-from app.modules.forecasting import detection, matching, repository
-from app.modules.forecasting.events import FORECAST_INPUTS_CHANGED
+from app.modules.forecasting import (
+    detection,
+    engine,
+    matching,
+    repository,
+    strategies,
+)
+from app.modules.forecasting.events import FORECAST_INPUTS_CHANGED, FORECAST_UPDATED
 from app.modules.forecasting.models import (
     ExpectedPayment,
     ExpectedPaymentMatch,
+    ForecastItem,
+    ForecastSnapshot,
+    ForecastWeek,
+    ItemSource,
     RecurringPattern,
     Repeats,
     Schedule,
 )
+from app.settings import get_settings
 
 log = structlog.get_logger(__name__)
 
@@ -146,6 +159,7 @@ class OpenOccurrence:
     amount_cents: int
     currency: str
     date: date
+    repeats: Repeats | None
 
 
 def _today(session: Session, business_id: uuid.UUID, now: datetime) -> date:
@@ -271,6 +285,7 @@ def open_occurrences(
             amount_cents=p.amount_cents,
             currency=p.currency,
             date=day,
+            repeats=p.repeats,  # type: ignore[arg-type]  # the check constraint holds it
         )
         for p in repository.expected_payments(session, business_id=business_id)
         for day in matching.occurrences_until(p.date, p.repeats, until)
@@ -431,3 +446,283 @@ def delete_expected_payment(
         session.rollback()
         raise
     _announce("expected_payment.deleted", business_id, payment_id, found)
+
+
+# A connection that has not synced for longer than this makes the forecast incomplete.
+STALE_AFTER = timedelta(hours=48)
+
+
+def clock() -> datetime:
+    """The event handlers' clock; tests replace it."""
+    return datetime.now(UTC)
+
+
+@dataclass(frozen=True)
+class ForecastItemView:
+    id: uuid.UUID
+    date: date
+    account_id: uuid.UUID
+    amount_cents: int
+    currency: str
+    source: ItemSource
+    source_id: uuid.UUID | None
+    description: str | None
+    counterparty: str | None
+    schedule: Schedule | None
+
+
+@dataclass(frozen=True)
+class ForecastWeekView:
+    number: int
+    starts_on: date
+    ends_on: date
+    end_balance_cents: int
+    low_cents: int
+    high_cents: int
+    money_in_cents: int
+    money_out_cents: int
+    # By date, source, then ID.
+    item_ids: list[uuid.UUID]
+
+
+@dataclass(frozen=True)
+class ForecastView:
+    id: uuid.UUID
+    as_of: date
+    computed_at: datetime
+    strategy: str
+    currency: str
+    opening_balance_cents: int
+    incomplete: bool
+    weeks: list[ForecastWeekView]
+    # By date, source, then ID.
+    items: list[ForecastItemView]
+
+
+def _business_today(session: Session, business_id: uuid.UUID, now: datetime) -> date:
+    zones = accounts_service.business_time_zones(session, [business_id])
+    return engine.business_today(now, zones[business_id])
+
+
+def forecast_inputs(
+    session: Session, *, business_id: uuid.UUID, now: datetime
+) -> strategies.ForecastInputs:
+    """Everything a strategy reads about the business, as known at `now`."""
+    today = _business_today(session, business_id, now)
+    starts = engine.week_starts(today)
+    accounts = [
+        a
+        for c in bank_sync_service.list_connections(session, business_id=business_id)
+        for a in c.accounts
+    ]
+    return strategies.ForecastInputs(
+        today=today,
+        week_starts=starts,
+        cash_accounts=tuple(
+            strategies.CashAccount(a.id, a.currency, a.balance_cents)
+            for a in accounts
+            if a.included
+        ),
+        card_accounts=tuple(
+            strategies.CardAccount(a.id, a.name, a.balance_cents)
+            for a in accounts
+            if a.type == "credit_card"
+        ),
+        transactions=tuple(
+            strategies.InputTransaction(
+                id=t.id,
+                account_id=t.account_id,
+                date=t.date,
+                amount_cents=t.amount_cents,
+                currency=t.currency,
+                label=t.label,
+                linked_transaction_id=t.linked_transaction_id,
+            )
+            for t in bank_sync_service.all_transactions(
+                session, business_id=business_id
+            )
+        ),
+        patterns=tuple(
+            strategies.InputPattern(
+                id=p.id,
+                account_id=p.account_id,
+                amount_cents=p.amount_cents,
+                currency=p.currency,
+                description=p.description,
+                counterparty=p.counterparty,
+                schedule=p.schedule,  # type: ignore[arg-type]  # the check constraint holds it
+                next_date=p.next_date,
+                transaction_ids=tuple(p.transaction_ids),
+            )
+            for p in repository.patterns(session, business_id=business_id)
+        ),
+        open_occurrences=tuple(
+            strategies.InputOccurrence(
+                expected_payment_id=o.expected_payment_id,
+                account_id=o.account_id,
+                amount_cents=o.amount_cents,
+                currency=o.currency,
+                description=o.description,
+                date=o.date,
+                repeats=o.repeats,
+            )
+            for o in open_occurrences(
+                session,
+                business_id=business_id,
+                today=today,
+                until=starts[-1] + timedelta(days=6),
+            )
+        ),
+        matched_transaction_ids=frozenset(
+            m.transaction_id
+            for m in repository.matches(session, business_id=business_id)
+        ),
+    )
+
+
+def recompute_forecast(event: events.Event) -> None:
+    """Recompute the business's 13-week forecast, storing it if its inputs changed.
+
+    The handler of `transactions.synced` and `forecast_inputs.changed` (AD-079): one
+    transaction under the business's forecast lock. Inputs equal to the latest
+    snapshot's write and publish nothing; inputs equal to an earlier one's make that
+    snapshot the latest again. After the commit it publishes `forecast.updated`. A
+    failure rolls back and keeps the earlier latest snapshot.
+    """
+    started = time.perf_counter()
+    business_id = event.business_id
+    with get_sessionmaker()() as session:
+        repository.lock_forecast(session, business_id=business_id)
+        inputs = forecast_inputs(session, business_id=business_id, now=clock())
+        selected = get_settings().forecast_strategy
+        inputs_sha256 = engine.fingerprint(inputs, selected)
+        latest = repository.latest_snapshot(session, business_id=business_id)
+        if latest is not None and latest.inputs_sha256 == inputs_sha256:
+            session.commit()
+            log.info("forecast.unchanged", business_id=str(business_id))
+            return
+        strategy, result = engine.CashFlowForecastService(selected).run(
+            inputs, business_id=business_id
+        )
+        snapshot_id, inserted = repository.upsert_snapshot(
+            session,
+            snapshot=ForecastSnapshot(
+                id=uuid.uuid4(),
+                business_id=business_id,
+                inputs_sha256=inputs_sha256,
+                strategy=strategy,
+                as_of=inputs.today,
+                currency=strategies.CASH_CURRENCY,
+                opening_balance_cents=strategies.opening_balance(inputs),
+            ),
+        )
+        if inserted:
+            repository.add_weeks_and_items(
+                session,
+                weeks=[
+                    ForecastWeek(snapshot_id=snapshot_id, **dataclasses.asdict(w))
+                    for w in result.weeks
+                ],
+                items=[
+                    ForecastItem(snapshot_id=snapshot_id, **dataclasses.asdict(i))
+                    for i in result.items
+                ],
+            )
+        session.commit()
+    log.info(
+        "forecast.updated",
+        business_id=str(business_id),
+        snapshot_id=str(snapshot_id),
+        strategy=strategy,
+        items=len(result.items),
+        duration_ms=round((time.perf_counter() - started) * 1000),
+    )
+    events.publish(
+        events.Event(
+            name=FORECAST_UPDATED,
+            business_id=business_id,
+            payload={"snapshot_id": str(snapshot_id)},
+        )
+    )
+
+
+def is_incomplete(session: Session, *, business_id: uuid.UUID, now: datetime) -> bool:
+    """A connection with an included account needs attention or is stale (AC 25)."""
+    return any(
+        c.status in ("login_required", "sync_failing")
+        or c.last_synced_at is None
+        or now - c.last_synced_at > STALE_AFTER
+        for c in bank_sync_service.list_connections(session, business_id=business_id)
+        if any(a.included for a in c.accounts)
+    )
+
+
+def _item_view(row: ForecastItem) -> ForecastItemView:
+    return ForecastItemView(
+        id=row.id,
+        date=row.date,
+        account_id=row.account_id,
+        amount_cents=row.amount_cents,
+        currency=row.currency,
+        source=row.source,  # type: ignore[arg-type]  # the check constraint holds it
+        source_id=row.source_id,
+        description=row.description,
+        counterparty=row.counterparty,
+        schedule=row.schedule,  # type: ignore[arg-type]  # a pattern's or a payment's words
+    )
+
+
+def latest_forecast(
+    session: Session, *, business_id: uuid.UUID, now: datetime
+) -> ForecastView | None:
+    """The business's latest forecast, with `incomplete` as of `now`; None if none yet."""
+    snapshot = repository.latest_snapshot(session, business_id=business_id)
+    if snapshot is None:
+        return None
+    rows = repository.snapshot_items(session, snapshot_id=snapshot.id)
+    by_week: dict[int, list[uuid.UUID]] = defaultdict(list)
+    for row in rows:
+        by_week[row.week].append(row.id)
+    return ForecastView(
+        id=snapshot.id,
+        as_of=snapshot.as_of,
+        computed_at=snapshot.last_computed_at,
+        strategy=snapshot.strategy,
+        currency=snapshot.currency,
+        opening_balance_cents=snapshot.opening_balance_cents,
+        incomplete=is_incomplete(session, business_id=business_id, now=now),
+        weeks=[
+            ForecastWeekView(
+                number=w.number,
+                starts_on=w.starts_on,
+                ends_on=w.starts_on + timedelta(days=6),
+                end_balance_cents=w.end_balance_cents,
+                low_cents=w.low_cents,
+                high_cents=w.high_cents,
+                money_in_cents=w.money_in_cents,
+                money_out_cents=w.money_out_cents,
+                item_ids=by_week[w.number],
+            )
+            for w in repository.snapshot_weeks(session, snapshot_id=snapshot.id)
+        ],
+        items=[_item_view(r) for r in rows],
+    )
+
+
+def upcoming_items(
+    session: Session, *, business_id: uuid.UUID, now: datetime, days: int
+) -> list[ForecastItemView] | None:
+    """The latest forecast's named items from today to today + `days` - 1 (AC 26).
+
+    Estimates are left out. None when the business has no forecast yet.
+    """
+    snapshot = repository.latest_snapshot(session, business_id=business_id)
+    if snapshot is None:
+        return None
+    today = _business_today(session, business_id, now)
+    last = today + timedelta(days=days - 1)
+    return [
+        _item_view(r)
+        for r in repository.snapshot_items(session, snapshot_id=snapshot.id)
+        if r.source != "estimate" and today <= r.date <= last
+    ]

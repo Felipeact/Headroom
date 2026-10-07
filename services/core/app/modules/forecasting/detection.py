@@ -9,7 +9,7 @@ import calendar
 import re
 import uuid
 from collections import Counter, defaultdict
-from collections.abc import Callable, Iterable
+from collections.abc import Callable, Iterable, Iterator
 from dataclasses import dataclass
 from datetime import date, timedelta
 from statistics import median_low
@@ -184,6 +184,24 @@ def _next_business_day(day: date) -> date:
     while not is_business_day(day):
         day += timedelta(days=1)
     return day
+
+
+def later_dates(schedule: Schedule, days: list[date], after: date) -> Iterator[date]:
+    """The dates after `after` on the cadence fitted to `days`, each a business day.
+
+    `days` are a pattern's transaction dates, oldest first; the cadence is the one
+    `detect` fits to them, so the dates continue a pattern's `next_date` (spec 21 AC 7).
+    Endless; empty when the schedule fits no cadence to `days`.
+    """
+    nth = _expected(schedule, days)
+    if nth is None:
+        return
+    k = _first_k(schedule, days[0])
+    while _next_business_day(nth(k)) <= after:
+        k += 1
+    while True:
+        yield _next_business_day(nth(k))
+        k += 1
 
 
 def _median_cents(amounts: list[int]) -> int:

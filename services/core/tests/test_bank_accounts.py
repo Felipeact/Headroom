@@ -12,6 +12,7 @@ from fastapi.testclient import TestClient
 from sqlalchemy import select, text
 from sqlalchemy.exc import IntegrityError
 
+from app import events
 from app.audit import AuditLog
 from app.db import get_sessionmaker
 from app.log import configure_logging
@@ -858,3 +859,57 @@ def test_update_logged(
     assert events[0]["included"] is True
     for secret in ("Main", "Reserve", "2381", "9025", "800000", "3430000", "34300"):
         assert secret not in out
+
+
+@pytest.fixture
+def input_changes() -> Iterator[list[tuple[events.Event, dict[str, bool]]]]:
+    """Each `forecast_inputs.changed`, with what a new session sees right then."""
+    seen: list[tuple[events.Event, dict[str, bool]]] = []
+
+    def record(event: events.Event) -> None:
+        business_id = str(event.business_id)
+        seen.append((event, {n: r.included for n, r in rows(business_id).items()}))
+
+    events.subscribe("forecast_inputs.changed", record)
+    yield seen
+    events.unsubscribe("forecast_inputs.changed", record)
+
+
+def test_inclusion_change_publishes(
+    owner_a: tuple[Caller, str],
+    fake: FakePlaid,
+    input_changes: list[tuple[events.Event, dict[str, bool]]],
+) -> None:
+    """Spec 21 C34: once per inclusion change, after the commit; never for primary."""
+    owner, business_id = owner_a
+    accounts = by_name(
+        connect_with(
+            fake,
+            owner,
+            business_id,
+            [acct("Main", current=900.0), acct("Ops"), acct("Reserve", "savings")]
+            + [acct("Visa", "credit_card")],
+        )
+    )
+    reserve = accounts["Reserve"]["id"]
+    assert patch(owner, business_id, reserve, {"included": True}).status_code == 200
+    assert len(input_changes) == 1
+    event, seen = input_changes[0]
+    assert event.name == "forecast_inputs.changed"
+    assert event.business_id == uuid.UUID(business_id)
+    assert dict(event.payload) == {"source": "bank_accounts", "account_id": reserve}
+    assert seen["Reserve"] is True
+
+    input_changes.clear()
+    assert patch(owner, business_id, reserve, {"primary": True}).status_code == 200
+    assert patch(owner, business_id, reserve, {"included": True}).status_code == 200
+    visa = accounts["Visa"]["id"]
+    assert patch(owner, business_id, visa, {"included": True}).status_code == 409
+    assert input_changes == []
+
+    ops = accounts["Ops"]["id"]
+    assert patch(owner, business_id, ops, {"included": False}).status_code == 200
+    assert [dict(e.payload) for e, _ in input_changes] == [
+        {"source": "bank_accounts", "account_id": ops}
+    ]
+    assert input_changes[0][1]["Ops"] is False

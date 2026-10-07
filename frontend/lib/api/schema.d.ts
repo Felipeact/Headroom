@@ -230,6 +230,40 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/v1/businesses/{business_id}/forecast": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Get Forecast */
+        get: operations["get_forecast_v1_businesses__business_id__forecast_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/businesses/{business_id}/upcoming": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** List Upcoming */
+        get: operations["list_upcoming_v1_businesses__business_id__upcoming_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/v1/webhooks/plaid": {
         parameters: {
             query?: never;
@@ -474,6 +508,103 @@ export interface components {
             msg: string;
             /** Type */
             type: string;
+        };
+        /** Forecast */
+        Forecast: {
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /**
+             * As Of
+             * Format: date
+             */
+            as_of: string;
+            /**
+             * Computed At
+             * Format: date-time
+             */
+            computed_at: string;
+            /** Strategy */
+            strategy: string;
+            /** Currency */
+            currency: string;
+            /** Opening Balance Cents */
+            opening_balance_cents: number;
+            /** Incomplete */
+            incomplete: boolean;
+            /** Weeks */
+            weeks: components["schemas"]["ForecastWeek"][];
+            /** Items */
+            items: components["schemas"]["ForecastItem"][];
+        };
+        /** ForecastItem */
+        ForecastItem: {
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /**
+             * Date
+             * Format: date
+             */
+            date: string;
+            /**
+             * Account Id
+             * Format: uuid
+             */
+            account_id: string;
+            /** Amount Cents */
+            amount_cents: number;
+            /** Currency */
+            currency: string;
+            /**
+             * Source
+             * @enum {string}
+             */
+            source: "recurring_pattern" | "expected_payment" | "card_payment" | "estimate";
+            /** Source Id */
+            source_id: string | null;
+            /** Description */
+            description: string | null;
+            /** Counterparty */
+            counterparty: string | null;
+            /** Schedule */
+            schedule: ("weekly" | "biweekly" | "semimonthly" | "monthly" | "quarterly") | null;
+        };
+        /** ForecastItemList */
+        ForecastItemList: {
+            /** Items */
+            items: components["schemas"]["ForecastItem"][];
+        };
+        /** ForecastWeek */
+        ForecastWeek: {
+            /** Number */
+            number: number;
+            /**
+             * Starts On
+             * Format: date
+             */
+            starts_on: string;
+            /**
+             * Ends On
+             * Format: date
+             */
+            ends_on: string;
+            /** End Balance Cents */
+            end_balance_cents: number;
+            /** Low Cents */
+            low_cents: number;
+            /** High Cents */
+            high_cents: number;
+            /** Money In Cents */
+            money_in_cents: number;
+            /** Money Out Cents */
+            money_out_cents: number;
+            /** Item Ids */
+            item_ids: string[];
         };
         /** LinkToken */
         LinkToken: {
@@ -1698,6 +1829,124 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content?: never;
+            };
+            /** @description Unauthorized */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ProblemDetails"];
+                };
+            };
+            /** @description Forbidden */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ProblemDetails"];
+                };
+            };
+            /** @description Not Found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ProblemDetails"];
+                };
+            };
+            /** @description Unprocessable Entity */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ValidationProblemDetails"];
+                };
+            };
+        };
+    };
+    get_forecast_v1_businesses__business_id__forecast_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                business_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Forecast"];
+                };
+            };
+            /** @description Unauthorized */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ProblemDetails"];
+                };
+            };
+            /** @description Forbidden */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ProblemDetails"];
+                };
+            };
+            /** @description Not Found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ProblemDetails"];
+                };
+            };
+            /** @description Unprocessable Entity */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ValidationProblemDetails"];
+                };
+            };
+        };
+    };
+    list_upcoming_v1_businesses__business_id__upcoming_get: {
+        parameters: {
+            query?: {
+                days?: number;
+            };
+            header?: never;
+            path: {
+                business_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ForecastItemList"];
+                };
             };
             /** @description Unauthorized */
             401: {

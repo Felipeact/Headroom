@@ -1,12 +1,16 @@
 import uuid
 from collections.abc import Sequence
 
-from sqlalchemy import delete, func, select
+from sqlalchemy import delete, func, literal_column, select
+from sqlalchemy.dialects.postgresql import insert
 from sqlalchemy.orm import Session
 
 from app.modules.forecasting.models import (
     ExpectedPayment,
     ExpectedPaymentMatch,
+    ForecastItem,
+    ForecastSnapshot,
+    ForecastWeek,
     RecurringPattern,
 )
 
@@ -118,3 +122,93 @@ def replace_matches(
     )
     session.add_all(matches)
     session.flush()
+
+
+def lock_forecast(session: Session, *, business_id: uuid.UUID) -> None:
+    """Hold the business's forecast lock until the transaction ends (AD-079).
+
+    Two recomputes of one business run one after the other, so the latest snapshot is
+    always the last one computed.
+    """
+    session.execute(
+        select(
+            func.pg_advisory_xact_lock(
+                func.hashtextextended(f"forecast:{business_id}", 0)
+            )
+        )
+    )
+
+
+def latest_snapshot(
+    session: Session, *, business_id: uuid.UUID
+) -> ForecastSnapshot | None:
+    """The business's snapshot with the greatest `(last_computed_at, id)`, or None."""
+    return session.scalar(
+        select(ForecastSnapshot)
+        .where(ForecastSnapshot.business_id == business_id)
+        .order_by(ForecastSnapshot.last_computed_at.desc(), ForecastSnapshot.id.desc())
+        .limit(1)
+    )
+
+
+def upsert_snapshot(
+    session: Session, *, snapshot: ForecastSnapshot
+) -> tuple[uuid.UUID, bool]:
+    """Insert `snapshot`, or make the business's one with its fingerprint the latest.
+
+    Returns the stored snapshot's ID, and whether it was inserted. `last_computed_at`
+    is the clock at this statement, after the forecast lock was taken.
+    """
+    snapshot_id: uuid.UUID
+    inserted: bool
+    snapshot_id, inserted = session.execute(
+        insert(ForecastSnapshot)
+        .values(
+            id=snapshot.id,
+            business_id=snapshot.business_id,
+            inputs_sha256=snapshot.inputs_sha256,
+            strategy=snapshot.strategy,
+            as_of=snapshot.as_of,
+            currency=snapshot.currency,
+            opening_balance_cents=snapshot.opening_balance_cents,
+            last_computed_at=func.clock_timestamp(),
+        )
+        .on_conflict_do_update(
+            constraint="uq_forecast_snapshots_business_id_inputs_sha256",
+            set_={"last_computed_at": func.clock_timestamp()},
+        )
+        # A row inserted by this statement has no deleting transaction yet.
+        .returning(ForecastSnapshot.id, literal_column("xmax = 0"))
+    ).one()
+    return snapshot_id, inserted
+
+
+def add_weeks_and_items(
+    session: Session, *, weeks: Sequence[ForecastWeek], items: Sequence[ForecastItem]
+) -> None:
+    """Store a new snapshot's weeks and items."""
+    session.add_all(weeks)
+    session.add_all(items)
+    session.flush()
+
+
+def snapshot_weeks(session: Session, *, snapshot_id: uuid.UUID) -> list[ForecastWeek]:
+    """The snapshot's weeks, 1 to 13."""
+    return list(
+        session.scalars(
+            select(ForecastWeek)
+            .where(ForecastWeek.snapshot_id == snapshot_id)
+            .order_by(ForecastWeek.number)
+        )
+    )
+
+
+def snapshot_items(session: Session, *, snapshot_id: uuid.UUID) -> list[ForecastItem]:
+    """The snapshot's items by date, source, then ID."""
+    return list(
+        session.scalars(
+            select(ForecastItem)
+            .where(ForecastItem.snapshot_id == snapshot_id)
+            .order_by(ForecastItem.date, ForecastItem.source, ForecastItem.id)
+        )
+    )

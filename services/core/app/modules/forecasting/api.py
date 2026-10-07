@@ -3,7 +3,7 @@ import uuid
 from datetime import UTC, date, datetime
 from typing import Annotated
 
-from fastapi import APIRouter, Depends, HTTPException, status
+from fastapi import APIRouter, Depends, HTTPException, Query, status
 from fastapi.exceptions import RequestValidationError
 from pydantic import (
     BaseModel,
@@ -19,7 +19,7 @@ from app.auth import Member, require_member
 from app.db import get_session
 from app.modules.accounts.service import Role
 from app.modules.forecasting import service
-from app.modules.forecasting.models import Repeats, Schedule
+from app.modules.forecasting.models import ItemSource, Repeats, Schedule
 from app.problems import ProblemDetails, ValidationProblemDetails
 
 router = APIRouter(tags=["forecasting"])
@@ -218,6 +218,95 @@ def update_expected_payment(
     now: NowDep,
 ) -> ExpectedPayment:
     return _save(session, member, now, body, payment_id)
+
+
+FORECAST_NOT_READY = "Forecast not ready."
+UPCOMING_DAYS = 14
+MAX_UPCOMING_DAYS = 90
+
+
+class ForecastItem(BaseModel):
+    id: uuid.UUID
+    date: date
+    account_id: uuid.UUID
+    # Our sign: money in positive, money out negative.
+    amount_cents: int
+    currency: str
+    source: ItemSource
+    # The pattern, expected payment or card account; null for an estimate.
+    source_id: uuid.UUID | None
+    # Null only for an estimate.
+    description: str | None
+    counterparty: str | None
+    schedule: Schedule | None
+
+
+class ForecastWeek(BaseModel):
+    number: int
+    # A Monday, and the Sunday after it.
+    starts_on: date
+    ends_on: date
+    end_balance_cents: int
+    low_cents: int
+    high_cents: int
+    money_in_cents: int
+    # 0 or less.
+    money_out_cents: int
+    # By date, source, then ID.
+    item_ids: list[uuid.UUID]
+
+
+class Forecast(BaseModel):
+    id: uuid.UUID
+    # The business-local day the forecast was made on.
+    as_of: date
+    computed_at: datetime
+    strategy: str
+    currency: str
+    opening_balance_cents: int
+    # An included bank needs attention or hasn't synced for 48 hours.
+    incomplete: bool
+    # Weeks 1 to 13.
+    weeks: list[ForecastWeek]
+    # By date, source, then ID.
+    items: list[ForecastItem]
+
+
+class ForecastItemList(BaseModel):
+    items: list[ForecastItem]
+
+
+@router.get(
+    "/businesses/{business_id}/forecast",
+    response_model=Forecast,
+    responses=PAYMENT_ERRORS,
+)
+def get_forecast(member: OwnerDep, session: SessionDep, now: NowDep) -> Forecast:
+    view = service.latest_forecast(session, business_id=member.business_id, now=now)
+    if view is None:
+        raise HTTPException(status.HTTP_404_NOT_FOUND, detail=FORECAST_NOT_READY)
+    return Forecast.model_validate(view, from_attributes=True)
+
+
+@router.get(
+    "/businesses/{business_id}/upcoming",
+    response_model=ForecastItemList,
+    responses=PAYMENT_ERRORS,
+)
+def list_upcoming(
+    member: OwnerDep,
+    session: SessionDep,
+    now: NowDep,
+    days: Annotated[int, Query(ge=1, le=MAX_UPCOMING_DAYS)] = UPCOMING_DAYS,
+) -> ForecastItemList:
+    items = service.upcoming_items(
+        session, business_id=member.business_id, now=now, days=days
+    )
+    if items is None:
+        raise HTTPException(status.HTTP_404_NOT_FOUND, detail=FORECAST_NOT_READY)
+    return ForecastItemList(
+        items=[ForecastItem.model_validate(i, from_attributes=True) for i in items]
+    )
 
 
 @router.delete(

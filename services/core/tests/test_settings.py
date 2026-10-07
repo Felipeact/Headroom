@@ -172,3 +172,27 @@ def test_token_encryption_keys_error_hides_value(
     assert "token_encryption_keys" in message
     for part in value.split(","):
         assert part not in message
+
+
+def test_forecast_strategy_default(plaid_env: pytest.MonkeyPatch) -> None:
+    """Spec 21 C9: unset means `recurring_pattern`."""
+    plaid_env.delenv("FORECAST_STRATEGY", raising=False)
+
+    assert Settings().forecast_strategy == "recurring_pattern"
+
+
+def test_forecast_strategy_rolling_average(plaid_env: pytest.MonkeyPatch) -> None:
+    """Spec 21 C9."""
+    plaid_env.setenv("FORECAST_STRATEGY", "rolling_average")
+
+    assert Settings().forecast_strategy == "rolling_average"
+
+
+def test_forecast_strategy_rejects_unknown(plaid_env: pytest.MonkeyPatch) -> None:
+    """Spec 21 C9: a typo fails validation, naming the field."""
+    plaid_env.setenv("FORECAST_STRATEGY", "average")
+
+    with pytest.raises(ValidationError) as excinfo:
+        Settings()
+
+    assert "forecast_strategy" in str(excinfo.value)
