@@ -194,8 +194,8 @@ T5 → T6 → T7 → T8
 
 **Done when**:
 
-- [ ] A test asserts `JOBS` is exactly the two jobs in that order
-- [ ] Gate check passes: `uv run pytest tests/test_run_due.py -q`
+- [x] A test asserts `JOBS` is exactly the two jobs in that order
+- [x] Gate check passes: `uv run pytest tests/test_run_due.py -q`
 
 **Tests**: unit
 **Gate**: quick

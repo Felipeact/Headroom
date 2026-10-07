@@ -352,3 +352,10 @@ def test_subscriptions_reach_job_events(
         events.Event(name="transactions.synced", business_id=c.business_id, payload={})
     )
     assert len(heard) == 1
+
+
+def test_jobs_registered() -> None:
+    """Spec 22 ACC-11: the accuracy job runs every hour, after the nightly sync."""
+    from app.jobs.forecast_accuracy import forecast_accuracy
+
+    assert jobs.JOBS == (nightly.nightly_bank_sync, forecast_accuracy)
