@@ -71,3 +71,5 @@ Context used per request, measured against a context window of about 250,000 tok
 | Spec 21: the 13-week forecast (plan, 2 user decisions) | ~180,000 (~72%) | Low (past 60%) |
 | Spec 21: the 13-week forecast (build, proofs, 44 checks) | ~140,000 (~56%) | Medium (attention degrades) |
 | Spec 21: verifier sub-agent, round 1 (separate context) | ~139,000 (~56%) | Medium (attention degrades) |
+| Spec 22: forecast accuracy (plan, prototype, 3 user decisions, build T1-T8) | ~175,000 (~70%) | Low (past 60%) |
+| Spec 22: verifier sub-agent (separate context) | ~123,000 (~49%) | Medium (attention degrades) |

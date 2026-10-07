@@ -163,17 +163,17 @@ Spec 21 forecasts 13 weeks, but nothing measures how close those forecasts come 
 | ACC-08 | P1: Backtest | Execute | Verified |
 | ACC-09 | P1: Accuracy baseline | Execute | Verified |
 | ACC-10 | (dropped: no tuning, context.md D5) | - | Dropped |
-| ACC-11 | P1: Weekly errors | Execute | Implemented |
-| ACC-12 | P1: Weekly errors | Execute | Implemented |
-| ACC-13 | P1: Weekly errors | Execute | Implemented |
-| ACC-14 | P1: Weekly errors | Execute | Implemented |
-| ACC-15 | P1: Weekly errors | Execute | Implemented |
-| ACC-16 | P1: Weekly errors | Execute | Implemented |
-| ACC-17 | P1: Weekly errors | Execute | Implemented |
-| ACC-18 | P1: Weekly errors | Execute | Implemented |
-| ACC-19 | P1: History | Execute | Implemented |
-| ACC-20 | P1: History | Execute | Implemented |
-| ACC-21 | P1: History | Execute | Implemented |
+| ACC-11 | P1: Weekly errors | Execute | Verified |
+| ACC-12 | P1: Weekly errors | Execute | Verified |
+| ACC-13 | P1: Weekly errors | Execute | Verified |
+| ACC-14 | P1: Weekly errors | Execute | Verified |
+| ACC-15 | P1: Weekly errors | Execute | Verified |
+| ACC-16 | P1: Weekly errors | Execute | Verified |
+| ACC-17 | P1: Weekly errors | Execute | Verified |
+| ACC-18 | P1: Weekly errors | Execute | Verified |
+| ACC-19 | P1: History | Execute | Verified |
+| ACC-20 | P1: History | Execute | Verified |
+| ACC-21 | P1: History | Execute | Verified |
 
 **Coverage:** 20 active (ACC-10 dropped), 20 mapped to tasks, 0 unmapped.
 

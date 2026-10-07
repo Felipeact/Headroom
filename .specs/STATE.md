@@ -95,9 +95,9 @@
 ## Handoff
 
 **Feature**: 22-forecast-accuracy
-**Where**: planned (spec, context, design, tasks); building T1-T8 inline
-**In progress**: T1
-**Next step**: T1 `bank_sync.service.label_transactions`
-**Blockers**: Done-when 1 (±10% at 4 weeks) is unreachable on the current Harbor Street sample (noise floor 14-18%; context.md D5). Measure only; a follow-up realigns the sample (spec 18 amendment). Plan it with spec 24's week-end recalibration (D6): the seed 0 forecast's low is about $28,100 against the reference's $3,150.
-**Uncommitted**: none
+**Where**: built in 8f44b9c..14dfa67; Verifier PASS (20/20 active ACs, 15/16 mutants killed, 1 equivalent); validate_state exit 0
+**In progress**: none. Spec 22 stays In progress: Done-when 2 is met; Done-when 1 (±10% at 4 weeks) is deferred by user decision D5
+**Next step**: spec 23 (minimum balance and first forecast); its dependency 21 is Done. Later, plan the Harbor Street realignment (spec 18 amendment) with spec 24's week-end recalibration, then re-gate spec 22's 10% bar
+**Blockers**: none for spec 23. Spec 22 Done-when 1 is below the current sample's noise floor (14-18%; context.md D5)
+**Uncommitted**: none from this feature (pre-existing .agents lock files and the untracked tlc-spec-driven skill are not this feature's)
 **Branch**: development

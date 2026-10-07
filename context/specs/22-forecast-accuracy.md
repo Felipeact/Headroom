@@ -16,7 +16,7 @@ Measure how accurate the forecast is, so changes to it can be judged with number
 ## Done when
 
 - [ ] On the sample data, the 4-week forecast is within ±10% of the actual balance. *Not met yet: the current sample can't support it (see Measured accuracy). This waits for the sample to be realigned with its reference future, planned with spec 24.*
-- [ ] The accuracy history is available for the weekly report in spec 32.
+- [x] The accuracy history is available for the weekly report in spec 32. *`forecasting.service.accuracy_history`, filled each week by the hourly `forecast_accuracy` job.*
 
 ## Measured accuracy
 
