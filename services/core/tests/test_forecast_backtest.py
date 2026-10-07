@@ -5,7 +5,9 @@ rules, never read back from the backtest.
 """
 
 import dataclasses
+import subprocess
 from datetime import date, timedelta
+from pathlib import Path
 
 import pytest
 
@@ -154,3 +156,81 @@ def test_short_history(sample: SampleBusiness) -> None:
     )
     for by_horizon in backtest.replay(short).values():
         assert all(s.origins == 0 for s in by_horizon.values())
+
+
+def rows(output: str, strategy: str) -> list[list[str]]:
+    return [line.split() for line in output.splitlines() if line.startswith(strategy)]
+
+
+def test_command_reports_every_seed(capsys: pytest.CaptureFixture[str]) -> None:
+    """ACC-01: seeds 0-4 x every strategy x horizons 1, 4, 13."""
+    assert backtest.main([]) == 0
+    output = capsys.readouterr().out
+    assert [
+        line.split()[1] for line in output.splitlines() if line.startswith("Seed")
+    ] == [
+        "0",
+        "1",
+        "2",
+        "3",
+        "4",
+    ]
+    for name in strategies.STRATEGIES:
+        found = rows(output, name)
+        assert len(found) == 5 * 3
+        assert [r[1] for r in found] == ["1", "4", "13"] * 5
+
+
+def test_command_one_seed(capsys: pytest.CaptureFixture[str]) -> None:
+    """ACC-01, ACC-02: --seed N prints only seed N, with the replay's numbers."""
+    assert backtest.main(["--seed", "3"]) == 0
+    output = capsys.readouterr().out
+    assert [line for line in output.splitlines() if line.startswith("Seed")] == [
+        "Seed 3"
+    ]
+    scores = backtest.replay(harbor_street.generate(3))["recurring_pattern"]
+    (week_4,) = [r for r in rows(output, "recurring_pattern") if r[1] == "4"]
+    expected = scores[4]
+    assert expected.mean_percent is not None
+    assert expected.worst_percent is not None
+    assert expected.mean_abs_cents is not None
+    dollars, cents = divmod(expected.mean_abs_cents, 100)
+    assert week_4[2:] == [
+        str(expected.origins),
+        str(expected.zero_actual),
+        f"{expected.mean_percent:.2f}",
+        f"{expected.worst_percent:.2f}",
+        f"${dollars:,}.{cents:02d}",
+    ]
+
+
+@pytest.mark.parametrize("seed", ["-1", "x", "1.5"])
+def test_command_bad_seed(seed: str, capsys: pytest.CaptureFixture[str]) -> None:
+    """ACC-08: exit 2 with a usage message."""
+    with pytest.raises(SystemExit) as exited:
+        backtest.main(["--seed", seed])
+    assert exited.value.code == 2
+    assert "usage:" in capsys.readouterr().err
+
+
+def test_runs_as_module() -> None:
+    """ACC-01: the command the spec names runs from services/core."""
+    core = Path(__file__).resolve().parents[1]
+    done = subprocess.run(
+        [
+            "uv",
+            "run",
+            "python",
+            "-m",
+            "app.modules.forecasting.backtest",
+            "--seed",
+            "0",
+        ],
+        cwd=core,
+        check=False,
+        capture_output=True,
+        text=True,
+        timeout=300,
+    )
+    assert done.returncode == 0, done.stderr
+    assert done.stdout.splitlines()[0] == "Seed 0"

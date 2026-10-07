@@ -7,12 +7,19 @@ expected payments. It then compares weeks 1, 4 and 13 with the actual balances. 
 no database, no clock.
 """
 
+import argparse
+import sys
 import uuid
-from collections.abc import Iterable
+from collections.abc import Iterable, Sequence
 from dataclasses import dataclass
 from datetime import date, timedelta
 
-from app.fixtures.harbor_street import REFERENCE_DAY, SampleAccount, SampleBusiness
+from app.fixtures.harbor_street import (
+    REFERENCE_DAY,
+    SampleAccount,
+    SampleBusiness,
+    generate,
+)
 from app.modules.bank_sync.service import (
     LabelItem,
     TransactionView,
@@ -21,6 +28,7 @@ from app.modules.bank_sync.service import (
 from app.modules.forecasting import detection, engine, strategies
 
 HORIZONS = (1, 4, 13)
+SEEDS = (0, 1, 2, 3, 4)
 WARM_UP_WEEKS = 13
 CASH_TYPES = ("checking", "savings")
 # Stable IDs, so two runs print the same thing (ACC-07).
@@ -216,3 +224,59 @@ def replay(sample: SampleBusiness) -> dict[str, dict[int, HorizonScore]]:
         name: {h: score(pairs) for h, pairs in by_horizon.items()}
         for name, by_horizon in found.items()
     }
+
+
+def _percent(value: float | None) -> str:
+    return "-" if value is None else f"{value:.2f}"
+
+
+def _dollars(cents: int | None) -> str:
+    if cents is None:
+        return "-"
+    dollars, rest = divmod(cents, 100)
+    return f"${dollars:,}.{rest:02d}"
+
+
+def render(seed: int, scores: dict[str, dict[int, HorizonScore]]) -> str:
+    """One seed's table: a row per strategy and horizon."""
+    lines = [
+        f"Seed {seed}",
+        (
+            f"{'strategy':<20}{'weeks':>6}{'origins':>9}{'zero':>6}"
+            f"{'mean %':>9}{'worst %':>9}{'mean error':>14}"
+        ),
+    ]
+    for name in sorted(scores):
+        for h, s in sorted(scores[name].items()):
+            lines.append(
+                f"{name:<20}{h:>6}{s.origins:>9}{s.zero_actual:>6}"
+                f"{_percent(s.mean_percent):>9}{_percent(s.worst_percent):>9}"
+                f"{_dollars(s.mean_abs_cents):>14}"
+            )
+    return "\n".join(lines)
+
+
+def _seed(text: str) -> int:
+    try:
+        value = int(text)
+    except ValueError:
+        raise argparse.ArgumentTypeError("must be a whole number") from None
+    if value < 0:
+        raise argparse.ArgumentTypeError("must be 0 or more")
+    return value
+
+
+def main(argv: Sequence[str] | None = None) -> int:
+    parser = argparse.ArgumentParser(
+        prog="python -m app.modules.forecasting.backtest",
+        description="Replay the sample data and report each strategy's forecast error.",
+    )
+    parser.add_argument("--seed", type=_seed, help="one seed; default: seeds 0 to 4")
+    args = parser.parse_args(argv)
+    seeds = SEEDS if args.seed is None else (args.seed,)
+    print("\n\n".join(render(seed, replay(generate(seed))) for seed in seeds))
+    return 0
+
+
+if __name__ == "__main__":
+    sys.exit(main())

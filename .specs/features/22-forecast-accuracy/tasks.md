@@ -110,10 +110,10 @@ T5 → T6 → T7 → T8
 
 **Done when**:
 
-- [ ] No arguments: seeds 0–4 × every registered strategy × horizons 1, 4, 13 with mean %, mean $, worst %, origins and zero-actual counts
-- [ ] `--seed 3` prints only seed 3; `--seed -1` and `--seed x` exit 2 with usage
-- [ ] `uv run python -m app.modules.forecasting.backtest --seed 0` runs from `services/core`
-- [ ] Gate check passes: `uv run pytest tests/test_forecast_backtest.py -q`
+- [x] No arguments: seeds 0–4 × every registered strategy × horizons 1, 4, 13 with mean %, mean $, worst %, origins and zero-actual counts
+- [x] `--seed 3` prints only seed 3; `--seed -1` and `--seed x` exit 2 with usage
+- [x] `uv run python -m app.modules.forecasting.backtest --seed 0` runs from `services/core`
+- [x] Gate check passes: `uv run pytest tests/test_forecast_backtest.py -q`
 
 **Tests**: unit
 **Gate**: quick
