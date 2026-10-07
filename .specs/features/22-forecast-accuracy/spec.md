@@ -153,15 +153,15 @@ Spec 21 forecasts 13 weeks, but nothing measures how close those forecasts come 
 
 | Requirement ID | Story | Phase | Status |
 | --- | --- | --- | --- |
-| ACC-01 | P1: Backtest | Design | Pending |
-| ACC-02 | P1: Backtest | Design | Pending |
-| ACC-03 | P1: Backtest | Design | Pending |
-| ACC-04 | P1: Backtest | Design | Pending |
-| ACC-05 | P1: Backtest | Design | Pending |
-| ACC-06 | P1: Backtest | Design | Pending |
-| ACC-07 | P1: Backtest | Design | Pending |
-| ACC-08 | P1: Backtest | Design | Pending |
-| ACC-09 | P1: Accuracy baseline | Design | Pending |
+| ACC-01 | P1: Backtest | Execute | Verified |
+| ACC-02 | P1: Backtest | Execute | Verified |
+| ACC-03 | P1: Backtest | Execute | Verified |
+| ACC-04 | P1: Backtest | Execute | Verified |
+| ACC-05 | P1: Backtest | Execute | Verified |
+| ACC-06 | P1: Backtest | Execute | Verified |
+| ACC-07 | P1: Backtest | Execute | Verified |
+| ACC-08 | P1: Backtest | Execute | Verified |
+| ACC-09 | P1: Accuracy baseline | Execute | Verified |
 | ACC-10 | (dropped: no tuning, context.md D5) | - | Dropped |
 | ACC-11 | P1: Weekly errors | Design | Pending |
 | ACC-12 | P1: Weekly errors | Design | Pending |

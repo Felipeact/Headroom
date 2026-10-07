@@ -132,8 +132,8 @@ T5 → T6 → T7 → T8
 
 **Done when**:
 
-- [ ] Table matches a fresh run of the command
-- [ ] Build gate passes
+- [x] Table matches a fresh run of the command
+- [x] Build gate passes
 
 **Tests**: none
 **Gate**: build
