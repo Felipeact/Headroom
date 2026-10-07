@@ -87,11 +87,11 @@ T5 → T6 → T7 → T8
 
 **Done when**:
 
-- [ ] `inputs_at` has no transaction after `today`, and its balances equal the reference minus later transactions (cash and card)
-- [ ] `actual_balance` equals the reference minus cash transactions after the Sunday
-- [ ] Error percent per ACC-05; a zero actual is counted in `zero_actual` and left out of the mean
-- [ ] Two replays are equal; a history shorter than the warm-up gives 0 origins without raising
-- [ ] Gate check passes: `uv run pytest tests/test_forecast_backtest.py -q`
+- [x] `inputs_at` has no transaction after `today`, and its balances equal the reference minus later transactions (cash and card)
+- [x] `actual_balance` equals the reference minus cash transactions after the Sunday
+- [x] Error percent per ACC-05; a zero actual is counted in `zero_actual` and left out of the mean
+- [x] Two replays are equal; a history shorter than the warm-up gives 0 origins without raising
+- [x] Gate check passes: `uv run pytest tests/test_forecast_backtest.py -q`
 
 **Tests**: unit
 **Gate**: quick
