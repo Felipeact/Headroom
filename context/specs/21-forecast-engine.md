@@ -1,7 +1,7 @@
 # Spec 21: The 13-week forecast
 
 - **Milestone:** 4, forecast
-- **Status:** Not started
+- **Status:** In progress
 - **Depends on:** 19, 20
 
 ## Goal
