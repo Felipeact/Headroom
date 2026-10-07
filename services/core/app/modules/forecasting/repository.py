@@ -292,3 +292,17 @@ def add_accuracy(session: Session, *, row: ForecastAccuracy) -> bool:
         .returning(ForecastAccuracy.horizon)
     ).first()
     return inserted is not None
+
+
+def accuracy_rows(
+    session: Session, *, horizon: int, since: date
+) -> list[ForecastAccuracy]:
+    """Every business's rows at `horizon` from `since` on, by week, then business."""
+    return list(
+        session.scalars(
+            select(ForecastAccuracy)
+            .where(ForecastAccuracy.horizon == horizon)
+            .where(ForecastAccuracy.week_start >= since)
+            .order_by(ForecastAccuracy.week_start, ForecastAccuracy.business_id)
+        )
+    )

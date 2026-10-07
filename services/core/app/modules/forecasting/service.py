@@ -860,3 +860,52 @@ def record_forecast_accuracy(now: datetime) -> dict[str, int]:
         counts["recorded"] += recorded
     log.info("forecast.accuracy_recorded", **counts)
     return counts
+
+
+@dataclass(frozen=True)
+class AccuracyRecord:
+    business_id: uuid.UUID
+    # The pin's Monday.
+    week_start: date
+    horizon: int
+    target_week_start: date
+    snapshot_id: uuid.UUID
+    currency: str
+    forecast_cents: int
+    actual_cents: int
+    # forecast - actual.
+    error_cents: int
+    # abs(error) / abs(actual) x 100; None when the actual balance was 0.
+    error_percent: float | None
+
+
+def accuracy_history(
+    session: Session, *, horizon: int, since: date
+) -> list[AccuracyRecord]:
+    """Every business's stored forecast errors at `horizon` weeks, from `since` on.
+
+    For spec 32's weekly report (AD-086): a read across businesses, with no HTTP route.
+    Ordered by the pin's Monday, then business. Raises `ValueError` unless `horizon`
+    is 1, 4 or 13.
+    """
+    if horizon not in ACCURACY_HORIZONS:
+        raise ValueError(f"horizon must be one of {ACCURACY_HORIZONS}")
+    return [
+        AccuracyRecord(
+            business_id=r.business_id,
+            week_start=r.week_start,
+            horizon=r.horizon,
+            target_week_start=r.target_week_start,
+            snapshot_id=r.snapshot_id,
+            currency=r.currency,
+            forecast_cents=r.forecast_cents,
+            actual_cents=r.actual_cents,
+            error_cents=r.error_cents,
+            error_percent=(
+                abs(r.error_cents) / abs(r.actual_cents) * 100
+                if r.actual_cents
+                else None
+            ),
+        )
+        for r in repository.accuracy_rows(session, horizon=horizon, since=since)
+    ]

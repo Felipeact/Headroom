@@ -214,9 +214,9 @@ T5 → T6 → T7 → T8
 
 **Done when**:
 
-- [ ] Filters by horizon and `since`; orders by week, then business; `error_percent` is derived and null at zero actual
-- [ ] `ValueError` for horizon 2; no `/v1` route mentions accuracy
-- [ ] Build gate passes
+- [x] Filters by horizon and `since`; orders by week, then business; `error_percent` is derived and null at zero actual
+- [x] `ValueError` for horizon 2; no `/v1` route mentions accuracy
+- [x] Build gate passes
 
 **Tests**: integration
 **Gate**: build
