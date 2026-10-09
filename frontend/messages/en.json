@@ -122,6 +122,37 @@
         "saveFailed": "We couldn't save that change. Try again.",
         "noneIncluded": "Choose at least one account that counts as cash."
       }
+    },
+    "Minimum": {
+      "title": "Set your minimum balance",
+      "intro": "Headroom warns you when your cash is forecast to drop below this amount.",
+      "label": "Minimum balance",
+      "suggested": "Suggested: {amount}, about two weeks of your typical spending.",
+      "alertsTitle": "How alerts work",
+      "alertsBody": "If your forecast dips below {amount}, you get an email that names the payments causing it and suggests ways to fix it.",
+      "alertsBodyNoAmount": "If your forecast dips below your minimum balance, you get an email that names the payments causing it and suggests ways to fix it.",
+      "settingsNote": "You can change this at any time in Settings.",
+      "continue": "Continue",
+      "errors": {
+        "invalid": "Enter a whole-dollar amount from $0 to {max}.",
+        "saveFailed": "We couldn't save your minimum balance. Try again."
+      }
+    },
+    "Forecast": {
+      "title": "Building your forecast",
+      "intro": "This usually takes a minute or two.",
+      "connected": "Connected {banks}",
+      "reading": "Reading your transactions",
+      "read": "Read {months, plural, one {# month} other {# months}} of transactions",
+      "readNoHistory": "Read your transactions",
+      "finding": "Finding recurring payments",
+      "others": "{count, plural, one {# other} other {# others}}",
+      "soFar": "{names} so far",
+      "building": "Building your 13-week forecast",
+      "footer": "You'll go to your dashboard as soon as it's ready.",
+      "slow": "This is taking longer than usual. You can go to your <link>dashboard</link>; your forecast will appear there when it's ready.",
+      "needsAttention": "Your bank needs you to log in again.",
+      "fixBank": "Go to bank settings"
     }
   },
   "Settings": {

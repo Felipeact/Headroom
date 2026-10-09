@@ -55,7 +55,7 @@ export function ChooseAccounts({
       setMessage("noneIncluded")
       return
     }
-    router.push("/")
+    router.push("/onboarding/minimum-balance")
   }
 
   const alert = message

@@ -1,5 +1,5 @@
 import { afterEach, beforeEach, describe, expect, test, vi } from 'vitest'
-import { formatSyncedAt } from '@/lib/format'
+import { formatList, formatSyncedAt, formatWholeDollarsInput, parseWholeDollars } from '@/lib/format'
 
 const TORONTO = 'America/Toronto'
 
@@ -20,5 +20,30 @@ describe('format', () => {
     ['2026-10-06T03:30:00Z', 'Oct 5 at 11:30 PM'],
   ])('C8 synced time %s', (iso, expected) => {
     expect(formatSyncedAt(iso, TORONTO)).toBe(expected)
+  })
+})
+
+describe('parseWholeDollars', () => {
+  test.each([
+    ['5000', 500000],
+    ['5,000', 500000],
+    ['$5,000', 500000],
+    [' 5000 ', 500000],
+    ['0', 0],
+    ['10,000,000', 1000000000],
+  ])('C24 parseWholeDollars(%j) is %i', (text, cents) => {
+    expect(parseWholeDollars(text)).toBe(cents)
+  })
+
+  test.each(['', 'abc', '5000.50', '-5', '10,000,001'])('C24 parseWholeDollars(%j) is null', (text) => {
+    expect(parseWholeDollars(text)).toBeNull()
+  })
+
+  test('formatWholeDollarsInput and formatList', () => {
+    expect(formatWholeDollarsInput(500000)).toBe('5,000')
+    expect(formatWholeDollarsInput(0)).toBe('0')
+    expect(formatList(['A'])).toBe('A')
+    expect(formatList(['A', 'B'])).toBe('A and B')
+    expect(formatList(['A', 'B', 'C'])).toBe('A, B, and C')
   })
 })

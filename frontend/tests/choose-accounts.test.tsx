@@ -305,10 +305,10 @@ describe('choose accounts view', () => {
     expect(screen.getByRole('alert').textContent).toContain(BANK.errors.connectFailed)
   })
 
-  test('continue', () => {
+  test('C28 continue goes to step 4', () => {
     renderView()
     fireEvent.click(button(ACCOUNTS.continue))
-    expect(push).toHaveBeenCalledWith('/')
+    expect(push).toHaveBeenCalledWith('/onboarding/minimum-balance')
   })
 
   test('continue with nothing included', () => {

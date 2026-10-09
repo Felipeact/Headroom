@@ -95,3 +95,31 @@ export function parseAmountInput(text: string): number | null {
   const total = Number(dollars) * 100 + Number(cents.padEnd(2, '0'))
   return Number.isSafeInteger(total) ? total : null
 }
+
+// The largest minimum balance: $10,000,000 (spec 23, AD-088).
+export const MAX_MINIMUM_CENTS = 1_000_000_000
+const WHOLE_DOLLARS_INPUT = /^\d+$/
+
+/** Whole dollars for an input field, unsigned with thousands commas: "5,000". */
+export function formatWholeDollarsInput(amountCents: number): string {
+  if (!Number.isSafeInteger(amountCents)) {
+    throw new RangeError(`amountCents must be a safe integer, got ${amountCents}`)
+  }
+  return new Intl.NumberFormat(LOCALE, { maximumFractionDigits: 0 }).format(Math.round(Math.abs(amountCents) / 100))
+}
+
+/**
+ * A typed minimum balance in cents, or null when it isn't whole dollars from $0 to $10,000,000:
+ * digits with an optional "$" and thousands commas. "$5,000" is 500000.
+ */
+export function parseWholeDollars(text: string): number | null {
+  const plain = text.trim().replace(/^\$/, '').replaceAll(',', '').trim()
+  if (!WHOLE_DOLLARS_INPUT.test(plain)) return null
+  const cents = Number(plain) * 100
+  return Number.isSafeInteger(cents) && cents <= MAX_MINIMUM_CENTS ? cents : null
+}
+
+/** Names joined as a sentence: "A", "A and B", "A, B, and C". */
+export function formatList(items: string[]): string {
+  return new Intl.ListFormat('en', { style: 'long', type: 'conjunction' }).format(items)
+}
