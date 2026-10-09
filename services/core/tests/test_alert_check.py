@@ -1,4 +1,5 @@
-"""Spec 24: the cash gap check, on hand-built forecasts (C6, C8-C17, C19, C20, C29)."""
+"""Spec 24: the cash gap check, on hand-built forecasts (C6, C8-C17, C19, C20, C29);
+spec 25: the fixes stored with each alert (C10-C13)."""
 
 import threading
 import uuid
@@ -16,8 +17,9 @@ from sqlalchemy.orm import Session
 from app import events, subscriptions
 from app.db import get_sessionmaker
 from app.main import app
+from app.modules.alerts import gaps
 from app.modules.alerts import service as alerts_service
-from app.modules.alerts.models import Alert, AlertItem
+from app.modules.alerts.models import Alert, AlertFix, AlertItem
 from app.modules.forecasting import service as forecasting_service
 from app.modules.forecasting.models import MinimumBalance
 from tests.test_expected_payments_api import owner_business
@@ -441,3 +443,159 @@ def test_subscriptions() -> None:
         alerts_service.check_cash_gaps,
     )
     assert len(subscriptions.SUBSCRIPTIONS) == 6
+
+
+# Spec 25: the fixes stored with each alert (C10-C13).
+
+LINE = gaps.CreditLine(name="Line of credit", currency="CAD", available_cents=2000000)
+
+
+def with_fixes(
+    fake: Fake, monkeypatch: pytest.MonkeyPatch, lines: dict[uuid.UUID, Any]
+) -> uuid.UUID:
+    """A business with a gap in week 7, a cause, a payment after it, and a line."""
+    business_id = business(fake)
+    fake.forecasts[business_id] = forecast(
+        {7: 185000},
+        items=[payroll(date(2026, 11, 12)), incoming(date(2026, 11, 17))],
+    )
+    lines[business_id] = [LINE]
+    monkeypatch.setattr(
+        alerts_service,
+        "credit_lines",
+        lambda session, business_id: lines.get(business_id, []),
+    )
+    return business_id
+
+
+def incoming(day: date) -> forecasting_service.ForecastItemView:
+    item = payroll(day)
+    return type(item)(**{**item.__dict__, "amount_cents": 960000})
+
+
+def fixes_of(alert_id: uuid.UUID) -> list[tuple[Any, ...]]:
+    with get_sessionmaker()() as session:
+        return [
+            (
+                f.kind,
+                f.amount_cents,
+                f.currency,
+                f.date,
+                f.original_date,
+                f.repay_on,
+                f.description,
+                f.counterparty,
+                f.available_cents,
+                f.new_lowest_balance_cents,
+            )
+            for f in session.scalars(
+                select(AlertFix)
+                .where(AlertFix.alert_id == alert_id)
+                .order_by(AlertFix.position)
+            )
+        ]
+
+
+def as_rows(found: list[gaps.Fix]) -> list[tuple[Any, ...]]:
+    return [
+        (
+            f.kind,
+            f.amount_cents,
+            f.currency,
+            f.date,
+            f.original_date,
+            f.repay_on,
+            f.description,
+            f.counterparty,
+            f.available_cents,
+            f.new_lowest_balance_cents,
+        )
+        for f in found
+    ]
+
+
+def test_fixes_stored_with_alert(
+    fake: Fake, monkeypatch: pytest.MonkeyPatch, sent: list[events.Event]
+) -> None:
+    """C10."""
+    business_id = with_fixes(fake, monkeypatch, {})
+    seen: list[list[tuple[Any, ...]]] = []
+
+    def read(event: events.Event) -> None:
+        seen.append(fixes_of(uuid.UUID(str(event.payload["alert_id"]))))
+
+    events.subscribe("alert.created", read)
+    try:
+        check(business_id)
+    finally:
+        events.unsubscribe("alert.created", read)
+    weeks = fake.forecasts[business_id].weeks
+    (gap,) = gaps.find_gaps(weeks, MINIMUM)
+    explained = gaps.explain(gap, fake.forecasts[business_id].items)
+    expected = as_rows(gaps.fixes(gap, explained, weeks, [LINE], currency="CAD"))
+    assert [row[0] for row in expected] == ["pay_early", "move_payment", "draw_credit"]
+    assert seen == [expected]
+
+
+def test_fixes_same_twice(
+    fake: Fake, monkeypatch: pytest.MonkeyPatch, sent: list[events.Event]
+) -> None:
+    """C11."""
+    business_id = with_fixes(fake, monkeypatch, {})
+    check(business_id)
+    (alert,) = alerts_of(business_id)
+    before = (columns(alert), items_of(alert.id), fixes_of(alert.id))
+    sent.clear()
+    monkeypatch.setattr(alerts_service, "clock", lambda: NOW + timedelta(hours=1))
+    check(business_id)
+    (again,) = alerts_of(business_id)
+    assert (columns(again), items_of(again.id), fixes_of(again.id)) == before
+    assert sent == []
+
+
+def test_credit_drop_switches_to_financing(
+    fake: Fake, monkeypatch: pytest.MonkeyPatch, sent: list[events.Event]
+) -> None:
+    """C12."""
+    lines: dict[uuid.UUID, Any] = {}
+    business_id = with_fixes(fake, monkeypatch, lines)
+    check(business_id)
+    (alert,) = alerts_of(business_id)
+    assert [f[0] for f in fixes_of(alert.id)] == [
+        "pay_early",
+        "move_payment",
+        "draw_credit",
+    ]
+    before = columns(alert)
+    sent.clear()
+    later = NOW + timedelta(hours=1)
+    monkeypatch.setattr(alerts_service, "clock", lambda: later)
+    lines[business_id] = [
+        gaps.CreditLine(name="Line of credit", currency="CAD", available_cents=100000)
+    ]
+    check(business_id)
+    (after,) = alerts_of(business_id)
+    assert [f[0] for f in fixes_of(after.id)] == [
+        "pay_early",
+        "move_payment",
+        "financing",
+    ]
+    assert after.updated_at == later
+    assert {k: v for k, v in columns(after).items() if k != "updated_at"} == {
+        k: v for k, v in before.items() if k != "updated_at"
+    }
+    assert sent == []
+
+
+def test_resolved_keeps_fixes(fake: Fake, monkeypatch: pytest.MonkeyPatch) -> None:
+    """C13."""
+    business_id = with_fixes(fake, monkeypatch, {})
+    check(business_id)
+    (alert,) = alerts_of(business_id)
+    before = fixes_of(alert.id)
+    assert len(before) == 3
+    fake.forecasts[business_id] = forecast({})
+    check(business_id)
+    (after,) = alerts_of(business_id)
+    assert after.state == "resolved"
+    assert fixes_of(after.id) == before

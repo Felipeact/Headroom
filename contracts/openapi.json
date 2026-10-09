@@ -2486,6 +2486,13 @@
             },
             "type": "array",
             "title": "Items"
+          },
+          "fixes": {
+            "items": {
+              "$ref": "#/components/schemas/Fix"
+            },
+            "type": "array",
+            "title": "Fixes"
           }
         },
         "type": "object",
@@ -2503,7 +2510,8 @@
           "updated_at",
           "dismissed_at",
           "resolved_at",
-          "items"
+          "items",
+          "fixes"
         ],
         "title": "Alert"
       },
@@ -3078,6 +3086,108 @@
           "type"
         ],
         "title": "FieldError"
+      },
+      "Fix": {
+        "properties": {
+          "kind": {
+            "type": "string",
+            "enum": [
+              "pay_early",
+              "move_payment",
+              "draw_credit",
+              "financing"
+            ],
+            "title": "Kind"
+          },
+          "amount_cents": {
+            "type": "integer",
+            "title": "Amount Cents"
+          },
+          "currency": {
+            "type": "string",
+            "title": "Currency"
+          },
+          "original_date": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Original Date"
+          },
+          "repay_on": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Repay On"
+          },
+          "date": {
+            "type": "string",
+            "format": "date",
+            "title": "Date"
+          },
+          "description": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Description"
+          },
+          "counterparty": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Counterparty"
+          },
+          "available_cents": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Available Cents"
+          },
+          "new_lowest_balance_cents": {
+            "type": "integer",
+            "title": "New Lowest Balance Cents"
+          }
+        },
+        "type": "object",
+        "required": [
+          "kind",
+          "amount_cents",
+          "currency",
+          "original_date",
+          "repay_on",
+          "date",
+          "description",
+          "counterparty",
+          "available_cents",
+          "new_lowest_balance_cents"
+        ],
+        "title": "Fix"
       },
       "Forecast": {
         "properties": {

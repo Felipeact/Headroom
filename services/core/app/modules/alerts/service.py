@@ -1,8 +1,9 @@
 """Cash gap alerts (spec 24): find each gap in the latest forecast and keep one alert per
-gap, open, dismissed or resolved.
+gap, open, dismissed or resolved, with the fixes that would close it (spec 25).
 
 The alerts module reads the forecast and the minimum balance only through
-`forecasting.service`, and owns the `alerts` and `alert_items` tables.
+`forecasting.service`, the lines of credit through `bank_sync.service`, and owns the
+`alerts`, `alert_items` and `alert_fixes` tables.
 """
 
 import uuid
@@ -16,7 +17,15 @@ from app import events
 from app.db import get_sessionmaker
 from app.modules.alerts import gaps, repository
 from app.modules.alerts.events import ALERT_CREATED, ALERT_RESOLVED, ALERT_UPDATED
-from app.modules.alerts.models import Alert, AlertItem, AlertItemKind, AlertState
+from app.modules.alerts.models import (
+    Alert,
+    AlertFix,
+    AlertItem,
+    AlertItemKind,
+    AlertState,
+    FixKind,
+)
+from app.modules.bank_sync import service as bank_sync_service
 from app.modules.forecasting import service as forecasting_service
 from app.modules.forecasting.events import FORECAST_INPUTS_CHANGED
 
@@ -48,6 +57,20 @@ class AlertItemView:
 
 
 @dataclass(frozen=True)
+class AlertFixView:
+    kind: FixKind
+    amount_cents: int
+    currency: str
+    original_date: date | None
+    repay_on: date | None
+    date: date
+    description: str | None
+    counterparty: str | None
+    available_cents: int | None
+    new_lowest_balance_cents: int
+
+
+@dataclass(frozen=True)
 class AlertView:
     id: uuid.UUID
     state: AlertState
@@ -64,11 +87,25 @@ class AlertView:
     resolved_at: datetime | None
     # Causes first, then the item arriving after the gap.
     items: list[AlertItemView]
+    # In kind order: pay_early, move_payment, draw_credit, financing.
+    fixes: list[AlertFixView]
 
 
 def clock() -> datetime:
     """The event handler's clock; tests replace it."""
     return datetime.now(UTC)
+
+
+def credit_lines(session: Session, business_id: uuid.UUID) -> list[gaps.CreditLine]:
+    """The business's lines of credit, with the credit the bank reports available."""
+    return [
+        gaps.CreditLine(
+            name=a.name, currency=a.currency, available_cents=a.available_cents
+        )
+        for c in bank_sync_service.list_connections(session, business_id=business_id)
+        for a in c.accounts
+        if a.type == "line_of_credit"
+    ]
 
 
 def _grew(notified_cents: int, shortfall_cents: int) -> bool:
@@ -112,6 +149,44 @@ def _stored(rows: list[AlertItem]) -> list[gaps.Explanation]:
     ]
 
 
+def _fix_rows(alert_id: uuid.UUID, found: list[gaps.Fix]) -> list[AlertFix]:
+    return [
+        AlertFix(
+            alert_id=alert_id,
+            position=n,
+            kind=f.kind,
+            amount_cents=f.amount_cents,
+            currency=f.currency,
+            date=f.date,
+            original_date=f.original_date,
+            repay_on=f.repay_on,
+            description=f.description,
+            counterparty=f.counterparty,
+            available_cents=f.available_cents,
+            new_lowest_balance_cents=f.new_lowest_balance_cents,
+        )
+        for n, f in enumerate(found)
+    ]
+
+
+def _stored_fixes(rows: list[AlertFix]) -> list[gaps.Fix]:
+    return [
+        gaps.Fix(
+            kind=r.kind,  # type: ignore[arg-type]  # ck_alert_fixes_kind holds it to FixKind
+            amount_cents=r.amount_cents,
+            currency=r.currency,
+            date=r.date,
+            original_date=r.original_date,
+            repay_on=r.repay_on,
+            description=r.description,
+            counterparty=r.counterparty,
+            available_cents=r.available_cents,
+            new_lowest_balance_cents=r.new_lowest_balance_cents,
+        )
+        for r in rows
+    ]
+
+
 def _reconcile(
     session: Session, business_id: uuid.UUID, now: datetime
 ) -> list[tuple[str, uuid.UUID]]:
@@ -127,10 +202,13 @@ def _reconcile(
     minimum_cents, currency = minimum
     live = repository.live_alerts(session, business_id=business_id)
     stored = repository.items_of(session, alert_ids=[a.id for a in live])
+    stored_fixes = repository.fixes_of(session, alert_ids=[a.id for a in live])
     pairs, gone = gaps.match(gaps.find_gaps(forecast.weeks, minimum_cents), live)
+    lines = credit_lines(session, business_id) if pairs else []
     sent: list[tuple[str, uuid.UUID]] = []
     for gap, alert in pairs:
         explained = gaps.explain(gap, forecast.items)
+        fixed = gaps.fixes(gap, explained, forecast.weeks, lines, currency=currency)
         fields = {
             "starts_on": gap.starts_on,
             "ends_on": gap.ends_on,
@@ -156,6 +234,9 @@ def _reconcile(
             repository.replace_items(
                 session, alert_id=alert.id, items=_rows(alert.id, explained)
             )
+            repository.replace_fixes(
+                session, alert_id=alert.id, fixes=_fix_rows(alert.id, fixed)
+            )
             sent.append((ALERT_CREATED, alert.id))
             continue
         grew = _grew(alert.notified_shortfall_cents, gap.shortfall_cents)
@@ -163,6 +244,7 @@ def _reconcile(
             grew
             or any(getattr(alert, k) != v for k, v in fields.items())
             or _stored(stored.get(alert.id, [])) != explained
+            or _stored_fixes(stored_fixes.get(alert.id, [])) != fixed
         )
         if not changed:
             continue
@@ -176,6 +258,9 @@ def _reconcile(
         alert.updated_at = now
         repository.replace_items(
             session, alert_id=alert.id, items=_rows(alert.id, explained)
+        )
+        repository.replace_fixes(
+            session, alert_id=alert.id, fixes=_fix_rows(alert.id, fixed)
         )
     for alert in gone:
         alert.state = "resolved"
@@ -219,6 +304,7 @@ def check_cash_gaps(event: events.Event) -> None:
 
 def _views(session: Session, alerts: list[Alert]) -> list[AlertView]:
     items = repository.items_of(session, alert_ids=[a.id for a in alerts])
+    fixes = repository.fixes_of(session, alert_ids=[a.id for a in alerts])
     return [
         AlertView(
             id=a.id,
@@ -246,6 +332,21 @@ def _views(session: Session, alerts: list[Alert]) -> list[AlertView]:
                     schedule=i.schedule,
                 )
                 for i in items.get(a.id, [])
+            ],
+            fixes=[
+                AlertFixView(
+                    kind=f.kind,  # type: ignore[arg-type]  # ck_alert_fixes_kind
+                    amount_cents=f.amount_cents,
+                    currency=f.currency,
+                    date=f.date,
+                    original_date=f.original_date,
+                    repay_on=f.repay_on,
+                    description=f.description,
+                    counterparty=f.counterparty,
+                    available_cents=f.available_cents,
+                    new_lowest_balance_cents=f.new_lowest_balance_cents,
+                )
+                for f in fixes.get(a.id, [])
             ],
         )
         for a in alerts

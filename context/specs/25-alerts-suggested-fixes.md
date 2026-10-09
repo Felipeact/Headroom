@@ -1,7 +1,7 @@
 # Spec 25: Suggested fixes
 
 - **Milestone:** 5, alerts and dashboard
-- **Status:** Not started
+- **Status:** In progress
 - **Depends on:** 24
 
 ## Goal

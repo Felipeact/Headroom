@@ -10,7 +10,7 @@ from app.auth import Member, require_member
 from app.db import get_session
 from app.modules.accounts.service import Role
 from app.modules.alerts import service
-from app.modules.alerts.models import AlertItemKind, AlertState
+from app.modules.alerts.models import AlertItemKind, AlertState, FixKind
 from app.problems import ProblemDetails, ValidationProblemDetails
 
 router = APIRouter(tags=["alerts"])
@@ -56,6 +56,29 @@ class AlertItem(BaseModel):
     schedule: str | None
 
 
+class Fix(BaseModel):
+    # `pay_early`: ask for the payment arriving after the gap a week early.
+    # `move_payment`: ask to move the largest cause a week later.
+    # `draw_credit`: borrow on a line of credit. `financing`: short-term financing.
+    kind: FixKind
+    # The payment moved, in our sign; or the amount borrowed, positive.
+    amount_cents: int
+    currency: str
+    # The payment's current date; null when borrowing.
+    original_date: date | None
+    # When borrowed money is repaid; null for a moved payment.
+    repay_on: date | None
+    # The payment's new date, or the day the money is borrowed.
+    date: date
+    # The payment's, or the line of credit's name.
+    description: str | None
+    counterparty: str | None
+    # The line of credit's available credit; `draw_credit` only.
+    available_cents: int | None
+    # The lowest of the 13 weekly balances if the fix were applied.
+    new_lowest_balance_cents: int
+
+
 class Alert(BaseModel):
     id: uuid.UUID
     state: AlertState
@@ -74,6 +97,8 @@ class Alert(BaseModel):
     resolved_at: datetime | None
     # Causes first, by date, then the item arriving after the gap.
     items: list[AlertItem]
+    # In kind order: pay_early, move_payment, draw_credit, financing.
+    fixes: list[Fix]
 
 
 class AlertList(BaseModel):

@@ -5,7 +5,7 @@ from collections.abc import Sequence
 from sqlalchemy import delete, func, select
 from sqlalchemy.orm import Session
 
-from app.modules.alerts.models import Alert, AlertItem, AlertState
+from app.modules.alerts.models import Alert, AlertFix, AlertItem, AlertState
 
 
 def lock_alerts(session: Session, *, business_id: uuid.UUID) -> None:
@@ -76,3 +76,24 @@ def replace_items(
 ) -> None:
     session.execute(delete(AlertItem).where(AlertItem.alert_id == alert_id))
     session.add_all(items)
+
+
+def fixes_of(
+    session: Session, *, alert_ids: Sequence[uuid.UUID]
+) -> dict[uuid.UUID, list[AlertFix]]:
+    """Each alert's fixes, by position."""
+    found: dict[uuid.UUID, list[AlertFix]] = defaultdict(list)
+    for row in session.scalars(
+        select(AlertFix)
+        .where(AlertFix.alert_id.in_(alert_ids))
+        .order_by(AlertFix.alert_id, AlertFix.position)
+    ):
+        found[row.alert_id].append(row)
+    return found
+
+
+def replace_fixes(
+    session: Session, *, alert_id: uuid.UUID, fixes: Sequence[AlertFix]
+) -> None:
+    session.execute(delete(AlertFix).where(AlertFix.alert_id == alert_id))
+    session.add_all(fixes)

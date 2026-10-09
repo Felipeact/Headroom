@@ -1,4 +1,4 @@
-"""Spec 24: the alerts routes (C18, C21-C27, C30)."""
+"""Spec 24: the alerts routes (C18, C21-C27, C30); spec 25: their fixes (C14, C16)."""
 
 import json
 import uuid
@@ -9,11 +9,14 @@ from typing import Any
 
 import pytest
 from fastapi.testclient import TestClient
+from sqlalchemy import delete
 
 from app import events
+from app.db import get_sessionmaker
 from app.main import app
 from app.modules.accounts import service as accounts_service
 from app.modules.alerts.api import get_now
+from app.modules.alerts.models import AlertFix
 from tests.test_alert_check import (
     NOW,
     Fake,
@@ -50,6 +53,20 @@ ALERT_KEYS = {
     "dismissed_at",
     "resolved_at",
     "items",
+    # Spec 25 door 2.
+    "fixes",
+}
+FIX_KEYS = {
+    "kind",
+    "amount_cents",
+    "currency",
+    "date",
+    "original_date",
+    "repay_on",
+    "description",
+    "counterparty",
+    "available_cents",
+    "new_lowest_balance_cents",
 }
 ITEM_KEYS = {
     "kind",
@@ -277,3 +294,51 @@ def test_contract_paths() -> None:
     assert "get" in paths[base]
     assert "get" in paths[base + "/{alert_id}"]
     assert "post" in paths[base + "/{alert_id}/dismiss"]
+
+
+def test_fixes_shape(fake: Fake) -> None:
+    """Spec 25 C14: `fixes` on every route, int cents with CAD, and [] when none."""
+    caller, business_id = owned(fake, {})
+    fake.forecasts[business_id] = forecast(
+        {7: 185000},
+        items=[payroll(date(2026, 11, 12)), _incoming(date(2026, 11, 17))],
+    )
+    check(business_id)
+    (listed,) = get(caller, business_id)["items"]
+    one = get(caller, business_id, f"alerts/{listed['id']}")
+    dismissed = dismiss(caller, business_id, listed["id"])
+    assert dismissed.status_code == 200, dismissed.text
+    for body in (listed, one, dismissed.json()):
+        assert [f["kind"] for f in body["fixes"]] == [
+            "pay_early",
+            "move_payment",
+            "financing",
+        ]
+        for fix in body["fixes"]:
+            assert set(fix) == FIX_KEYS
+            assert fix["currency"] == "CAD"
+            for key in ("amount_cents", "new_lowest_balance_cents"):
+                assert type(fix[key]) is int
+            assert fix["available_cents"] is None
+
+    # An alert stored before spec 25 has no fixes until its next check.
+    with get_sessionmaker()() as session:
+        session.execute(
+            delete(AlertFix).where(AlertFix.alert_id == uuid.UUID(listed["id"]))
+        )
+        session.commit()
+    assert get(caller, business_id, f"alerts/{listed['id']}")["fixes"] == []
+
+
+def test_contract_fixes() -> None:
+    """Spec 25 C16: `Alert.fixes` is an array of `Fix` with the 4 kinds."""
+    schemas = json.loads(CONTRACT.read_text(encoding="utf-8"))["components"]["schemas"]
+    fixes = schemas["Alert"]["properties"]["fixes"]
+    assert fixes["type"] == "array"
+    assert fixes["items"] == {"$ref": "#/components/schemas/Fix"}
+    assert schemas["Fix"]["properties"]["kind"]["enum"] == [
+        "pay_early",
+        "move_payment",
+        "draw_credit",
+        "financing",
+    ]

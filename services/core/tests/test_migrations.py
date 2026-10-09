@@ -1080,3 +1080,55 @@ def test_alerts_upgrade_downgrade_and_check(empty_database_url: str) -> None:
     for args in (("upgrade", "head"), ("check",)):
         result = alembic_run(*args, database_url=empty_database_url)
         assert result.returncode == 0, result.stdout + result.stderr
+
+
+ALERTS = "d6a2474cf2d6"
+
+
+def test_alert_fixes_upgrade_downgrade_and_check(empty_database_url: str) -> None:
+    """Spec 25 C15: alert fixes, their kind check, the cascade, and back."""
+    result = alembic_run("upgrade", "head", database_url=empty_database_url)
+    assert result.returncode == 0, result.stderr
+    engine = create_engine(empty_database_url)
+    alert_id = str(uuid.uuid4())
+    fix = (
+        "INSERT INTO alert_fixes (alert_id, position, kind, amount_cents, currency,"
+        " date, new_lowest_balance_cents) VALUES (%s, %s, %s, 200000, 'CAD',"
+        " '2026-11-09', 515000)"
+    )
+    try:
+        assert "alert_fixes" in inspect(engine).get_table_names()
+        with engine.begin() as conn:
+            conn.exec_driver_sql(
+                "INSERT INTO alerts (id, business_id, state, starts_on, ends_on,"
+                " lowest_week_starts_on, lowest_balance_cents, minimum_cents,"
+                " shortfall_cents, notified_shortfall_cents, currency, snapshot_id,"
+                " created_at, updated_at) VALUES (%s, %s, 'open', '2026-11-09',"
+                " '2026-11-15', '2026-11-09', 315000, 500000, 185000, 185000, 'CAD',"
+                " %s, now(), now())",
+                (alert_id, str(uuid.uuid4()), str(uuid.uuid4())),
+            )
+            conn.exec_driver_sql(fix, (alert_id, 0, "draw_credit"))
+        with pytest.raises(IntegrityError) as raised, engine.begin() as conn:
+            conn.exec_driver_sql(fix, (alert_id, 1, "split"))
+        assert "ck_alert_fixes_kind" in str(raised.value)
+        with engine.begin() as conn:
+            conn.exec_driver_sql("DELETE FROM alerts WHERE id = %s", (alert_id,))
+            left = conn.exec_driver_sql("SELECT count(*) FROM alert_fixes").scalar()
+        assert left == 0
+    finally:
+        engine.dispose()
+
+    result = alembic_run("downgrade", ALERTS, database_url=empty_database_url)
+    assert result.returncode == 0, result.stderr
+    engine = create_engine(empty_database_url)
+    try:
+        names = inspect(engine).get_table_names()
+        assert "alert_fixes" not in names
+        assert "alerts" in names
+    finally:
+        engine.dispose()
+
+    for args in (("upgrade", "head"), ("check",)):
+        result = alembic_run(*args, database_url=empty_database_url)
+        assert result.returncode == 0, result.stdout + result.stderr

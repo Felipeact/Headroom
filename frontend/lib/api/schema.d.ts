@@ -490,6 +490,8 @@ export interface components {
             resolved_at: string | null;
             /** Items */
             items: components["schemas"]["AlertItem"][];
+            /** Fixes */
+            fixes: components["schemas"]["Fix"][];
         };
         /** AlertItem */
         AlertItem: {
@@ -676,6 +678,35 @@ export interface components {
             msg: string;
             /** Type */
             type: string;
+        };
+        /** Fix */
+        Fix: {
+            /**
+             * Kind
+             * @enum {string}
+             */
+            kind: "pay_early" | "move_payment" | "draw_credit" | "financing";
+            /** Amount Cents */
+            amount_cents: number;
+            /** Currency */
+            currency: string;
+            /** Original Date */
+            original_date: string | null;
+            /** Repay On */
+            repay_on: string | null;
+            /**
+             * Date
+             * Format: date
+             */
+            date: string;
+            /** Description */
+            description: string | null;
+            /** Counterparty */
+            counterparty: string | null;
+            /** Available Cents */
+            available_cents: number | null;
+            /** New Lowest Balance Cents */
+            new_lowest_balance_cents: number;
         };
         /** Forecast */
         Forecast: {

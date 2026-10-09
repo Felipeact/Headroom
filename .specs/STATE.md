@@ -104,13 +104,15 @@
 | AD-097 | Events `alert.created`, `alert.updated`, `alert.resolved` (`alerts/events.py`), payload `{"alert_id": str}` only, published after the commit, one per changed alert | spec 29 emails on created and updated (spec 24 door 3) | active | 2026-10-09 |
 | AD-098 | `SUBSCRIPTIONS[4]` `(forecast.updated, alerts.service.check_cash_gaps)`, `SUBSCRIPTIONS[5]` `(forecast_inputs.changed, check_cash_gaps)`; the handler ignores a `forecast_inputs.changed` whose `source` isn't `minimum_balance` (extends AD-055) | a minimum change leaves the forecast unchanged (AD-089) (spec 24 door 4) | active | 2026-10-09 |
 | AD-099 | `GET /v1/businesses/{business_id}/alerts?state=` (`open` default, `dismissed`, `resolved`; other `422`) -> `{"items": [Alert]}` by `starts_on`, `id`; `GET .../alerts/{alert_id}`; `POST .../alerts/{alert_id}/dismiss` (owner only, AD-031; resolved `409` "This alert is already resolved."; dismissed `200` unchanged); unknown or foreign `404` "Alert not found.". `Alert` = `id`, `state`, `starts_on`, `ends_on`, `lowest_week_starts_on`, `lowest_balance_cents`, `minimum_cents`, `shortfall_cents`, `currency`, `created_at`, `updated_at`, `dismissed_at`, `resolved_at`, `items` [`kind`, `date`, `amount_cents`, `currency`, `description`, `counterparty`, `source`, `schedule`]. GETs are `require_member(*Role)`: owner-only until spec 31 adds `bookkeeper` | specs 26 and 27 read these (spec 24 door 5) | active | 2026-10-09 |
+| AD-100 | Table `alert_fixes` (module `alerts`, extends AD-095): PK `(alert_id, position)`, FK `alerts.id` CASCADE, `kind` with `ck_alert_fixes_kind` over exactly `pay_early`, `move_payment`, `draw_credit`, `financing` (Python `FixKind`), `amount_cents`, `currency`, `date`, `original_date`/`repay_on` null, `description`/`counterparty` null, `available_cents` null, `new_lowest_balance_cents`; replaced whole with `alert_items` on every check; a change only to fixes bumps `updated_at` silently | an alert outlives its snapshot, so its fixes are stored with it; specs 27 and 29 read them (spec 25 door 1) | active | 2026-10-09 |
+| AD-101 | `Alert` JSON (AD-099) adds `fixes`: [`kind`, `amount_cents`, `currency`, `date`, `original_date`, `repay_on`, `description`, `counterparty`, `available_cents`, `new_lowest_balance_cents`], in kind order `pay_early`, `move_payment`, `draw_credit`, `financing`; no prose from the API | the text lives in `messages/en.json` (spec 25 door 2) | active | 2026-10-09 |
 
 ## Handoff
 
-**Feature**: 24-alerts-cash-gaps (with 23a-forecast-sample-realignment before it)
-**Where**: Done. 23a built in 0ac511f, Verifier PASS 13/13. Spec 24 built in 87f71a5..5e20aec plus the C9/C21 clock fix, Verifier PASS 32/32 (validate_verification exit 0 for both)
-**In progress**: none
-**Next step**: spec 25 (suggested fixes); the sample's alert now carries the gap, causes and arrives-after item spec 25 builds on
-**Blockers**: none. Spec 24 AC 26 amendment confirmed by the user (non-owner GETs wait for spec 31's bookkeeper role, like AD-088)
-**Uncommitted**: none from these features (pre-existing .agents lock files and the untracked tlc-spec-driven skill are not this feature's)
+**Feature**: 25-alerts-suggested-fixes
+**Where**: built (C1-C18 green locally); Verifier dispatched over 71d6587..HEAD
+**In progress**: spec 25 verification
+**Next step**: Verifier report, then the-judge review, then mark spec 25 Done
+**Blockers**: none
+**Uncommitted**: token log row
 **Branch**: development

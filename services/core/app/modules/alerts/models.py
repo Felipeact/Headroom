@@ -21,6 +21,8 @@ AlertState = Literal["open", "dismissed", "resolved"]
 ALERT_STATES: tuple[str, ...] = get_args(AlertState)
 AlertItemKind = Literal["cause", "arrives_after"]
 ALERT_ITEM_KINDS: tuple[str, ...] = get_args(AlertItemKind)
+FixKind = Literal["pay_early", "move_payment", "draw_credit", "financing"]
+FIX_KINDS: tuple[str, ...] = get_args(FixKind)
 
 
 class Alert(Base):
@@ -87,3 +89,33 @@ class AlertItem(Base):
     source: Mapped[str] = mapped_column(Text)
     source_id: Mapped[uuid.UUID | None] = mapped_column(Uuid)
     schedule: Mapped[str | None] = mapped_column(Text)
+
+
+class AlertFix(Base):
+    """A suggested fix for an alert (spec 25, AD-100); replaced whole with the items."""
+
+    __tablename__ = "alert_fixes"
+    __table_args__ = (
+        CheckConstraint(
+            f"kind IN ({', '.join(repr(k) for k in FIX_KINDS)})", name="kind"
+        ),
+    )
+
+    alert_id: Mapped[uuid.UUID] = mapped_column(
+        Uuid, ForeignKey("alerts.id", ondelete="CASCADE"), primary_key=True
+    )
+    # Kind order: pay_early, move_payment, draw_credit, financing.
+    position: Mapped[int] = mapped_column(SmallInteger, primary_key=True)
+    kind: Mapped[str] = mapped_column(Text)
+    # The payment moved, in our sign; or the amount borrowed, positive.
+    amount_cents: Mapped[int] = mapped_column(BigInteger)
+    currency: Mapped[str] = mapped_column(Text)
+    original_date: Mapped[date | None] = mapped_column(Date)
+    repay_on: Mapped[date | None] = mapped_column(Date)
+    # The payment's new date, or the day the money is borrowed. Declared after the
+    # other dates: the attribute shadows `date` in the annotations below it.
+    date: Mapped[date] = mapped_column(Date)
+    description: Mapped[str | None] = mapped_column(Text)
+    counterparty: Mapped[str | None] = mapped_column(Text)
+    available_cents: Mapped[int | None] = mapped_column(BigInteger)
+    new_lowest_balance_cents: Mapped[int] = mapped_column(BigInteger)
