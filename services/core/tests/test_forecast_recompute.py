@@ -404,8 +404,8 @@ def test_expected_items() -> None:
 
 
 def test_subscriptions_order() -> None:
-    """C26."""
-    assert subscriptions.SUBSCRIPTIONS == (
+    """C26. Spec 24 appends the alert handlers after these (its C29)."""
+    assert subscriptions.SUBSCRIPTIONS[:4] == (
         ("transactions.synced", service.refresh_recurring_patterns),
         ("transactions.synced", service.match_expected_payments),
         ("transactions.synced", service.recompute_forecast),

@@ -960,6 +960,17 @@ def get_minimum_balance(
     return _minimum_view(session, business_id, now)
 
 
+def minimum_balance_amount(
+    session: Session, *, business_id: uuid.UUID
+) -> tuple[int, str] | None:
+    """The stored minimum as (`amount_cents`, `currency`); None while unset (spec 24).
+
+    Unlike `get_minimum_balance`, it reads no transactions: no suggestion is computed.
+    """
+    row = repository.minimum_balance(session, business_id=business_id)
+    return None if row is None else (row.amount_cents, row.currency)
+
+
 def set_minimum_balance(
     session: Session,
     *,

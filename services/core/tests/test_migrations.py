@@ -1013,3 +1013,70 @@ def test_minimum_balances_upgrade_downgrade_and_check(empty_database_url: str) -
     for args in (("upgrade", "head"), ("check",)):
         result = alembic_run(*args, database_url=empty_database_url)
         assert result.returncode == 0, result.stdout + result.stderr
+
+
+MINIMUM_BALANCES = "48f0c75eb864"
+
+
+def test_alerts_upgrade_downgrade_and_check(empty_database_url: str) -> None:
+    """Spec 24 C28: alerts and their items, their checks, the cascade, and back."""
+    result = alembic_run("upgrade", "head", database_url=empty_database_url)
+    assert result.returncode == 0, result.stderr
+    engine = create_engine(empty_database_url)
+    alert = (
+        "INSERT INTO alerts (id, business_id, state, starts_on, ends_on,"
+        " lowest_week_starts_on, lowest_balance_cents, minimum_cents, shortfall_cents,"
+        " notified_shortfall_cents, currency, snapshot_id, created_at, updated_at)"
+        " VALUES (%s, %s, %s, '2026-11-09', '2026-11-15', '2026-11-09', 315000,"
+        " 500000, %s, 185000, 'CAD', %s, now(), now())"
+    )
+    item = (
+        "INSERT INTO alert_items (alert_id, position, kind, date, amount_cents,"
+        " currency, source) VALUES (%s, 0, %s, '2026-11-12', -1450000, 'CAD',"
+        " 'expected_payment')"
+    )
+    alert_id = str(uuid.uuid4())
+
+    def new_alert(state: str, shortfall: int) -> tuple[str, ...]:
+        return (str(uuid.uuid4()), str(uuid.uuid4()), state, str(shortfall)) + (
+            str(uuid.uuid4()),
+        )
+
+    try:
+        names = inspect(engine).get_table_names()
+        assert {"alerts", "alert_items"} <= set(names)
+        with engine.begin() as conn:
+            conn.exec_driver_sql(
+                alert, (alert_id, str(uuid.uuid4()), "open", 185000, str(uuid.uuid4()))
+            )
+            conn.exec_driver_sql(item, (alert_id, "cause"))
+        for values, constraint in (
+            (new_alert("closed", 185000), "ck_alerts_state"),
+            (new_alert("open", 0), "ck_alerts_shortfall_positive"),
+        ):
+            with pytest.raises(IntegrityError) as raised, engine.begin() as conn:
+                conn.exec_driver_sql(alert, values)
+            assert constraint in str(raised.value)
+        with pytest.raises(IntegrityError) as raised, engine.begin() as conn:
+            conn.exec_driver_sql(item.replace("0, %s", "1, %s"), (alert_id, "other"))
+        assert "ck_alert_items_kind" in str(raised.value)
+        with engine.begin() as conn:
+            conn.exec_driver_sql("DELETE FROM alerts WHERE id = %s", (alert_id,))
+            left = conn.exec_driver_sql("SELECT count(*) FROM alert_items").scalar()
+        assert left == 0
+    finally:
+        engine.dispose()
+
+    result = alembic_run("downgrade", MINIMUM_BALANCES, database_url=empty_database_url)
+    assert result.returncode == 0, result.stderr
+    engine = create_engine(empty_database_url)
+    try:
+        names = inspect(engine).get_table_names()
+        assert "alerts" not in names
+        assert "alert_items" not in names
+    finally:
+        engine.dispose()
+
+    for args in (("upgrade", "head"), ("check",)):
+        result = alembic_run(*args, database_url=empty_database_url)
+        assert result.returncode == 0, result.stdout + result.stderr

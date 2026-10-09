@@ -1,7 +1,7 @@
 # Spec 24: Cash gap alerts
 
 - **Milestone:** 5, alerts and dashboard
-- **Status:** Not started
+- **Status:** In progress
 - **Depends on:** 23
 
 ## Goal

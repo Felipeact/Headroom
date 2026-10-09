@@ -26,7 +26,7 @@ This reuses the event bus and `SUBSCRIPTIONS` (AD-047, AD-055), `forecast.update
 | domain | new term: `cash gap` (the AGENTS.md glossary term, made exact) - a maximal run of consecutive forecast weeks whose `end_balance_cents` is below the minimum. `low_cents` / `high_cents` are the uncertainty band (context.md, Findings) and are not used |
 | domain | existing term: `forecast_inputs.changed` - gains its second subscriber. `alerts` acts only on `source` `minimum_balance` and ignores the others, which already lead to `forecast.updated` |
 | domain | existing module `forecasting` - gains one public read, `minimum_balance_amount(session, business_id) -> (amount_cents, currency) or None`. `get_minimum_balance` computes the suggestion over every transaction, and the alert check doesn't need it |
-| app | `app/main.py` mounts the `alerts` router on the authenticated `/v1` router (AD-022). `app/subscriptions.py` gains 2 rows after the existing 4 |
+| app | `app/main.py` mounts the `alerts` router on the authenticated `/v1` router (AD-022). `app/subscriptions.py` gains 2 rows after the existing 4. `tests/test_forecast_recompute.py::test_subscriptions_order` (spec 21 C26) asserted the whole tuple and now asserts its first 4 |
 | contracts | `contracts/openapi.json` and `frontend/lib/api/schema.d.ts` are regenerated with 3 new routes |
 | stored data | 2 new tables, nothing to migrate or backfill. A business with a forecast and a minimum gets its alerts on its next forecast or minimum change |
 
@@ -116,7 +116,7 @@ One-way constraints: `state` is exactly one of `open`, `dismissed`, `resolved` (
 23. WHEN a member calls `GET .../alerts/{alert_id}` for an alert of the business in any state THEN the system SHALL return `200` with that `Alert`.
 24. IF `state` is not one of `open`, `dismissed`, `resolved` THEN `GET .../alerts` SHALL return `422` problem details.
 25. IF the alert doesn't exist or belongs to another business THEN `GET .../alerts/{alert_id}` and dismiss SHALL return `404` "Alert not found.".
-26. IF the caller is not a member of the business THEN all 3 routes SHALL return `404` "Business not found.". IF a member who isn't the owner calls dismiss THEN the system SHALL return `403`, and their `GET`s SHALL succeed.
+26. IF the caller is not a member of the business THEN all 3 routes SHALL return `404` "Business not found.". IF a member who isn't the owner calls dismiss THEN the system SHALL return `403`. (Amended while building, 2026-10-09: "and their `GET`s SHALL succeed" waits for spec 31's `bookkeeper` role. v1's only role is `owner`, as in AD-088.)
 27. The system SHALL return money only as integer cents with `currency`, and SHALL put no amount in any alert event payload.
 
 **Independent test:** pytest through `TestClient` with signed tokens, including a second business whose owner gets `404` on the first business's alert.
