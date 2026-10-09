@@ -101,9 +101,9 @@
 ## Handoff
 
 **Feature**: 23-forecast-minimum-balance-and-first-forecast
-**Where**: Build. plan.md approved ("build", 2026-10-09); checks.md C1-C34 written, validate_checks exit 0
-**In progress**: S1 (minimum balance API)
-**Next step**: build S1-S5, then dispatch the Verifier
-**Blockers**: none
-**Uncommitted**: spec 23 plan, checks, STATE rows (pre-existing .agents lock files and the untracked tlc-spec-driven skill are not this feature's)
+**Where**: Done. Built in 4b15181..d5b6334, Verifier PASS 34/34 (validate_verification exit 0); AC 27 amended by user decision (AD-092, 2026-10-09)
+**In progress**: none
+**Next step**: spec 24 (cash gap alerts); its dependency 23 is Done. Spec 24 subscribes to `forecast_inputs.changed` with source `minimum_balance` (AD-089)
+**Blockers**: none. Verifier follow-ups (non-blocking): API-level tests for `suggested_cents` null and for an outflow on an excluded account
+**Uncommitted**: none from this feature (pre-existing .agents lock files and the untracked tlc-spec-driven skill are not this feature's)
 **Branch**: development
