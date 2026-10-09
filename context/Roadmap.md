@@ -1,6 +1,6 @@
 # Headroom roadmap
 
-*Last updated: October 6, 2026. Update this file whenever a milestone or gate is passed.*
+*Last updated: October 9, 2026. Update this file whenever a milestone or gate is passed.*
 
 **The plan:** generate the project with official tools, then build Headroom one short spec at a time until it's ready for its first clients. Scale up only after they confirm the product is worth paying for.
 
@@ -57,7 +57,7 @@ Specs 01–05 are done. Staging runs on Railway, and its service settings live i
 | [16](specs/16-bank-transaction-labels.md) | Transaction labels | 14 |
 | [17](specs/17-bank-connection-settings.md) | Bank connection settings | 13, 14 |
 
-### Milestone 4: Forecast (2–3 weeks)
+### Milestone 4: Forecast (2–3 weeks): done October 9, 2026
 
 | Spec | What it does | Depends on |
 |---|---|---|
