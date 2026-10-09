@@ -1,7 +1,7 @@
 # Spec 23: Minimum balance and the first forecast
 
 - **Milestone:** 4, forecast
-- **Status:** Not started
+- **Status:** In progress
 - **Depends on:** 21
 
 ## Goal

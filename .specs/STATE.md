@@ -91,13 +91,18 @@
 | AD-084 | Tables (module `forecasting`): `forecast_pins` (PK `(business_id, week_start)`, `snapshot_id` FK `forecast_snapshots` CASCADE) and `forecast_accuracy` (PK `(business_id, week_start, horizon)`, `ck_forecast_accuracy_horizon` IN (1,4,13), `target_week_start`, `snapshot_id` FK CASCADE, `currency`, `forecast_cents`, `actual_cents`, `error_cents` = forecast − actual; no stored percent). Both are write-once, with ON CONFLICT DO NOTHING | Snapshots are reused (AD-077), so what was current on a Monday must be pinned when it happens (spec 22) | active | 2026-10-07 |
 | AD-085 | Job `forecast_accuracy` (`app/jobs/forecast_accuracy.py`), `JOBS = (nightly_bank_sync, forecast_accuracy)`: per business with a snapshot, in its own transaction, it pins the latest snapshot on the business-local Monday (no back-dating), and from the Tuesday after target week T records h ∈ {1,4,13} for pins up to 14 weeks old. The forecast is the pinned snapshot's week with `starts_on` = T, or nothing. The actual is the included CAD accounts' balances (null = 0) minus their transactions after T's Sunday. A failure is logged as `forecast.accuracy_failed` (business, error type) and the job continues; it returns `pinned`, `recorded`, `accuracy_failed` (`failed` is the nightly job's key in the merged `jobs.run_finished`) | Late postings get a night to land; one row per week stays stable (spec 22) | active | 2026-10-07 |
 | AD-086 | `forecasting.service.accuracy_history(session, *, horizon, since) -> list[AccuracyRecord]` is the only reader of accuracy rows (spec 32). It reads across businesses, has no HTTP route, and raises `ValueError` outside (1, 4, 13); `error_percent` is derived, and null at zero actual | Spec 32's report is a job, like AD-053's cross-business read (spec 22) | active | 2026-10-07 |
+| AD-087 | Table `minimum_balances` (module `forecasting`): `business_id uuid` primary key (no FK), `amount_cents bigint not null` with `ck_minimum_balances_amount_cents_nonnegative`, `currency text`, `updated_at timestamptz`, `updated_by uuid` (`users.id`); read and written only through `forecasting.service`; a change audits `minimum_balance.changed` with `{"amount_cents": n}` | spec 24 compares, spec 26 draws; `businesses` belongs to `accounts` (spec 23 door 1) | active | 2026-10-09 |
+| AD-088 | `GET`/`PUT /v1/businesses/{business_id}/minimum-balance`: GET any member, PUT owner only (AD-031); body `{"amount_cents": int}` 0..1,000,000,000, `extra="forbid"`; `MinimumBalance` = `amount_cents` (null = unset), `currency`, `suggested_cents` (2 × median weekly money out over 13 complete weeks, rounded up to 10000; null without a complete week), `updated_at` | step 4 needs the suggestion with the unset value (spec 23 door 2) | active | 2026-10-09 |
+| AD-089 | A changed minimum publishes `forecast_inputs.changed` `{"source": "minimum_balance"}` after commit; the same amount publishes and audits nothing (extends AD-076) | spec 24 re-checks alerts on it; the forecast fingerprint is unchanged (spec 23 door 3) | active | 2026-10-09 |
+| AD-090 | `GET /v1/businesses/{business_id}/forecast/status`, any member: `state` `needs_attention` (an included connection `login_required`) > `ready` (every included connection synced once and latest `inputs_sha256` = fingerprint of current inputs) > `building`; plus `institution_names`, `transactions_read`, `history_months`, `recurring_count`, `recurring_names` (≤ 2) | "a snapshot exists" is true before the first sync lands (spec 23 door 4) | active | 2026-10-09 |
+| AD-091 | Onboarding routes `/onboarding/minimum-balance` (step 4) and `/onboarding/forecast` (step 5); both redirect to `/onboarding/business` / `/onboarding/bank` like step 3; step 5 redirects to step 4 while unset, and to `/` when ready | steps are named by content (spec 23 door 5) | active | 2026-10-09 |
 
 ## Handoff
 
-**Feature**: 22-forecast-accuracy
-**Where**: Done. Built in 8f44b9c..14dfa67, Verifier PASS (validate_state exit 0); Done-when 1 amended by user decision D7 (2026-10-09)
-**In progress**: none
-**Next step**: spec 23 (minimum balance and first forecast); its dependency 21 is Done
-**Blockers**: none. Spec 24 now carries the ±10% 4-week bar and the Harbor Street realignment (spec 18 amendment), to be planned with its week-end recalibration
-**Uncommitted**: none from this feature (pre-existing .agents lock files and the untracked tlc-spec-driven skill are not this feature's)
+**Feature**: 23-forecast-minimum-balance-and-first-forecast
+**Where**: Build. plan.md approved ("build", 2026-10-09); checks.md C1-C34 written, validate_checks exit 0
+**In progress**: S1 (minimum balance API)
+**Next step**: build S1-S5, then dispatch the Verifier
+**Blockers**: none
+**Uncommitted**: spec 23 plan, checks, STATE rows (pre-existing .agents lock files and the untracked tlc-spec-driven skill are not this feature's)
 **Branch**: development
