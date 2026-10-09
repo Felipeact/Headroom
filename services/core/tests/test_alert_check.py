@@ -233,8 +233,10 @@ def test_nothing_without_forecast_or_minimum(
     assert sent == []
 
 
-def test_same_forecast_twice(fake: Fake, sent: list[events.Event]) -> None:
-    """C9."""
+def test_same_forecast_twice(
+    fake: Fake, sent: list[events.Event], monkeypatch: pytest.MonkeyPatch
+) -> None:
+    """C9. The clock moves between the checks, so a needless write would show."""
     business_id = business(fake, w7=185000)
     fake.forecasts[business_id].items.append(payroll(date(2026, 11, 13)))
     check(business_id)
@@ -242,6 +244,7 @@ def test_same_forecast_twice(fake: Fake, sent: list[events.Event]) -> None:
     before = (columns(first), items_of(first.id))
     assert len(before[1]) == 1
     sent.clear()
+    monkeypatch.setattr(alerts_service, "clock", lambda: NOW + timedelta(hours=1))
     check(business_id)
     (second,) = alerts_of(business_id)
     assert (columns(second), items_of(second.id)) == before

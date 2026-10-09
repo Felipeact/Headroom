@@ -3,7 +3,7 @@
 import json
 import uuid
 from collections.abc import Iterator
-from datetime import date
+from datetime import date, timedelta
 from types import SimpleNamespace
 from typing import Any
 
@@ -146,6 +146,8 @@ def test_dismiss_resolved_or_dismissed(fake: Fake) -> None:
     dismissed_at = get(caller, business_id, f"alerts/{ids['dismissed']}")[
         "dismissed_at"
     ]
+    # A later clock, so rewriting the dismissal would change it.
+    app.dependency_overrides[get_now] = lambda: NOW + timedelta(hours=1)
     again = dismiss(caller, business_id, ids["dismissed"])
     assert again.status_code == 200, again.text
     assert again.json()["dismissed_at"] == dismissed_at

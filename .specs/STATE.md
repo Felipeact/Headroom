@@ -107,10 +107,10 @@
 
 ## Handoff
 
-**Feature**: 23a-forecast-sample-realignment, then 24-alerts-cash-gaps
-**Where**: Plans written for both (2026-10-09), awaiting user review. Spike done in the scratchpad; results in `.specs/features/24-alerts-cash-gaps/context.md` ("Spike result"). No code yet
+**Feature**: 24-alerts-cash-gaps (with 23a-forecast-sample-realignment before it)
+**Where**: Done. 23a built in 0ac511f, Verifier PASS 13/13. Spec 24 built in 87f71a5..5e20aec plus the C9/C21 clock fix, Verifier PASS 32/32 (validate_verification exit 0 for both)
 **In progress**: none
-**Next step**: user approves 23a plan (open question: 10 sample patterns instead of spec 19 C17's 3) and 24 plan (open: 20% large-payment rule, single arrives-after item); then checks.md for 23a, build, verify; then 24
-**Blockers**: 24 AC 7 (Done when 1) needs 23a built first (D1)
-**Uncommitted**: the two plan.md files and context.md's spike section; pre-existing .agents lock files and the untracked tlc-spec-driven skill are not this feature's
+**Next step**: spec 25 (suggested fixes); the sample's alert now carries the gap, causes and arrives-after item spec 25 builds on
+**Blockers**: none. Pending user confirmation: spec 24 C26/AC 26 amendment (non-owner GETs wait for spec 31's bookkeeper role, like AD-088)
+**Uncommitted**: none from these features (pre-existing .agents lock files and the untracked tlc-spec-driven skill are not this feature's)
 **Branch**: development
