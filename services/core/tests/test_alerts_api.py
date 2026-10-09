@@ -15,6 +15,8 @@ from app import events
 from app.db import get_sessionmaker
 from app.main import app
 from app.modules.accounts import service as accounts_service
+from app.modules.alerts import gaps
+from app.modules.alerts import service as alerts_service
 from app.modules.alerts.api import get_now
 from app.modules.alerts.models import AlertFix
 from tests.test_alert_check import (
@@ -342,3 +344,17 @@ def test_contract_fixes() -> None:
         "draw_credit",
         "financing",
     ]
+
+
+def test_draw_credit_on_the_route(fake: Fake, monkeypatch: pytest.MonkeyPatch) -> None:
+    """Spec 25 AC 15: a `draw_credit` fix carries its available credit as int cents."""
+    line = gaps.CreditLine("Line of credit", "CAD", 2000000)
+    monkeypatch.setattr(alerts_service, "credit_lines", lambda *_: [line])
+    caller, business_id = owned(fake, {7: 185000})
+    (alert,) = get(caller, business_id)["items"]
+    (fix,) = alert["fixes"]
+    assert set(fix) == FIX_KEYS
+    assert fix["kind"] == "draw_credit"
+    assert type(fix["amount_cents"]) is int and fix["amount_cents"] == 200000
+    assert type(fix["available_cents"]) is int and fix["available_cents"] == 2000000
+    assert fix["currency"] == "CAD"

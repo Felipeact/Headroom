@@ -110,9 +110,9 @@
 ## Handoff
 
 **Feature**: 25-alerts-suggested-fixes
-**Where**: built (C1-C18 green locally); Verifier dispatched over 71d6587..HEAD
-**In progress**: spec 25 verification
-**Next step**: Verifier report, then the-judge review, then mark spec 25 Done
+**Where**: Done. Built in f839b7e, Verifier PASS 18/18 (validate_verification exit 0); its gaps 1-2 closed by 2 extra tests
+**In progress**: none
+**Next step**: spec 26 (the dashboard) or 27 (the alert page, which renders the fixes from `Alert.fixes`)
 **Blockers**: none
-**Uncommitted**: token log row
+**Uncommitted**: none
 **Branch**: development

@@ -1,7 +1,7 @@
 # Spec 25: Suggested fixes
 
 - **Milestone:** 5, alerts and dashboard
-- **Status:** In progress
+- **Status:** Done
 - **Depends on:** 24
 
 ## Goal
@@ -19,5 +19,5 @@ Rules choose the fixes. Each fix shows what the lowest balance would be if it we
 
 ## Done when
 
-- [ ] On the sample data, the alert offers three fixes, with new lowest balances of $12,750, $17,650, and $5,150, matching the alert mockup.
-- [ ] The line-of-credit fix appears only when the available credit covers the shortfall.
+- [x] On the sample data, the alert offers three fixes, with new lowest balances of $12,750, $17,650, and $5,150, matching the alert mockup.
+- [x] The line-of-credit fix appears only when the available credit covers the shortfall.

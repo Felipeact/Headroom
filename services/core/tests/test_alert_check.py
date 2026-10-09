@@ -7,6 +7,7 @@ from collections.abc import Iterator
 from contextlib import contextmanager
 from dataclasses import dataclass, field
 from datetime import UTC, date, datetime, timedelta
+from types import SimpleNamespace
 from typing import Any
 
 import pytest
@@ -599,3 +600,32 @@ def test_resolved_keeps_fixes(fake: Fake, monkeypatch: pytest.MonkeyPatch) -> No
     (after,) = alerts_of(business_id)
     assert after.state == "resolved"
     assert fixes_of(after.id) == before
+
+
+def test_only_lines_of_credit_count(monkeypatch: pytest.MonkeyPatch) -> None:
+    """Spec 25 AC 4: a credit card's available credit is never a line to draw on."""
+
+    def account(name: str, kind: str, available: int | None) -> Any:
+        return SimpleNamespace(
+            name=name, type=kind, currency="CAD", available_cents=available
+        )
+
+    connections = [
+        SimpleNamespace(
+            accounts=[
+                account("Business Visa", "credit_card", 5000000),
+                account("Line of credit", "line_of_credit", 300000),
+                account("Operating", "checking", None),
+            ]
+        )
+    ]
+    monkeypatch.setattr(
+        alerts_service.bank_sync_service,
+        "list_connections",
+        lambda session, business_id: connections,
+    )
+    with get_sessionmaker()() as session:
+        found = alerts_service.credit_lines(session, uuid.uuid4())
+    assert found == [
+        gaps.CreditLine(name="Line of credit", currency="CAD", available_cents=300000)
+    ]

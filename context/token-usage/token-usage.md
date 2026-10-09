@@ -76,3 +76,6 @@ Context used per request, measured against a context window of about 250,000 tok
 | Spec 24: cash gap alerts (plan research, engine probe, 2 user decisions; stopped for the realignment spike) | ~165,000 (~66%) | Low (past 60%) |
 | Spec 23a + 24: realignment spike (design B, 7 conditions), plans for 23a and 24 | ~110,000 (~44%) | Medium (attention degrades) |
 | Spec 23a + 24: checks, build, 2 verifier dispatches, C26 amendment, C9/C21 clock fix | ~130,000 (~52%) | Medium (attention degrades) |
+| Spec 25: suggested fixes (plan, sample forecast probe, 2 open questions) | ~75,000 (~30%) | High (smart zone) |
+| Spec 25: checks, build, verifier dispatch, 2 gap tests | ~70,000 (~28%) | High (smart zone) |
+| Spec 25: verifier sub-agent (separate context) | ~109,000 (~44%) | Medium (attention degrades) |
