@@ -94,7 +94,7 @@ From the sample's own history, the `recurring_pattern` strategy forecasts the No
 | --- | --- | --- | --- |
 | Changing spec 19 C17 from exactly 3 patterns to exactly 10 (spike condition 6) | Change it, with spec 19's Done-when untouched (it says the sample's payroll, rent and software are found, and they still are) | Dated client payments are the only route the spike found to the mockup's gap and the 10% bar | y (approved, 2026-10-09) |
 | Feature name and order | `23a-forecast-sample-realignment`, built before spec 24 (D1) | it amends spec 18 and carries spec 22's bar, and must land between 23 and 24 | y (approved, 2026-10-09) |
-| The seed-0 calibration in odd cents (Acme 519,997, Pine Ridge 645,277) | Keep them as literal constants with a comment | A round number misses $3,150 by cents. Any later change to detection or strategies moves it, and AC 1 fails loudly | y (approved, 2026-10-09) |
+| The seed-0 calibration in odd cents (Acme 519,997, Pine Ridge 645,277; as built, only Pine Ridge 604,966 - see Landing 1a) | Keep them as literal constants with a comment | A round number misses $3,150 by cents. Any later change to detection or strategies moves it, and AC 1 fails loudly | y (approved, 2026-10-09) |
 | The future's supplier line (AC 10) | One weekly "Typical supplier bills" item, the same amount every Monday | The future is seed-independent (C2), and the engine's supplier estimate is weekly | y (approved, 2026-10-09) |
 
 **Open questions:** none - all resolved or logged above. Ten patterns approved by the user on 2026-10-09.
