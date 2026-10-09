@@ -24,3 +24,4 @@ Find the weeks when cash will drop below the minimum, and explain why.
 - [ ] The sample data's gap in the week of Nov 9 produces one alert, naming the supplier payment and payroll.
 - [ ] Processing the same forecast again creates no duplicate, and small changes publish nothing.
 - [ ] A gap that disappears from the forecast becomes resolved.
+- [ ] *Carried over from spec 22:* on seeds 0–4, the default strategy's 4-week mean error in `uv run python -m app.modules.forecasting.backtest` is within ±10%. This needs Harbor Street's history realigned with its reference future (a spec 18 amendment): today, client payments and supplier bills fall on random days, which puts the floor at 14–18%. See spec 22's Measured accuracy.

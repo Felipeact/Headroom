@@ -95,9 +95,9 @@
 ## Handoff
 
 **Feature**: 22-forecast-accuracy
-**Where**: built in 8f44b9c..14dfa67; Verifier PASS (20/20 active ACs, 15/16 mutants killed, 1 equivalent); validate_state exit 0
-**In progress**: none. Spec 22 stays In progress: Done-when 2 is met; Done-when 1 (±10% at 4 weeks) is deferred by user decision D5
-**Next step**: spec 23 (minimum balance and first forecast); its dependency 21 is Done. Later, plan the Harbor Street realignment (spec 18 amendment) with spec 24's week-end recalibration, then re-gate spec 22's 10% bar
-**Blockers**: none for spec 23. Spec 22 Done-when 1 is below the current sample's noise floor (14-18%; context.md D5)
+**Where**: Done. Built in 8f44b9c..14dfa67, Verifier PASS (validate_state exit 0); Done-when 1 amended by user decision D7 (2026-10-09)
+**In progress**: none
+**Next step**: spec 23 (minimum balance and first forecast); its dependency 21 is Done
+**Blockers**: none. Spec 24 now carries the ±10% 4-week bar and the Harbor Street realignment (spec 18 amendment), to be planned with its week-end recalibration
 **Uncommitted**: none from this feature (pre-existing .agents lock files and the untracked tlc-spec-driven skill are not this feature's)
 **Branch**: development

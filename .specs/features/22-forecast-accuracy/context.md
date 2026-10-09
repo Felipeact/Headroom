@@ -10,6 +10,7 @@ Decided 2026-10-07, before the spec was written.
 | D4 | Which sample seeds must meet the bar | Seeds 0, 1, 2, 3 and 4, each on its own. `--seed` runs a single one. |
 | D5 | The 10% bar can't be met honestly (found 2026-10-07 by prototype) | Measure only. The replay's best possible 4-week error is 14–18%, because the sample puts client payments and supplier bills on random days. The reference future is 48% off at week 4, because it assumes less income than the history shows. Spec 22 builds the measurement and leaves Done-when 1 unticked with the numbers. A separate follow-up realigns Harbor Street's history with its reference future (spec 18 amendment), then re-gates at 10%. Supersedes D1, D2 and D4's "must pass". |
 | D6 | Spec 21 doesn't reproduce the Nov 9 gap (found by the same probe) | Already known: spec 21's plan (fbfba53, user decision 2026-10-07) pins only the sample's named items, and spec 24 recalibrates the week ends. Spec 22 changes nothing here. The D5 sample realignment should be planned together with spec 24's recalibration. |
+| D7 | How spec 22 is completed (2026-10-09) | Done-when 1 is amended to what spec 22 delivered: the backtest measures and records the 4-week error. The ±10% bar and the sample realignment move to spec 24 as a carried-over Done-when item. Spec 22 is Done. |
 
 ## Prototype evidence (2026-10-07)
 

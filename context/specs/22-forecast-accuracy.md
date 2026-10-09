@@ -1,7 +1,7 @@
 # Spec 22: Forecast accuracy
 
 - **Milestone:** 4, forecast
-- **Status:** In progress
+- **Status:** Done
 - **Depends on:** 21
 
 ## Goal
@@ -15,7 +15,7 @@ Measure how accurate the forecast is, so changes to it can be judged with number
 
 ## Done when
 
-- [ ] On the sample data, the 4-week forecast is within ±10% of the actual balance. *Not met yet: the current sample can't support it (see Measured accuracy). This waits for the sample to be realigned with its reference future, planned with spec 24.*
+- [x] On the sample data, the backtest measures the 4-week forecast error and records it (see Measured accuracy). *Amended 2026-10-09: the original bar, within ±10% of the actual balance, can't be met on the current sample. It moved to spec 24, together with realigning the sample (see Measured accuracy and context.md D7).*
 - [x] The accuracy history is available for the weekly report in spec 32. *`forecasting.service.accuracy_history`, filled each week by the hourly `forecast_accuracy` job.*
 
 ## Measured accuracy
