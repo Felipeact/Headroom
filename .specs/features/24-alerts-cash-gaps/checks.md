@@ -92,7 +92,7 @@ Proof: `uv run pytest tests/test_alerts_api.py -k test_bad_state`
 **C25** - An unknown alert ID, and an alert of another business, return `404` with detail "Alert not found." on both `GET .../alerts/{id}` and dismiss (AC 25)
 Proof: `uv run pytest tests/test_alerts_api.py -k test_alert_not_found`
 
-**C26** - A caller who isn't a member gets `404` "Business not found." on all 3 routes. With `get_membership` patched to role `viewer`, dismiss returns `403` and the alert stays `open` (AC 26). *Amended while building, 2026-10-09, pending the user's confirmation: v1 has only the `owner` role (`Role` = `{OWNER}`), so `require_member(*Role)` refuses any non-owner, and "their GETs SHALL succeed" can't hold until spec 31 adds `bookkeeper`, as AD-088 already records for the minimum balance GET.*
+**C26** - A caller who isn't a member gets `404` "Business not found." on all 3 routes. With `get_membership` patched to role `viewer`, dismiss returns `403` and the alert stays `open` (AC 26). *Amended while building, 2026-10-09, confirmed by the user the same day: v1 has only the `owner` role (`Role` = `{OWNER}`), so `require_member(*Role)` refuses any non-owner, and "their GETs SHALL succeed" can't hold until spec 31 adds `bookkeeper`, as AD-088 already records for the minimum balance GET.*
 Proof: `uv run pytest tests/test_alerts_api.py -k test_access`
 
 **C27** - Every amount in the `Alert` JSON is an `int` next to a `currency` of "CAD", and each of `alert.created`, `alert.updated` and `alert.resolved` carries a payload whose keys are exactly `{"alert_id"}` (AC 27)
