@@ -13,6 +13,7 @@ from app.auth import current_user
 from app.db import get_engine
 from app.log import configure_logging
 from app.modules.accounts.api import router as accounts_router
+from app.modules.alerts.api import router as alerts_router
 from app.modules.bank_sync.api import router as bank_sync_router
 from app.modules.bank_sync.api import webhook_router as bank_sync_webhook_router
 from app.modules.forecasting.api import router as forecasting_router
@@ -55,6 +56,7 @@ v1 = APIRouter(
 v1.include_router(accounts_router)
 v1.include_router(bank_sync_router)
 v1.include_router(forecasting_router)
+v1.include_router(alerts_router)
 app.include_router(v1)
 
 # The one exception to the rule above (AD-049): providers cannot send a Clerk token, so
