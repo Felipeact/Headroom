@@ -14,6 +14,7 @@ from app.modules.forecasting.models import (
     ForecastPin,
     ForecastSnapshot,
     ForecastWeek,
+    MinimumBalance,
     RecurringPattern,
 )
 
@@ -306,3 +307,34 @@ def accuracy_rows(
             .order_by(ForecastAccuracy.week_start, ForecastAccuracy.business_id)
         )
     )
+
+
+def minimum_balance(
+    session: Session, *, business_id: uuid.UUID, lock: bool = False
+) -> MinimumBalance | None:
+    """The business's minimum balance row, locked for update when `lock`."""
+    query = select(MinimumBalance).where(MinimumBalance.business_id == business_id)
+    return session.scalar(query.with_for_update() if lock else query)
+
+
+def save_minimum_balance(
+    session: Session,
+    *,
+    business_id: uuid.UUID,
+    amount_cents: int,
+    currency: str,
+    user_id: uuid.UUID,
+) -> None:
+    """Insert the business's minimum balance, or replace the one it has."""
+    values = {
+        "amount_cents": amount_cents,
+        "currency": currency,
+        "updated_by": user_id,
+        "updated_at": func.now(),
+    }
+    session.execute(
+        insert(MinimumBalance)
+        .values(business_id=business_id, **values)
+        .on_conflict_do_update(index_elements=["business_id"], set_=values)
+    )
+    session.expire_all()

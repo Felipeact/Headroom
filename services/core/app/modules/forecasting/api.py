@@ -26,6 +26,8 @@ router = APIRouter(tags=["forecasting"])
 
 SessionDep = Annotated[Session, Depends(get_session)]
 OwnerDep = Annotated[Member, Depends(require_member(Role.OWNER))]
+# Every role may read; spec 31 adds roles beside the owner.
+MemberDep = Annotated[Member, Depends(require_member(*Role))]
 
 
 class RecurringPattern(BaseModel):
@@ -328,3 +330,77 @@ def delete_expected_payment(
         raise HTTPException(
             status.HTTP_404_NOT_FOUND, detail=PAYMENT_NOT_FOUND
         ) from None
+
+
+MAX_MINIMUM_CENTS = 1_000_000_000
+
+
+class MinimumBalance(BaseModel):
+    # Null until the owner sets one.
+    amount_cents: int | None
+    currency: str
+    # About two weeks of typical spending; null without a complete week of history.
+    suggested_cents: int | None
+    updated_at: datetime | None
+
+
+class MinimumBalanceBody(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+
+    amount_cents: StrictInt = Field(ge=0, le=MAX_MINIMUM_CENTS)
+
+
+@router.get(
+    "/businesses/{business_id}/minimum-balance",
+    response_model=MinimumBalance,
+    responses=PAYMENT_ERRORS,
+)
+def get_minimum_balance(
+    member: MemberDep, session: SessionDep, now: NowDep
+) -> MinimumBalance:
+    view = service.get_minimum_balance(session, business_id=member.business_id, now=now)
+    return MinimumBalance.model_validate(view, from_attributes=True)
+
+
+@router.put(
+    "/businesses/{business_id}/minimum-balance",
+    response_model=MinimumBalance,
+    responses=PAYMENT_ERRORS,
+)
+def put_minimum_balance(
+    body: MinimumBalanceBody, member: OwnerDep, session: SessionDep, now: NowDep
+) -> MinimumBalance:
+    view = service.set_minimum_balance(
+        session,
+        business_id=member.business_id,
+        user_id=member.user_id,
+        amount_cents=body.amount_cents,
+        now=now,
+    )
+    return MinimumBalance.model_validate(view, from_attributes=True)
+
+
+class ForecastStatus(BaseModel):
+    # needs_attention: an included bank needs a new login.
+    state: service.ForecastState
+    # Oldest connection first.
+    institution_names: list[str]
+    # Every bank with an included account has synced at least once.
+    transactions_read: bool
+    # Whole months back to the oldest transaction; null with none.
+    history_months: int | None
+    recurring_count: int
+    # At most 2, the largest first.
+    recurring_names: list[str]
+
+
+@router.get(
+    "/businesses/{business_id}/forecast/status",
+    response_model=ForecastStatus,
+    responses=PAYMENT_ERRORS,
+)
+def get_forecast_status(
+    member: MemberDep, session: SessionDep, now: NowDep
+) -> ForecastStatus:
+    view = service.forecast_status(session, business_id=member.business_id, now=now)
+    return ForecastStatus.model_validate(view, from_attributes=True)

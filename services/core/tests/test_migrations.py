@@ -968,3 +968,48 @@ def test_forecast_accuracy_upgrade_downgrade_and_check(
     for args in (("upgrade", "head"), ("check",)):
         result = alembic_run(*args, database_url=empty_database_url)
         assert result.returncode == 0, result.stdout + result.stderr
+
+
+FORECAST_ACCURACY = "7a2f7dbe8d2f"
+
+
+def test_minimum_balances_upgrade_downgrade_and_check(empty_database_url: str) -> None:
+    """Spec 23 C11: one minimum per business, never negative, and back."""
+    result = alembic_run("upgrade", "head", database_url=empty_database_url)
+    assert result.returncode == 0, result.stderr
+    engine = create_engine(empty_database_url)
+    row = (
+        "INSERT INTO minimum_balances (business_id, amount_cents, currency, updated_by)"
+        " VALUES (%s, %s, 'CAD', %s)"
+    )
+    business, user = str(uuid.uuid4()), str(uuid.uuid4())
+    try:
+        assert "minimum_balances" in inspect(engine).get_table_names()
+        pk = inspect(engine).get_pk_constraint("minimum_balances")
+        assert pk["constrained_columns"] == ["business_id"]
+        assert pk["name"] == "pk_minimum_balances"
+        with engine.begin() as conn:
+            conn.exec_driver_sql(row, (business, 0, user))
+        for values in ((business, 5, user), (str(uuid.uuid4()), -1, user)):
+            with pytest.raises(IntegrityError) as raised, engine.begin() as conn:
+                conn.exec_driver_sql(row, values)
+            if values[1] == -1:
+                assert "ck_minimum_balances_amount_cents_nonnegative" in str(
+                    raised.value
+                )
+    finally:
+        engine.dispose()
+
+    result = alembic_run(
+        "downgrade", FORECAST_ACCURACY, database_url=empty_database_url
+    )
+    assert result.returncode == 0, result.stderr
+    engine = create_engine(empty_database_url)
+    try:
+        assert "minimum_balances" not in inspect(engine).get_table_names()
+    finally:
+        engine.dispose()
+
+    for args in (("upgrade", "head"), ("check",)):
+        result = alembic_run(*args, database_url=empty_database_url)
+        assert result.returncode == 0, result.stdout + result.stderr

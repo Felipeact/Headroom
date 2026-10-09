@@ -266,3 +266,25 @@ class ForecastAccuracy(Base):
     created_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True), server_default=func.now()
     )
+
+
+class MinimumBalance(Base):
+    """The balance below which the owner wants a warning (spec 23, AD-087).
+
+    One row per business. `business_id` has no foreign key: businesses belong to the
+    accounts module. Every change is in the audit log, so no history is kept here.
+    """
+
+    __tablename__ = "minimum_balances"
+    __table_args__ = (
+        CheckConstraint("amount_cents >= 0", name="amount_cents_nonnegative"),
+    )
+
+    business_id: Mapped[uuid.UUID] = mapped_column(Uuid, primary_key=True)
+    amount_cents: Mapped[int] = mapped_column(BigInteger)
+    currency: Mapped[str] = mapped_column(Text)
+    updated_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), server_default=func.now()
+    )
+    # A `users.id` (AD-020).
+    updated_by: Mapped[uuid.UUID] = mapped_column(Uuid)

@@ -8,16 +8,20 @@ import dataclasses
 import hashlib
 import json
 import uuid
+from collections.abc import Collection, Iterable
 from datetime import date, datetime, timedelta
+from statistics import median_high, median_low
 from zoneinfo import ZoneInfo
 
 import structlog
 
 from app.modules.forecasting.strategies import (
+    NOT_SPENDING,
     STRATEGIES,
     WEEKS,
     ForecastInputs,
     ForecastResult,
+    InputTransaction,
 )
 
 log = structlog.get_logger(__name__)
@@ -53,6 +57,56 @@ def _canonical(value: object) -> object:
 
 def _sorted(rows: list[object]) -> list[object]:
     return sorted(rows, key=lambda r: json.dumps(r, sort_keys=True))
+
+
+# The weeks of spending the suggested minimum balance looks back on (spec 23, AC 3).
+SUGGESTION_WEEKS = 13
+SUGGESTION_ROUNDING_CENTS = 10_000
+
+
+def suggested_minimum(
+    transactions: Iterable[InputTransaction],
+    cash_account_ids: Collection[uuid.UUID],
+    today: date,
+) -> int | None:
+    """About two weeks of typical spending: 2 × the median weekly money out (AD-088).
+
+    Weeks run Monday to Sunday; only the 13 complete weeks before `today`'s week count,
+    and none before the week of the oldest outflow. Money out is every outflow on a
+    cash account except transfers. Rounded up to the next $100; None with no complete
+    week.
+    """
+    this_monday = today - timedelta(days=today.weekday())
+    outflows = [
+        t
+        for t in transactions
+        if t.amount_cents < 0
+        and t.account_id in cash_account_ids
+        and t.label not in NOT_SPENDING
+    ]
+    if not outflows:
+        return None
+    oldest = min(t.date for t in outflows)
+    first = max(
+        oldest - timedelta(days=oldest.weekday()),
+        this_monday - timedelta(weeks=SUGGESTION_WEEKS),
+    )
+    weeks = (this_monday - first).days // 7
+    if weeks <= 0:
+        return None
+    totals = [0] * weeks
+    for t in outflows:
+        if first <= t.date < this_monday:
+            totals[(t.date - first).days // 7] -= t.amount_cents
+    # 2 × the median, kept in whole cents: the two middle weeks added together.
+    doubled = median_low(totals) + median_high(totals)
+    return -(-doubled // SUGGESTION_ROUNDING_CENTS) * SUGGESTION_ROUNDING_CENTS
+
+
+def whole_months(since: date, today: date) -> int:
+    """Complete months from `since` to `today`: June 26 to September 26 is 3."""
+    months = (today.year - since.year) * 12 + today.month - since.month
+    return months - 1 if today.day < since.day else months
 
 
 def fingerprint(inputs: ForecastInputs, strategy: str) -> str:

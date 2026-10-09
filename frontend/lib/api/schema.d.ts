@@ -264,6 +264,41 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/v1/businesses/{business_id}/minimum-balance": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Get Minimum Balance */
+        get: operations["get_minimum_balance_v1_businesses__business_id__minimum_balance_get"];
+        /** Put Minimum Balance */
+        put: operations["put_minimum_balance_v1_businesses__business_id__minimum_balance_put"];
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/businesses/{business_id}/forecast/status": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Get Forecast Status */
+        get: operations["get_forecast_status_v1_businesses__business_id__forecast_status_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/v1/webhooks/plaid": {
         parameters: {
             query?: never;
@@ -579,6 +614,24 @@ export interface components {
             /** Items */
             items: components["schemas"]["ForecastItem"][];
         };
+        /** ForecastStatus */
+        ForecastStatus: {
+            /**
+             * State
+             * @enum {string}
+             */
+            state: "building" | "ready" | "needs_attention";
+            /** Institution Names */
+            institution_names: string[];
+            /** Transactions Read */
+            transactions_read: boolean;
+            /** History Months */
+            history_months: number | null;
+            /** Recurring Count */
+            recurring_count: number;
+            /** Recurring Names */
+            recurring_names: string[];
+        };
         /** ForecastWeek */
         ForecastWeek: {
             /** Number */
@@ -638,6 +691,22 @@ export interface components {
              * Format: date-time
              */
             created_at: string;
+        };
+        /** MinimumBalance */
+        MinimumBalance: {
+            /** Amount Cents */
+            amount_cents: number | null;
+            /** Currency */
+            currency: string;
+            /** Suggested Cents */
+            suggested_cents: number | null;
+            /** Updated At */
+            updated_at: string | null;
+        };
+        /** MinimumBalanceBody */
+        MinimumBalanceBody: {
+            /** Amount Cents */
+            amount_cents: number;
         };
         /** ProblemDetails */
         ProblemDetails: {
@@ -1946,6 +2015,184 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["ForecastItemList"];
+                };
+            };
+            /** @description Unauthorized */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ProblemDetails"];
+                };
+            };
+            /** @description Forbidden */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ProblemDetails"];
+                };
+            };
+            /** @description Not Found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ProblemDetails"];
+                };
+            };
+            /** @description Unprocessable Entity */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ValidationProblemDetails"];
+                };
+            };
+        };
+    };
+    get_minimum_balance_v1_businesses__business_id__minimum_balance_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                business_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["MinimumBalance"];
+                };
+            };
+            /** @description Unauthorized */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ProblemDetails"];
+                };
+            };
+            /** @description Forbidden */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ProblemDetails"];
+                };
+            };
+            /** @description Not Found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ProblemDetails"];
+                };
+            };
+            /** @description Unprocessable Entity */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ValidationProblemDetails"];
+                };
+            };
+        };
+    };
+    put_minimum_balance_v1_businesses__business_id__minimum_balance_put: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                business_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["MinimumBalanceBody"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["MinimumBalance"];
+                };
+            };
+            /** @description Unauthorized */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ProblemDetails"];
+                };
+            };
+            /** @description Forbidden */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ProblemDetails"];
+                };
+            };
+            /** @description Not Found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ProblemDetails"];
+                };
+            };
+            /** @description Unprocessable Entity */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ValidationProblemDetails"];
+                };
+            };
+        };
+    };
+    get_forecast_status_v1_businesses__business_id__forecast_status_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                business_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ForecastStatus"];
                 };
             };
             /** @description Unauthorized */

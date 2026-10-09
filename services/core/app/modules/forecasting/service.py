@@ -909,3 +909,157 @@ def accuracy_history(
         )
         for r in repository.accuracy_rows(session, horizon=horizon, since=since)
     ]
+
+
+@dataclass(frozen=True)
+class MinimumBalanceView:
+    # None until the owner sets one.
+    amount_cents: int | None
+    currency: str
+    # None without a complete week of spending.
+    suggested_cents: int | None
+    updated_at: datetime | None
+
+
+def _minimum_view(
+    session: Session, business_id: uuid.UUID, now: datetime
+) -> MinimumBalanceView:
+    row = repository.minimum_balance(session, business_id=business_id)
+    cash = {
+        a.id
+        for c in bank_sync_service.list_connections(session, business_id=business_id)
+        for a in c.accounts
+        if a.included
+    }
+    transactions = [
+        strategies.InputTransaction(
+            id=t.id,
+            account_id=t.account_id,
+            date=t.date,
+            amount_cents=t.amount_cents,
+            currency=t.currency,
+            label=t.label,
+            linked_transaction_id=t.linked_transaction_id,
+        )
+        for t in bank_sync_service.all_transactions(session, business_id=business_id)
+    ]
+    return MinimumBalanceView(
+        amount_cents=None if row is None else row.amount_cents,
+        currency=strategies.CASH_CURRENCY if row is None else row.currency,
+        suggested_cents=engine.suggested_minimum(
+            transactions, cash, _business_today(session, business_id, now)
+        ),
+        updated_at=None if row is None else row.updated_at,
+    )
+
+
+def get_minimum_balance(
+    session: Session, *, business_id: uuid.UUID, now: datetime
+) -> MinimumBalanceView:
+    """The business's minimum balance, if set, and the suggested one (AD-088)."""
+    return _minimum_view(session, business_id, now)
+
+
+def set_minimum_balance(
+    session: Session,
+    *,
+    business_id: uuid.UUID,
+    user_id: uuid.UUID,
+    amount_cents: int,
+    now: datetime,
+) -> MinimumBalanceView:
+    """Store the business's minimum balance and return it (AD-087, AD-089).
+
+    A changed amount is audited as `minimum_balance.changed` in the same transaction,
+    and announced after the commit as `forecast_inputs.changed` with source
+    `minimum_balance`. The amount already stored changes nothing. Commits the session.
+    """
+    try:
+        row = repository.minimum_balance(session, business_id=business_id, lock=True)
+        changed = row is None or row.amount_cents != amount_cents
+        if changed:
+            repository.save_minimum_balance(
+                session,
+                business_id=business_id,
+                amount_cents=amount_cents,
+                currency=strategies.CASH_CURRENCY,
+                user_id=user_id,
+            )
+            audit.record(
+                session,
+                action="minimum_balance.changed",
+                business_id=business_id,
+                actor_user_id=str(user_id),
+                target_type="minimum_balance",
+                target_id=str(business_id),
+                details={"amount_cents": amount_cents},
+            )
+        session.commit()
+    except BaseException:
+        session.rollback()
+        raise
+    if changed:
+        log.info("minimum_balance.changed", business_id=str(business_id))
+        events.publish(
+            events.Event(
+                name=FORECAST_INPUTS_CHANGED,
+                business_id=business_id,
+                payload={"source": "minimum_balance"},
+            )
+        )
+    return _minimum_view(session, business_id, now)
+
+
+ForecastState = Literal["building", "ready", "needs_attention"]
+# How many recurring payments step 5 names (spec 23, AC 13).
+NAMED_PATTERNS = 2
+
+
+@dataclass(frozen=True)
+class ForecastStatusView:
+    state: ForecastState
+    # Oldest connection first.
+    institution_names: list[str]
+    transactions_read: bool
+    history_months: int | None
+    recurring_count: int
+    recurring_names: list[str]
+
+
+def forecast_status(
+    session: Session, *, business_id: uuid.UUID, now: datetime
+) -> ForecastStatusView:
+    """How far the business's first forecast has got, for onboarding step 5 (AD-090).
+
+    Ready means every connection with an included account has synced at least once and
+    the latest snapshot was computed from exactly the current inputs. A connection that
+    needs a new login wins over both.
+    """
+    connections = bank_sync_service.list_connections(session, business_id=business_id)
+    cash_connections = [c for c in connections if any(a.included for a in c.accounts)]
+    transactions_read = all(c.last_synced_at is not None for c in cash_connections)
+    inputs = forecast_inputs(session, business_id=business_id, now=now)
+    cash = {a.id for a in inputs.cash_accounts}
+    dates = [t.date for t in inputs.transactions if t.account_id in cash]
+    patterns = sorted(
+        repository.patterns(session, business_id=business_id),
+        key=lambda p: (-abs(p.amount_cents), p.counterparty or p.description),
+    )
+    state: ForecastState = "building"
+    if any(c.status == "login_required" for c in cash_connections):
+        state = "needs_attention"
+    elif transactions_read:
+        latest = repository.latest_snapshot(session, business_id=business_id)
+        current = engine.fingerprint(inputs, get_settings().forecast_strategy)
+        if latest is not None and latest.inputs_sha256 == current:
+            state = "ready"
+    return ForecastStatusView(
+        state=state,
+        institution_names=[c.institution_name for c in connections],
+        transactions_read=transactions_read,
+        history_months=engine.whole_months(min(dates), inputs.today) if dates else None,
+        recurring_count=len(patterns),
+        recurring_names=[
+            p.counterparty or p.description for p in patterns[:NAMED_PATTERNS]
+        ],
+    )
