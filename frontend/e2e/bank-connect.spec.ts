@@ -38,11 +38,11 @@ test.describe('a user without a business', () => {
     await connectButton(page).click()
     await connectSandboxBank(page)
 
-    // Spec 13: a connected bank lands on choosing cash accounts, and Continue goes on to `/`.
+    // Spec 13: a connected bank lands on choosing cash accounts; spec 23: Continue goes on to step 4.
     await expect.poll(() => pathOf(page), { timeout: 60_000 }).toBe('/onboarding/accounts')
     await page.getByRole('button', { name: 'Continue' }).click()
-    await expect.poll(() => pathOf(page), { timeout: 30_000 }).toBe('/')
-    await expect(page.getByTestId('shell')).toBeVisible()
+    await expect.poll(() => pathOf(page), { timeout: 30_000 }).toBe('/onboarding/minimum-balance')
+    await expect(page.getByRole('heading', { name: 'Set your minimum balance' })).toBeVisible()
     expect(Date.now() - started).toBeLessThan(120_000)
   })
 

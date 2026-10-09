@@ -12,9 +12,11 @@ import { formatList } from "@/lib/format"
 export type ForecastStatus = components["schemas"]["ForecastStatus"]
 type StepState = "done" | "active" | "pending"
 
-// How often step 5 asks again, and when it offers a way out (spec 23, AC 26 and AC 29).
+// How often step 5 asks again, when it offers a way out, and how long it shows every step done
+// before the dashboard (spec 23, AC 26, AC 29, AC 27).
 const POLL_MS = 3000
 const SLOW_MS = 180_000
+const FINISH_MS = 2000
 
 function StepIcon({ state }: { state: StepState }) {
   return (
@@ -71,13 +73,15 @@ function Step({ state, title, detail }: { state: StepState; title: string; detai
 }
 
 // Onboarding step 5, from design/mockups/onboarding-5-building-forecast.dc.html (spec 23). The
-// page reloads the status from the API every 3 seconds while the forecast is building; the
-// server component sends the owner to the dashboard once it is ready.
+// page reloads the status from the API every 3 seconds while the forecast is building. Once it
+// is ready, every step shows done for 2 seconds before the dashboard: the forecast is often
+// ready before this page first loads, and a redirect would skip it (AD-092).
 export function ForecastProgress({ status }: { status: ForecastStatus }) {
   const t = useTranslations("Onboarding")
-  const { refresh } = useRouter()
+  const { refresh, replace } = useRouter()
   const [slow, setSlow] = useState(false)
   const building = status.state === "building"
+  const ready = status.state === "ready"
 
   useEffect(() => {
     if (!building) return
@@ -89,6 +93,12 @@ export function ForecastProgress({ status }: { status: ForecastStatus }) {
     const timer = setTimeout(() => setSlow(true), SLOW_MS)
     return () => clearTimeout(timer)
   }, [])
+
+  useEffect(() => {
+    if (!ready) return
+    const timer = setTimeout(() => replace("/"), FINISH_MS)
+    return () => clearTimeout(timer)
+  }, [ready, replace])
 
   const read = status.transactions_read
   const others = status.recurring_count - status.recurring_names.length
@@ -109,7 +119,7 @@ export function ForecastProgress({ status }: { status: ForecastStatus }) {
         <ul className="flex flex-col">
           <Step state="done" title={t("Forecast.connected", { banks: formatList(status.institution_names) })} />
           <Step
-            state={read ? "done" : "active"}
+            state={read || ready ? "done" : "active"}
             title={
               !read
                 ? t("Forecast.reading")
@@ -118,8 +128,8 @@ export function ForecastProgress({ status }: { status: ForecastStatus }) {
                   : t("Forecast.read", { months: status.history_months })
             }
           />
-          <Step state={read ? "active" : "pending"} title={t("Forecast.finding")} detail={found} />
-          <Step state="pending" title={t("Forecast.building")} />
+          <Step state={ready ? "done" : read ? "active" : "pending"} title={t("Forecast.finding")} detail={found} />
+          <Step state={ready ? "done" : "pending"} title={t("Forecast.building")} />
         </ul>
       </div>
       {status.state === "needs_attention" ? (

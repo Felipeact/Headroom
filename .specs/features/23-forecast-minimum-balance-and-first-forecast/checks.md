@@ -113,8 +113,9 @@ Proof: `npx vitest run tests/forecast-progress.test.tsx -t "step texts"`
 **C31** - While `building`, the progress component calls `router.refresh()` every 3000 ms (fake timers: 0 calls at 2999 ms, 1 at 3000, 2 at 6000), and stops after unmount. After 180000 ms it shows "This is taking longer than usual. You can go to your dashboard; your forecast will appear there when it's ready." with a link to `/`, and keeps refreshing; at 179999 ms it doesn't (AC 26, AC 29)
 Proof: `npx vitest run tests/forecast-progress.test.tsx -t "polls"`
 
-**C32** - Step 5's page redirects to `/` on `ready`. On `needs_attention` it shows "Your bank needs you to log in again." with a link to `/settings/banks` and doesn't refresh (0 calls after 9000 ms). When `GET .../forecast/status` answers 500 it renders `LayoutError`. With `amount_cents` null it redirects to `/onboarding/minimum-balance` (AC 27, AC 28, AC 30, AC 31)
+**C32** - On `ready`, step 5's page doesn't redirect on the server; it renders all four steps `done` and calls `router.replace('/')` at 2000 ms (not at 1999 ms) (amended with the user, 2026-10-09). On `needs_attention` it shows "Your bank needs you to log in again." with a link to `/settings/banks` and doesn't refresh (0 calls after 9000 ms). When `GET .../forecast/status` answers 500 it renders `LayoutError`. With `amount_cents` null it redirects to `/onboarding/minimum-balance` (AC 27, AC 28, AC 30, AC 31)
 Proof: `npx vitest run tests/forecast-step-page.test.tsx -t "states"`
+Proof: `npx vitest run tests/forecast-progress.test.tsx -t "ready"`
 Proof: `npx vitest run tests/forecast-progress.test.tsx -t "needs attention"`
 
 ### S5 - Both screens meet the screen rules · 3 files · 40 KB · ~10k
@@ -123,7 +124,7 @@ Proof: `npx vitest run tests/forecast-progress.test.tsx -t "needs attention"`
 Proof: `npx vitest run tests/minimum-balance-page.test.tsx -t "redirects"`
 Proof: `npx vitest run tests/forecast-step-page.test.tsx -t "redirects"`
 
-**C34** - The Done-when e2e: a new user signs in, completes step 2, connects TD Canada Trust in the Plaid sandbox, presses Continue on step 3, reaches step 4 with the input prefilled or empty, then uses the keyboard alone (Tab to the input, type "5,000", press Enter) and reaches step 5's "Building your forecast". At 375 px wide both screens have no horizontal scroll, `Continue` is at least 44 px tall, and axe finds no violations on either. Then step 5 redirects to `/` within 120 s (AC 20, AC 24, AC 27, AC 32, AC 33; Done when 1)
+**C34** - The Done-when e2e: a new user signs in, completes step 2, connects TD Canada Trust in the Plaid sandbox, presses Continue on step 3, reaches step 4 with the input prefilled or empty, then uses the keyboard alone (Tab to the input, type "5,000", press Enter) and reaches step 5's "Building your forecast" (shown at least while its 2-second finish runs). At 375 px wide both screens have no horizontal scroll, `Continue` is at least 44 px tall, and axe finds no violations on either. Then step 5 redirects to `/` within 120 s (AC 20, AC 24, AC 27, AC 32, AC 33; Done when 1)
 Proof: `npx playwright test e2e/minimum-balance-onboarding.spec.ts -g "C34"`
 
 ## Coverage
@@ -165,3 +166,7 @@ Proof: `npx playwright test e2e/minimum-balance-onboarding.spec.ts -g "C34"`
 - S1-S2 read and touch: `forecasting/{api,service,models,repository,engine}.py` (about 50 KB), `bank_sync/service.py` 42 KB (read), `auth.py` 4 KB, `audit.py` 3 KB, `tests/test_expected_payments_api.py` 22 KB and `tests/test_forecast_recompute.py` 25 KB as models, `tests/test_migrations.py` 33 KB (append), `contracts/openapi.json` 70 KB (generated). New: the migration, 3 test files, about 30 KB. About 280 KB.
 - S3-S5 read and touch: the onboarding pages and components (about 25 KB), `lib/format.ts` 5 KB, `messages/en.json` 20 KB, `lib/api/schema.d.ts` 60 KB (generated), the two mockups 9 KB, `tests/accounts-page.test.tsx` and `tests/choose-accounts.test.tsx` 20 KB as models, `e2e/expected-payments.spec.ts` 15 KB. New: 2 pages, 2 components, 1 action, 1 loader, 5 test files and 1 e2e file, about 45 KB. About 200 KB.
 - 480 KB / 4 = ~120k, under the 150k budget - one builder
+
+- **Boundary:** C1-C34 built by one builder; S1-S2 at a473e3c, S3-S4 at 507d728
+- **Settled mid-build:** 2026-10-09, the user chose "brief finish": on the sandbox the forecast is ready before step 5 loads, so AC 27 and C32 now show all steps done and replace the route with `/` after 2 s instead of a server redirect (AD-092). Pattern `counterparty` is NOT NULL, so C19's "else description" branch is exercised with an empty counterparty
+- **Abandoned:** an e2e that accepted skipping step 5 when already ready - it would have passed without ever showing the screen Done-when 1 names

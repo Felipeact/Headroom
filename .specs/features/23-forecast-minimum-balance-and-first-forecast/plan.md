@@ -17,7 +17,7 @@ This reuses the owner check (AD-031) and problem details (AD-008). It also reuse
 3. Step 4's Continue -> server action -> `PUT .../minimum-balance` (door 2) -> `forecasting.service` (exists). It writes `minimum_balances` (door 1) and an audit entry (AD-011) in one transaction. After the commit, and only when the amount changed, it publishes `forecast_inputs.changed` with `source` `minimum_balance` (door 3). `recompute_forecast` (exists, AD-079) handles it.
 4. On success the browser goes to web `/onboarding/forecast` (door 5). That server component loads `GET .../forecast/status` (door 4) every 3 seconds via `router.refresh()`.
 5. `GET .../forecast/status` -> `forecasting.service` (exists). It reads the connections and the pattern count through `bank_sync.service` / its own repository, then compares the latest snapshot's fingerprint with the fingerprint of the current inputs (`engine.fingerprint`, exists).
-6. Out: once the status is `ready`, the server component redirects to `/`. The dashboard comes in spec 26; until then `/` is the existing home page.
+6. Out: once the status is `ready`, step 5 shows all four steps done and the browser replaces the route with `/` after 2 seconds (user decision 2026-10-09). The dashboard comes in spec 26; until then `/` is the existing home page.
 
 ## Impact
 
@@ -120,7 +120,7 @@ One-way constraints: one row per business (primary key `business_id`, door 1); t
 24. WHEN the owner opens step 5 THEN the screen SHALL show "Step 5 of 5" with all 5 segments filled, the heading "Building your forecast", "This usually takes a minute or two.", a `role="status"` `aria-live="polite"` list of four steps, and "You'll go to your dashboard as soon as it's ready."
 25. The screen SHALL show the four steps as "Connected {institution names}" (done); "Read {n} months of transactions" (done when `transactions_read`, "Reading your transactions" in progress otherwise, "Read your transactions" when `history_months` is null); "Finding recurring payments" (in progress once transactions are read, with "{name}, {name}, and {n} others so far" when `recurring_count` > 0); and "Building your 13-week forecast" (pending until ready). Done shows the green check, in progress shows the accent arc, and pending shows the empty circle, as in the mockup.
 26. WHILE the status is `building` the screen SHALL reload the status every 3 seconds.
-27. WHEN the status is `ready` THEN the system SHALL redirect to `/`.
+27. WHEN the status is `ready` THEN the screen SHALL show all four steps as done and replace the route with `/` 2 seconds later (amended by user decision 2026-10-09: on the sandbox the forecast is ready before step 5 loads, so an immediate redirect skipped the screen).
 28. IF the status is `needs_attention` THEN the screen SHALL say "Your bank needs you to log in again." with a link to `/settings/banks`, and stop polling.
 29. IF the status is still `building` 3 minutes after the screen opened THEN the screen SHALL add "This is taking longer than usual. You can go to your dashboard; your forecast will appear there when it's ready." with a link to `/`, and keep polling.
 30. IF loading the status fails THEN the screen SHALL show the existing `LayoutError` with its retry, and polling SHALL resume after a successful retry.

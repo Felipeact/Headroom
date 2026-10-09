@@ -21,7 +21,7 @@ const redirect = vi.hoisted(() =>
   }),
 )
 const refresh = vi.hoisted(() => vi.fn())
-vi.mock('next/navigation', () => ({ redirect, useRouter: () => ({ push: vi.fn(), refresh }) }))
+vi.mock('next/navigation', () => ({ redirect, useRouter: () => ({ push: vi.fn(), replace: vi.fn(), refresh }) }))
 
 type Result = Awaited<ReturnType<typeof api.GET>>
 const FORECAST = messages.Onboarding.Forecast
@@ -102,10 +102,12 @@ describe('forecast step page', () => {
     })
   })
 
-  test('C32 states: ready redirects to the dashboard', async () => {
+  test('C32 states: ready shows every step done, with no server redirect', async () => {
     arrange({ status: { ...BUILDING, state: 'ready' } })
-    await expect(renderPage()).rejects.toThrow('NEXT_REDIRECT')
-    expect(redirect).toHaveBeenCalledWith('/')
+    await renderPage()
+    expect(redirect).not.toHaveBeenCalled()
+    const steps = within(screen.getByRole('status')).getAllByRole('listitem')
+    expect(steps.map((s) => s.getAttribute('data-state'))).toEqual(['done', 'done', 'done', 'done'])
   })
 
   test('C32 states: needs attention', async () => {

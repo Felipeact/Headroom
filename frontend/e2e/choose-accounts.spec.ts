@@ -75,7 +75,7 @@ test.describe('a new owner', () => {
     await expect(checked).toHaveCount(1)
 
     await page.getByRole('button', { name: 'Continue' }).click()
-    await expect.poll(() => pathOf(page), { timeout: 30_000 }).toBe('/')
+    await expect.poll(() => pathOf(page), { timeout: 30_000 }).toBe('/onboarding/minimum-balance')
   })
 
   test('C50 layout keyboard and axe', async ({ page }, testInfo) => {

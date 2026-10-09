@@ -18,7 +18,6 @@ export default async function ForecastStepPage() {
   const minimum = business && connections ? await loadMinimumBalance(business.id) : null
   if (minimum && minimum.amount_cents == null) redirect("/onboarding/minimum-balance")
   const status = business && minimum ? await loadForecastStatus(business.id) : null
-  if (status?.state === "ready") redirect("/")
   const t = await getTranslations()
 
   return (

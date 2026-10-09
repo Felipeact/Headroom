@@ -96,6 +96,7 @@
 | AD-089 | A changed minimum publishes `forecast_inputs.changed` `{"source": "minimum_balance"}` after commit; the same amount publishes and audits nothing (extends AD-076) | spec 24 re-checks alerts on it; the forecast fingerprint is unchanged (spec 23 door 3) | active | 2026-10-09 |
 | AD-090 | `GET /v1/businesses/{business_id}/forecast/status`, any member: `state` `needs_attention` (an included connection `login_required`) > `ready` (every included connection synced once and latest `inputs_sha256` = fingerprint of current inputs) > `building`; plus `institution_names`, `transactions_read`, `history_months`, `recurring_count`, `recurring_names` (≤ 2) | "a snapshot exists" is true before the first sync lands (spec 23 door 4) | active | 2026-10-09 |
 | AD-091 | Onboarding routes `/onboarding/minimum-balance` (step 4) and `/onboarding/forecast` (step 5); both redirect to `/onboarding/business` / `/onboarding/bank` like step 3; step 5 redirects to step 4 while unset, and to `/` when ready | steps are named by content (spec 23 door 5) | active | 2026-10-09 |
+| AD-092 | Step 5 on `ready`: no server redirect; it renders all four steps done and calls `router.replace("/")` 2 s later (supersedes AD-091's redirect to `/`, the rest of AD-091 stands) | the forecast is usually ready before step 5 loads, so a server redirect skipped the screen (spec 23, user decision 2026-10-09) | active | 2026-10-09 |
 
 ## Handoff
 

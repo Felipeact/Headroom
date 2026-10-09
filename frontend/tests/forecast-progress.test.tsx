@@ -5,7 +5,8 @@ import { ForecastProgress, type ForecastStatus } from '@/components/onboarding/f
 import messages from '@/messages/en.json'
 
 const refresh = vi.hoisted(() => vi.fn())
-vi.mock('next/navigation', () => ({ useRouter: () => ({ push: vi.fn(), refresh }) }))
+const replace = vi.hoisted(() => vi.fn())
+vi.mock('next/navigation', () => ({ useRouter: () => ({ push: vi.fn(), replace, refresh }) }))
 
 const FORECAST = messages.Onboarding.Forecast
 const SLOW =
@@ -35,6 +36,7 @@ function steps() {
 
 beforeEach(() => {
   refresh.mockClear()
+  replace.mockClear()
   vi.useFakeTimers()
 })
 
@@ -95,6 +97,17 @@ describe('forecast progress', () => {
     renderProgress({ state: 'needs_attention' })
     expect(screen.getByText(FORECAST.needsAttention)).toBeDefined()
     expect(screen.getByRole('link', { name: FORECAST.fixBank }).getAttribute('href')).toBe('/settings/banks')
+    act(() => vi.advanceTimersByTime(9000))
+    expect(refresh).not.toHaveBeenCalled()
+  })
+
+  test('C32 ready: every step done, then the dashboard after 2 s', () => {
+    renderProgress({ state: 'ready' })
+    expect(steps().map(([, state]) => state)).toEqual(['done', 'done', 'done', 'done'])
+    act(() => vi.advanceTimersByTime(1999))
+    expect(replace).not.toHaveBeenCalled()
+    act(() => vi.advanceTimersByTime(1))
+    expect(replace).toHaveBeenCalledWith('/')
     act(() => vi.advanceTimersByTime(9000))
     expect(refresh).not.toHaveBeenCalled()
   })
