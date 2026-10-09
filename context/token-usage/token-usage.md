@@ -73,3 +73,6 @@ Context used per request, measured against a context window of about 250,000 tok
 | Spec 21: verifier sub-agent, round 1 (separate context) | ~139,000 (~56%) | Medium (attention degrades) |
 | Spec 22: forecast accuracy (plan, prototype, 3 user decisions, build T1-T8) | ~175,000 (~70%) | Low (past 60%) |
 | Spec 22: verifier sub-agent (separate context) | ~123,000 (~49%) | Medium (attention degrades) |
+| Spec 24: cash gap alerts (plan research, engine probe, 2 user decisions; stopped for the realignment spike) | ~165,000 (~66%) | Low (past 60%) |
+| Spec 23a + 24: realignment spike (design B, 7 conditions), plans for 23a and 24 | ~110,000 (~44%) | Medium (attention degrades) |
+| Spec 23a + 24: checks, build, 2 verifier dispatches, C26 amendment, C9/C21 clock fix | ~130,000 (~52%) | Medium (attention degrades) |

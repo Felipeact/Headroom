@@ -20,7 +20,21 @@
       "source": "local",
       "contentHash": "28368cb86a9d441fce24426eb502a39a5e7f9ffe0ad5d682fead2ce76c5b085b",
       "installedAt": "2026-10-01T17:05:50.419Z",
-      "updatedAt": "2026-10-01T17:05:50.434Z",
+      "updatedAt": "2026-10-01T17:05:50.452Z",
+      "agents": [
+        "cursor",
+        "claude-code",
+        "windsurf"
+      ],
+      "method": "copy",
+      "global": false
+    },
+    "tlc-spec-driven": {
+      "name": "tlc-spec-driven",
+      "source": "local",
+      "contentHash": "9f4c793556001f3210a2d9fe3b41bf24e82e581c522d8dd50f65addfee169a29",
+      "installedAt": "2026-10-07T15:52:43.323Z",
+      "updatedAt": "2026-10-07T15:52:43.346Z",
       "agents": [
         "cursor",
         "claude-code"
