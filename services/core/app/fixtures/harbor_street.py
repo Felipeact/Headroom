@@ -5,8 +5,9 @@ cents in our sign (money in positive) and in CAD. The history runs 18 months up 
 `REFERENCE_DAY`; `future` is the intended next 13 weeks, with the cash gap of the alert
 mockup in the week of Nov 9. It is the target specs 21 to 25 reproduce, not a forecast.
 
-Only the client payments, supplier bills and card purchases depend on the seed. The
-balances, the expected payments and the future are the same for every seed.
+Only the client payments' amounts, the supplier bills and the card purchases depend on
+the seed. The balances, the expected payments and the future are the same for every seed.
+Each client pays on a fixed day, so the forecast can date the money (feature 23a).
 """
 
 import calendar
@@ -39,15 +40,26 @@ OPERATING_FLOOR_CENTS = 300_000
 OPERATING_TARGET_CENTS = 1_000_000
 TRANSFER_STEP_CENTS = 50_000
 
-CLIENTS = (
-    "Acme Co",
-    "Birch & Co",
-    "Delta Property Management",
-    "Fairview Condos",
-    "Northgate Dental",
-    "Pine Ridge Homes",
+# (client, day of month, base cents): each pays once a month, on that day or the next
+# business day, within 2% of its base (AD-093). Clients pay only on the 16th to the 25th:
+# an earlier day would land in the dashboard's next 14 days or in the week of Nov 9.
+# Pine Ridge's odd cents are the calibration that ends the seed-0 forecast's
+# week of Nov 9 at exactly $3,150.
+MONTHLY_CLIENTS = (
+    ("Acme Co", 16, 486_000),
+    ("Northgate Dental", 18, 383_000),
+    ("Pine Ridge Homes", 19, 604_966),
+    ("Fairview Condos", 21, 448_000),
+    ("Birch & Co", 23, 523_000),
+    ("Delta Property Management", 24, 402_000),
 )
+CLIENT_NOISE = 0.02
+# Delta's maintenance contract, paid in March, June, September and December.
+QUARTERLY_CLIENT = ("Delta Property Management", 2, 1_300_000)
+QUARTERLY_MONTHS = (3, 6, 9, 12)
 SUPPLIER = "Coastal Supply Co"
+SUPPLIER_BILLS_PER_MONTH = 2
+SUPPLIER_BILL_CENTS = (80_000, 220_000)
 CARD_MERCHANTS = (
     "Northside Fuel",
     "Bayline Hardware",
@@ -207,22 +219,12 @@ EXPECTED_PAYMENTS = (
         "operating",
     ),
 )
-# Card payments after October's, and the typical client receipts of each week after the
+# Card payments after October's, and the supplier bills of a typical week after the
 # dashboard's next 14 days, chosen so the week of Nov 9 ends at $3,150 and every other
 # week at $17,650 or more (the alert mockup's gap and its three fixes).
-FUTURE_CARD_PAYMENTS = ((date(2026, 11, 9), -231_000), (date(2026, 12, 8), -228_000))
-FUTURE_CLIENT_RECEIPTS = (
-    (date(2026, 10, 14), 500_000),
-    (date(2026, 10, 21), 650_000),
-    (date(2026, 10, 28), 499_000),
-    (date(2026, 11, 4), 550_000),
-    (date(2026, 11, 18), 900_000),
-    (date(2026, 11, 25), 1_150_000),
-    (date(2026, 12, 2), 600_000),
-    (date(2026, 12, 9), 1_100_000),
-    (date(2026, 12, 16), 700_000),
-    (date(2026, 12, 23), 900_000),
-)
+FUTURE_CARD_PAYMENTS = ((date(2026, 11, 9), -230_966), (date(2026, 12, 8), -140_000))
+FUTURE_SUPPLIER_FIRST_WEEK = date(2026, 10, 12)
+TYPICAL_SUPPLIER_CENTS = -129_600
 FUTURE_FIRST_WEEK = date(2026, 9, 28)
 FUTURE_WEEKS = 13
 
@@ -394,55 +396,45 @@ def _card_flows(rng: random.Random) -> list[_Flow]:
     return flows
 
 
-def _supplier_and_client_flows(
-    rng: random.Random, outgoing: list[_Flow]
-) -> list[_Flow]:
-    """Coastal Supply Co bills, then client payments that roughly cover each month.
-
-    Each month's client payments add up to its cash spending plus a random net, mostly
-    negative, so the business holds a little more cash 18 months back than today.
-    """
+def _supplier_and_client_flows(rng: random.Random) -> list[_Flow]:
+    """Coastal Supply Co bills on random days, then each client's payments on its days."""
     flows: list[_Flow] = []
     last = REFERENCE_DAY - timedelta(days=1)
-    spent: dict[Month, int] = defaultdict(int)
-    for flow in outgoing:
-        if flow.account_key == "operating":
-            spent[(flow.date.year, flow.date.month)] += flow.amount_cents
-    for index, month in enumerate(_months(FIRST_DAY, REFERENCE_DAY)):
+    for month in _months(FIRST_DAY, REFERENCE_DAY):
         days = _days(month, last=last, business=True)
-        for _ in range(rng.randint(1, 3)):
-            bill = _Flow(
-                "operating",
-                rng.choice(days),
-                -rng.randint(80_000, 450_000),
-                "Coastal Supply Co",
-                SUPPLIER,
-                (
-                    "GENERAL_MERCHANDISE",
-                    "GENERAL_MERCHANDISE_OTHER_GENERAL_MERCHANDISE",
-                ),
-                "supplier",
-            )
-            flows.append(bill)
-            spent[month] += bill.amount_cents
-        count = 2 if len(days) < 10 else rng.randint(6, 9)
-        net = rng.randint(-250_000, 50_000)
-        total = max(-spent[month] + net, 100_000 * count)
-        for n, amount in enumerate(_split(rng, total, count)):
-            client = (
-                CLIENTS[(index + n) % len(CLIENTS)] if n < 2 else rng.choice(CLIENTS)
-            )
+        for _ in range(SUPPLIER_BILLS_PER_MONTH):
             flows.append(
                 _Flow(
                     "operating",
                     rng.choice(days),
-                    amount,
-                    f"Payment from {client}",
-                    client,
-                    INCOME,
-                    "client",
+                    -rng.randint(*SUPPLIER_BILL_CENTS),
+                    "Coastal Supply Co",
+                    SUPPLIER,
+                    (
+                        "GENERAL_MERCHANDISE",
+                        "GENERAL_MERCHANDISE_OTHER_GENERAL_MERCHANDISE",
+                    ),
+                    "supplier",
                 )
             )
+        payers = list(MONTHLY_CLIENTS)
+        if month[1] in QUARTERLY_MONTHS:
+            payers.append(QUARTERLY_CLIENT)
+        for client, day_of_month, base in payers:
+            amount = round(base * rng.uniform(1 - CLIENT_NOISE, 1 + CLIENT_NOISE))
+            day = monthly_day(day_of_month, month)
+            if FIRST_DAY <= day <= last:
+                flows.append(
+                    _Flow(
+                        "operating",
+                        day,
+                        amount,
+                        f"Payment from {client}",
+                        client,
+                        INCOME,
+                        "client",
+                    )
+                )
     return flows
 
 
@@ -546,7 +538,7 @@ def _history(rng: random.Random) -> tuple[SampleTransaction, ...]:
     fixed = _fixed_flows()
     card = _card_flows(rng)
     flows = fixed + card
-    flows += _supplier_and_client_flows(rng, flows)
+    flows += _supplier_and_client_flows(rng)
     flows += _transfers([f for f in flows if f.account_key == "operating"])
     flows.sort(key=lambda f: (f.date, f.kind, f.account_key, f.amount_cents))
     counts: dict[tuple[date, str], int] = defaultdict(int)
@@ -598,7 +590,20 @@ def _future() -> ReferenceFuture:
     items += [
         FutureItem(p.date, p.amount_cents, p.description) for p in EXPECTED_PAYMENTS
     ]
-    items += [FutureItem(d, c, "Client payments") for d, c in FUTURE_CLIENT_RECEIPTS]
+    for month in _months(REFERENCE_DAY + timedelta(days=1), last):
+        payers = list(MONTHLY_CLIENTS)
+        if month[1] in QUARTERLY_MONTHS:
+            payers.append(QUARTERLY_CLIENT)
+        for client, day_of_month, base in payers:
+            day = monthly_day(day_of_month, month)
+            if REFERENCE_DAY < day <= last:
+                items.append(FutureItem(day, base, f"Payment from {client}"))
+    monday = FUTURE_SUPPLIER_FIRST_WEEK
+    while monday <= last:
+        items.append(
+            FutureItem(monday, TYPICAL_SUPPLIER_CENTS, "Typical supplier bills")
+        )
+        monday += timedelta(weeks=1)
     items.sort(key=lambda i: (i.date, i.description))
     opening = OPERATING.balance_cents + RESERVE.balance_cents
     weeks = []

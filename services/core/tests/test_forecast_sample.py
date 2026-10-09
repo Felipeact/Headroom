@@ -27,6 +27,16 @@ def sample(migrated_database: None) -> Iterator[Sample]:
     app.dependency_overrides.pop(get_now, None)
 
 
+CLIENT_DAYS = {
+    "Acme Co": 16,
+    "Northgate Dental": 18,
+    "Pine Ridge Homes": 19,
+    "Fairview Condos": 21,
+    "Birch & Co": 23,
+    "Delta Property Management": 24,
+}
+
+
 def named(items: list[dict[str, Any]]) -> list[tuple[str, int, str]]:
     return sorted(
         (i["date"], i["amount_cents"], i["description"])
@@ -41,7 +51,8 @@ def test_named_items(sample: Sample) -> None:
     assert forecast["as_of"] == "2026-09-26"
     items = [i for i in forecast["items"] if i["source"] != "estimate"]
     card = [i for i in items if i["source"] == "card_payment"]
-    others = [i for i in items if i["source"] != "card_payment"]
+    clients = [i for i in items if i["counterparty"] in CLIENT_DAYS]
+    others = [i for i in items if i["source"] != "card_payment" and i not in clients]
 
     payroll = ["10-02", "10-16", "10-30", "11-13", "11-27", "12-11"]
     rent = ["10-15", "11-16", "12-15"]
@@ -57,6 +68,26 @@ def test_named_items(sample: Sample) -> None:
             ("2026-12-07", -300_000, "Equipment lease deposit"),
         ]
     )
+    # Feature 23a C12: each client's receipts on its day, as recurring patterns.
+    expected_clients = sorted(
+        [
+            (
+                harbor_street.monthly_day(day, (2026, month)).isoformat(),
+                client,
+                "monthly",
+            )
+            for client, day in CLIENT_DAYS.items()
+            for month in (10, 11, 12)
+        ]
+        + [("2026-12-02", "Delta Property Management", "quarterly")]
+    )
+    assert (
+        sorted((i["date"], i["counterparty"], i["schedule"]) for i in clients)
+        == expected_clients
+    )
+    assert all(
+        i["source"] == "recurring_pattern" and i["amount_cents"] > 0 for i in clients
+    )
     assert [(i["date"], i["description"]) for i in card] == [
         ("2026-10-08", "Business Visa"),
         ("2026-11-09", "Business Visa"),
@@ -69,15 +100,16 @@ def test_named_items(sample: Sample) -> None:
 
     skipped = {
         (date(2026, 12, 24), -1_120_000),
-        (date(2026, 11, 9), -231_000),
-        (date(2026, 12, 8), -228_000),
+        (date(2026, 11, 9), -230_966),
+        (date(2026, 12, 8), -140_000),
     }
     found = {(i["date"], i["amount_cents"]) for i in items}
     reference = harbor_street.generate(0).future.items
     checked = 0
     for item in reference:
         if (
-            item.description == "Client payments"
+            item.description.startswith("Payment from ")
+            or item.description == "Typical supplier bills"
             or (item.date, item.amount_cents) in skipped
         ):
             continue

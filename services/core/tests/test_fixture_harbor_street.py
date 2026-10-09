@@ -426,3 +426,42 @@ def test_future_continues_history(sample: SampleBusiness) -> None:
         assert [i.date for i in sorted(future, key=lambda i: i.date)] == [
             _day_rule(nominal, m) for m in months
         ]
+
+
+MONTHLY_CLIENTS = {
+    "Acme Co": (16, 486_000),
+    "Northgate Dental": (18, 383_000),
+    "Pine Ridge Homes": (19, 604_966),
+    "Fairview Condos": (21, 448_000),
+    "Birch & Co": (23, 523_000),
+    "Delta Property Management": (24, 402_000),
+}
+
+
+def test_future_client_receipts(sample: SampleBusiness) -> None:
+    """23a C10."""
+    items = sample.future.items
+    receipts = sorted(
+        (i.date, i.amount_cents, i.description)
+        for i in items
+        if i.description.startswith("Payment from ")
+    )
+    expected = sorted(
+        [
+            (
+                harbor_street.monthly_day(day, (2026, month)),
+                base,
+                f"Payment from {client}",
+            )
+            for client, (day, base) in MONTHLY_CLIENTS.items()
+            for month in (10, 11, 12)
+        ]
+        + [(date(2026, 12, 2), 1_300_000, "Payment from Delta Property Management")]
+    )
+    assert receipts == expected
+    supplier = [i for i in items if i.description == "Typical supplier bills"]
+    assert [i.date for i in supplier] == [
+        date(2026, 10, 12) + timedelta(weeks=n) for n in range(11)
+    ]
+    assert len({i.amount_cents for i in supplier}) == 1
+    assert supplier[0].amount_cents < 0

@@ -97,13 +97,15 @@
 | AD-090 | `GET /v1/businesses/{business_id}/forecast/status`, any member: `state` `needs_attention` (an included connection `login_required`) > `ready` (every included connection synced once and latest `inputs_sha256` = fingerprint of current inputs) > `building`; plus `institution_names`, `transactions_read`, `history_months`, `recurring_count`, `recurring_names` (≤ 2) | "a snapshot exists" is true before the first sync lands (spec 23 door 4) | active | 2026-10-09 |
 | AD-091 | Onboarding routes `/onboarding/minimum-balance` (step 4) and `/onboarding/forecast` (step 5); both redirect to `/onboarding/business` / `/onboarding/bank` like step 3; step 5 redirects to step 4 while unset, and to `/` when ready | steps are named by content (spec 23 door 5) | active | 2026-10-09 |
 | AD-092 | Step 5 on `ready`: no server redirect; it renders all four steps done and calls `router.replace("/")` 2 s later (supersedes AD-091's redirect to `/`, the rest of AD-091 stands) | the forecast is usually ready before step 5 loads, so a server redirect skipped the screen (spec 23, user decision 2026-10-09) | active | 2026-10-09 |
+| AD-093 | Harbor Street (extends AD-068): 6 monthly clients on fixed days (Acme 16th 486_000, Northgate 18th 383_000, Pine Ridge 19th 604_966, Fairview 21st 448_000, Birch 23rd 523_000, Delta 24th 402_000; each `round(base * uniform(0.98, 1.02))`, `monthly_day`), Delta's quarterly 1_300_000 on the 2nd of Mar/Jun/Sep/Dec, 2 Coastal bills a month `randint(80_000, 220_000)` on random business days; 10 patterns on seeds 0–9; future client receipts at the bases, `Typical supplier bills` -129_600 each Monday from 2026-10-12. Pine Ridge's cents calibrate seed 0's forecast to 315000 in the week of 2026-11-09 | specs 24–27 prove the mockup numbers on the engine's own forecast of the sample (feature 23a door 1, user decision 2026-10-09) | active | 2026-10-09 |
+| AD-094 | `tests/test_forecast_backtest.py::test_ten_percent_bar`: `recurring_pattern` 4-week mean error ≤ 10.0 on seeds 0–4 (supersedes spec 22 D5's "measure only") | spec 24 D1 (feature 23a door 2) | active | 2026-10-09 |
 
 ## Handoff
 
-**Feature**: 23-forecast-minimum-balance-and-first-forecast
-**Where**: Done. Built in 4b15181..d5b6334, Verifier PASS 34/34 (validate_verification exit 0); AC 27 amended by user decision (AD-092, 2026-10-09)
+**Feature**: 23a-forecast-sample-realignment, then 24-alerts-cash-gaps
+**Where**: Plans written for both (2026-10-09), awaiting user review. Spike done in the scratchpad; results in `.specs/features/24-alerts-cash-gaps/context.md` ("Spike result"). No code yet
 **In progress**: none
-**Next step**: spec 24 (cash gap alerts); its dependency 23 is Done. Spec 24 subscribes to `forecast_inputs.changed` with source `minimum_balance` (AD-089)
-**Blockers**: none. Verifier follow-ups (non-blocking): API-level tests for `suggested_cents` null and for an outflow on an excluded account
-**Uncommitted**: none from this feature (pre-existing .agents lock files and the untracked tlc-spec-driven skill are not this feature's)
+**Next step**: user approves 23a plan (open question: 10 sample patterns instead of spec 19 C17's 3) and 24 plan (open: 20% large-payment rule, single arrives-after item); then checks.md for 23a, build, verify; then 24
+**Blockers**: 24 AC 7 (Done when 1) needs 23a built first (D1)
+**Uncommitted**: the two plan.md files and context.md's spike section; pre-existing .agents lock files and the untracked tlc-spec-driven skill are not this feature's
 **Branch**: development

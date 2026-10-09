@@ -27,5 +27,12 @@ From `uv run python -m app.modules.forecasting.backtest` on 2026-10-07: the mean
 | `recurring_pattern` (default) | 22.55% | 21.56% | 21.02% | 21.73% | 19.68% |
 | `rolling_average` | 20.96% | 20.93% | 21.96% | 20.93% | 18.49% |
 
-**Why ±10% isn't reachable on this sample yet:** Harbor Street puts each month's client payments and supplier bills on random days. A forecast that knew every month's true totals, but not the days, would still miss by 14–18% at 4 weeks. A forecast that keeps the balance flat misses by 17–20%. Details and the decision are in `.specs/features/22-forecast-accuracy/context.md` (D5).
+After feature 23a realigned the sample (2026-10-09), each client pays on a fixed day and the default strategy dates that money:
+
+| Strategy | Seed 0 | Seed 1 | Seed 2 | Seed 3 | Seed 4 |
+|---|---|---|---|---|---|
+| `recurring_pattern` (default) | 8.56% | 6.79% | 7.22% | 6.92% | 7.50% |
+| `rolling_average` | 16.33% | 17.13% | 16.29% | 16.35% | 16.56% |
+
+**Why ±10% wasn't reachable before the realignment:** Harbor Street puts each month's client payments and supplier bills on random days. A forecast that knew every month's true totals, but not the days, would still miss by 14–18% at 4 weeks. A forecast that keeps the balance flat misses by 17–20%. Details and the decision are in `.specs/features/22-forecast-accuracy/context.md` (D5).
 

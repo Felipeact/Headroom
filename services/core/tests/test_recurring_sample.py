@@ -116,14 +116,28 @@ def test_software(sample: Sample) -> None:
 
 
 @pytest.mark.parametrize("seed", range(10))
-def test_exactly_three(seed: int) -> None:
-    """C17."""
+def test_exactly_ten(seed: int) -> None:
+    """C17, as amended by feature 23a C8: the 3 bills, 6 monthly clients and Delta's
+    quarterly contract (user approval, 2026-10-09)."""
     patterns = load_sample(seed).patterns()
     assert sorted(p["counterparty"] for p in patterns) == [
+        "Acme Co",
+        "Birch & Co",
+        "Delta Property Management",
+        "Delta Property Management",
+        "Fairview Condos",
         "Fieldworks Software",
+        "Northgate Dental",
         "Payroll",
+        "Pine Ridge Homes",
         "Wharfside Properties",
     ]
+    delta = sorted(
+        p["schedule"]
+        for p in patterns
+        if p["counterparty"] == "Delta Property Management"
+    )
+    assert delta == ["monthly", "quarterly"]
 
 
 def test_no_transfers(sample: Sample) -> None:

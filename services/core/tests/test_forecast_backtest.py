@@ -234,3 +234,11 @@ def test_runs_as_module() -> None:
     )
     assert done.returncode == 0, done.stderr
     assert done.stdout.splitlines()[0] == "Seed 0"
+
+
+@pytest.mark.parametrize("seed", [0, 1, 2, 3, 4])
+def test_ten_percent_bar(seed: int) -> None:
+    """23a C7: the default strategy's 4-week mean error is at most 10% (AD-094)."""
+    score = backtest.replay(harbor_street.generate(seed))["recurring_pattern"][4]
+    assert score.mean_percent is not None
+    assert score.mean_percent <= 10.0
