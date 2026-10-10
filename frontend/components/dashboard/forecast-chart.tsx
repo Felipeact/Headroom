@@ -80,7 +80,7 @@ export function ForecastChart({
         data-points={points.length}
         className="aspect-auto h-[240px] w-full lg:h-[280px]">
         {/* The text summary beside the chart is what screen readers get, so the drawing takes no focus. */}
-        <ComposedChart data={points} accessibilityLayer={false} margin={{ top: 24, right: 12, bottom: 0, left: 0 }}>
+        <ComposedChart data={points} accessibilityLayer={false} margin={{ top: 24, right: 24, bottom: 0, left: 0 }}>
           <CartesianGrid vertical={false} stroke="var(--line-soft)" />
           <XAxis
             dataKey="label"
