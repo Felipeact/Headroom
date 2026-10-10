@@ -1,5 +1,5 @@
 import { execFileSync } from 'node:child_process'
-import type { Page } from '@playwright/test'
+import { expect, type Page } from '@playwright/test'
 
 export const API = 'http://localhost:8100'
 
@@ -39,3 +39,17 @@ export type DashboardJson = {
 
 export const getDashboard = (page: Page): Promise<DashboardJson> =>
   callApi(page, 'GET', (id) => `/v1/businesses/${id}/dashboard`)
+
+/** Whole dollars as the app shows them: "$3,150", "−$14,500". */
+export const money = (cents: number) =>
+  new Intl.NumberFormat('en-CA', { style: 'currency', currency: 'CAD', maximumFractionDigits: 0 })
+    .format(Math.round(Math.abs(cents) / 100))
+    .replace(/^/, cents < 0 ? '−' : '')
+
+/** Sets the minimum $5,000 above the projected low, so the sample has a cash gap on any day. */
+export async function raiseMinimum(page: Page) {
+  const before = await getDashboard(page)
+  const low = before.projected_low?.balance_cents ?? 0
+  await callApi(page, 'PUT', (id) => `/v1/businesses/${id}/minimum-balance`, { amount_cents: Math.max(0, low) + 500000 })
+  await expect.poll(async () => (await getDashboard(page)).alerts.length, { timeout: 30_000 }).toBeGreaterThan(0)
+}

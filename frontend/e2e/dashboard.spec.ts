@@ -1,7 +1,7 @@
 import AxeBuilder from '@axe-core/playwright'
 import { clerk } from '@clerk/testing/playwright'
 import { expect, test, type Page } from '@playwright/test'
-import { callApi, getDashboard, loadSample } from './dashboard-steps'
+import { callApi, getDashboard, loadSample, money, raiseMinimum } from './dashboard-steps'
 import { completeBusinessStep, tabTo } from './onboarding-steps'
 import { createOnboardingUser, deleteUser, SIGNED_OUT } from './test-user'
 
@@ -12,11 +12,6 @@ const WIDE = { width: 1280, height: 900 }
 const PHONE = { width: 375, height: 812 }
 const AXE_TAGS = ['wcag2a', 'wcag2aa', 'wcag21a', 'wcag21aa', 'wcag22aa']
 
-const money = (cents: number) =>
-  new Intl.NumberFormat('en-CA', { style: 'currency', currency: 'CAD', maximumFractionDigits: 0 })
-    .format(Math.round(Math.abs(cents) / 100))
-    .replace(/^/, cents < 0 ? '−' : '')
-
 async function signIn(page: Page, email: string) {
   await page.goto('/sign-in')
   await clerk.signIn({ page, emailAddress: email })
@@ -25,14 +20,6 @@ async function signIn(page: Page, email: string) {
 async function openDashboard(page: Page) {
   await page.goto('/')
   await expect(page.getByRole('heading', { level: 1, name: 'Cash flow' })).toBeVisible({ timeout: 30_000 })
-}
-
-/** Sets the minimum $5,000 above the projected low, so the sample has a cash gap on any day. */
-async function raiseMinimum(page: Page) {
-  const before = await getDashboard(page)
-  const low = before.projected_low?.balance_cents ?? 0
-  await callApi(page, 'PUT', (id) => `/v1/businesses/${id}/minimum-balance`, { amount_cents: Math.max(0, low) + 500000 })
-  await expect.poll(async () => (await getDashboard(page)).alerts.length, { timeout: 30_000 }).toBeGreaterThan(0)
 }
 
 async function settle(page: Page) {

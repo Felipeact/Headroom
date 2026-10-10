@@ -405,5 +405,45 @@
       "action": "Go to bank settings"
     },
     "notifications": "Notifications"
+  },
+  "AlertPage": {
+    "back": "Dashboard",
+    "projectedLow": "Projected low",
+    "weekOf": "Week of {week}",
+    "shortBy": "Short by",
+    "belowMinimum": "Below your minimum",
+    "causesTitle": "What's causing it",
+    "arrivesAfter": "Arrives after the gap",
+    "rowMeta": "{date} · {type}",
+    "types": {
+      "expected": "Expected payment",
+      "card": "Card payment",
+      "recurring": "Recurring",
+      "weekly": "Every week",
+      "biweekly": "Every 2 weeks",
+      "semimonthly": "Twice a month",
+      "monthly": "Every month",
+      "quarterly": "Every 3 months"
+    },
+    "fixesTitle": "Ways to fix it",
+    "newLowest": "New lowest balance",
+    "fix": {
+      "payEarlyTitle": "Ask {name} to pay a week early",
+      "payEarlyBody": "Their {amount} invoice is due {due}. Ask them to pay by {date}. A small early-payment discount can help.",
+      "moveTitle": "Move the {name} payment by a week",
+      "moveBody": "Ask {name} to move the {amount} payment to {date}.",
+      "drawTitle": "Draw {amount} on your line of credit",
+      "drawBodyWhen": "You have {available} available. Repay it when {name} pays.",
+      "drawBodyOn": "You have {available} available. Repay it on {date}.",
+      "financingTitle": "Arrange {amount} of short-term financing",
+      "financingBody": "Borrow it on {date} and repay it on {repay}, after the gap."
+    },
+    "dismiss": "Dismiss alert",
+    "dismissNote": "This alert closes on its own when the gap leaves your forecast.",
+    "dismissedNote": "You dismissed this alert on {date}. It comes back if the gap gets worse.",
+    "resolvedNote": "This gap is no longer in your forecast.",
+    "notFoundTitle": "We couldn't find this alert",
+    "notFoundBody": "It may belong to another business, or the link may be wrong.",
+    "notFoundAction": "Go to the dashboard"
   }
 }
