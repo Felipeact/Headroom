@@ -1,7 +1,7 @@
 # Spec 28: Email foundation
 
 - **Milestone:** 6, emails and bookkeepers
-- **Status:** In progress
+- **Status:** Done
 - **Depends on:** 10
 
 ## Goal
@@ -23,6 +23,6 @@ Set up reliable email sending, and the preferences and unsubscribe link every em
 
 ## Done when
 
-- [ ] When the same event is processed twice, only one email is sent.
-- [ ] Unsubscribing works without logging in, and takes effect immediately.
-- [ ] When the email provider fails, the send is retried until it succeeds.
+- [x] When the same event is processed twice, only one email is sent.
+- [x] Unsubscribing works without logging in, and takes effect immediately.
+- [x] When the email provider fails, the send is retried until it succeeds.

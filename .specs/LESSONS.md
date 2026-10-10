@@ -236,6 +236,12 @@ Seen once or not yet corroborated. Tracked, not trusted.
 - evidence: verification.md round 1 (C25-C37 not runnable) (frontend/e2e)
 - last seen: 2026-10-10T03:28:40Z
 
+### L-038 - A value the service composes from settings (links, tokens, addresses) needs a proof on the delivered output, not only on a template fed hand-built inputs.
+- signal: `ac_gap` · recurrence: 1 feature(s) · scope: `services/core/notifications` · harmful: 0
+- features: 28-email-foundation
+- evidence: C11/C12 round 1, tests/test_email_template.py:11 (services/core/notifications)
+- last seen: 2026-10-10T23:00:39Z
+
 ## Quarantined (failed when applied - ignore)
 
 A confirmed lesson that recurred alongside failure. Kept for the maintainer to review.

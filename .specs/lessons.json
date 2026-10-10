@@ -3,7 +3,7 @@
   "promote_threshold": 2,
   "window_days": 45,
   "quarantine_threshold": 2,
-  "next_id": 38,
+  "next_id": 39,
   "lessons": [
     {
       "id": "L-001",
@@ -670,6 +670,24 @@
       ],
       "created": "2026-10-10T03:28:40Z",
       "last_seen": "2026-10-10T03:28:40Z"
+    },
+    {
+      "id": "L-038",
+      "key": "ac_gap::a value the service composes from settings links tokens addresses needs a proof on the delivered output not only on a template fed hand built inputs",
+      "text": "A value the service composes from settings (links, tokens, addresses) needs a proof on the delivered output, not only on a template fed hand-built inputs.",
+      "signal": "ac_gap",
+      "scope": "services/core/notifications",
+      "status": "candidate",
+      "features": [
+        "28-email-foundation"
+      ],
+      "recurrence": 1,
+      "harmful": 0,
+      "evidence": [
+        "C11/C12 round 1, tests/test_email_template.py:11 (services/core/notifications)"
+      ],
+      "created": "2026-10-10T23:00:39Z",
+      "last_seen": "2026-10-10T23:00:39Z"
     }
   ]
 }
