@@ -2,7 +2,7 @@ from functools import lru_cache
 from typing import Annotated, Literal
 
 from cryptography.fernet import Fernet
-from pydantic import field_validator
+from pydantic import field_validator, model_validator
 from pydantic_settings import BaseSettings, NoDecode, SettingsConfigDict
 
 DATABASE_SCHEME = "postgresql+psycopg://"
@@ -34,6 +34,33 @@ class Settings(BaseSettings):
     forecast_strategy: Literal["recurring_pattern", "rolling_average"] = (
         "recurring_pattern"
     )
+
+    # Email (spec 28). No default for the sender, for the same reason as `plaid_env`: a
+    # deploy that forgot it must not quietly print emails instead of sending them.
+    email_sender: Literal["console", "resend"]
+    resend_api_key: str | None = None
+    # `Headroom <alerts@...>`, on a domain verified in Resend.
+    email_from: str
+    # Headroom's postal address, required in every email's footer by CASL.
+    email_mailing_address: str
+    # Public base URLs: the web app (footer links) and this API (List-Unsubscribe).
+    web_url: str
+    api_public_url: str
+    # Clerk Backend API key: the API reads a recipient's address from Clerk at send time.
+    clerk_secret_key: str
+
+    @model_validator(mode="after")
+    def require_resend_key(self) -> "Settings":
+        if self.email_sender == "resend" and not self.resend_api_key:
+            raise ValueError("resend_api_key is required when email_sender is resend")
+        return self
+
+    @field_validator("resend_api_key", mode="before")
+    @classmethod
+    def empty_resend_key_is_unset(cls, value: object) -> object:
+        if isinstance(value, str) and not value.strip():
+            return None
+        return value
 
     @field_validator("database_url")
     @classmethod

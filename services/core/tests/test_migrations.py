@@ -1132,3 +1132,66 @@ def test_alert_fixes_upgrade_downgrade_and_check(empty_database_url: str) -> Non
     for args in (("upgrade", "head"), ("check",)):
         result = alembic_run(*args, database_url=empty_database_url)
         assert result.returncode == 0, result.stdout + result.stderr
+
+
+EMAIL_TABLES = "4471d55a961b"
+# The revision before spec 28's.
+ALERT_FIXES = "23f599cd91e1"
+
+
+def test_email_tables_upgrade_downgrade_and_check(empty_database_url: str) -> None:
+    """Spec 28 C18: both email tables, the dedup key and the checks, and back."""
+    result = alembic_run("upgrade", "head", database_url=empty_database_url)
+    assert result.returncode == 0, result.stderr
+    engine = create_engine(empty_database_url)
+    user_id = str(uuid.uuid4())
+    delivery = (
+        "INSERT INTO email_deliveries (id, business_id, user_id, dedup_key, kind,"
+        " template, params, reason, state, attempts) VALUES (%s, %s, %s, %s, %s,"
+        " 't', '{}', 'r', %s, 0)"
+    )
+    try:
+        names = inspect(engine).get_table_names()
+        assert {"email_deliveries", "email_preferences"} <= set(names)
+        with engine.begin() as conn:
+            conn.exec_driver_sql(
+                "INSERT INTO users (id, clerk_user_id) VALUES (%s, %s)",
+                (user_id, "user_email_tables"),
+            )
+            conn.exec_driver_sql(
+                delivery,
+                (
+                    str(uuid.uuid4()),
+                    str(uuid.uuid4()),
+                    user_id,
+                    "k",
+                    "alert",
+                    "pending",
+                ),
+            )
+        for values, constraint in (
+            (("k", "alert", "pending"), "uq_email_deliveries_dedup_key_user_id"),
+            (("k2", "alert", "queued"), "ck_email_deliveries_state"),
+            (("k3", "invite", "pending"), "ck_email_deliveries_kind"),
+        ):
+            with pytest.raises(IntegrityError) as raised, engine.begin() as conn:
+                conn.exec_driver_sql(
+                    delivery, (str(uuid.uuid4()), str(uuid.uuid4()), user_id, *values)
+                )
+            assert constraint in str(raised.value)
+    finally:
+        engine.dispose()
+
+    result = alembic_run("downgrade", ALERT_FIXES, database_url=empty_database_url)
+    assert result.returncode == 0, result.stderr
+    engine = create_engine(empty_database_url)
+    try:
+        names = inspect(engine).get_table_names()
+        assert "email_deliveries" not in names
+        assert "email_preferences" not in names
+    finally:
+        engine.dispose()
+
+    for args in (("upgrade", "head"), ("check",)):
+        result = alembic_run(*args, database_url=empty_database_url)
+        assert result.returncode == 0, result.stdout + result.stderr

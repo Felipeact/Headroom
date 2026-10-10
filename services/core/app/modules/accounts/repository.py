@@ -20,6 +20,10 @@ def get_or_insert_user(session: Session, clerk_user_id: str) -> User:
     ).one()
 
 
+def clerk_user_id(session: Session, user_id: uuid.UUID) -> str | None:
+    return session.scalar(select(User.clerk_user_id).where(User.id == user_id))
+
+
 def owns_a_business(session: Session, user_id: uuid.UUID) -> bool:
     return (
         session.scalar(

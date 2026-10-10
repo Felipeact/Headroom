@@ -367,6 +367,24 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/v1/me/email-preferences": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Read Email Preferences */
+        get: operations["read_email_preferences_v1_me_email_preferences_get"];
+        /** Update Email Preferences */
+        put: operations["update_email_preferences_v1_me_email_preferences_put"];
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/v1/webhooks/plaid": {
         parameters: {
             query?: never;
@@ -378,6 +396,26 @@ export interface paths {
         put?: never;
         /** Plaid Webhook */
         post: operations["plaid_webhook_v1_webhooks_plaid_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/unsubscribe/{token}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Unsubscribe
+         * @description One click from an email, or a mail client's RFC 8058 POST; any body is ignored.
+         */
+        post: operations["unsubscribe_v1_unsubscribe__token__post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -899,6 +937,13 @@ export interface components {
             /** High Cents */
             high_cents: number;
         };
+        /** EmailPreferences */
+        EmailPreferences: {
+            /** Alerts */
+            alerts: boolean;
+            /** Weekly Digest */
+            weekly_digest: boolean;
+        };
         /** ExpectedPayment */
         ExpectedPayment: {
             /**
@@ -1290,6 +1335,14 @@ export interface components {
             items: components["schemas"]["Transaction"][];
             /** Next Cursor */
             next_cursor: string | null;
+        };
+        /** Unsubscribed */
+        Unsubscribed: {
+            /**
+             * Status
+             * @constant
+             */
+            status: "unsubscribed";
         };
         /** ValidationError */
         ValidationError: {
@@ -2938,6 +2991,77 @@ export interface operations {
             };
         };
     };
+    read_email_preferences_v1_me_email_preferences_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["EmailPreferences"];
+                };
+            };
+            /** @description Unauthorized */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ProblemDetails"];
+                };
+            };
+        };
+    };
+    update_email_preferences_v1_me_email_preferences_put: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["EmailPreferences"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["EmailPreferences"];
+                };
+            };
+            /** @description Unauthorized */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ProblemDetails"];
+                };
+            };
+            /** @description Unprocessable Entity */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ValidationProblemDetails"];
+                };
+            };
+        };
+    };
     plaid_webhook_v1_webhooks_plaid_post: {
         parameters: {
             query?: never;
@@ -2981,6 +3105,46 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["ProblemDetails"];
+                };
+            };
+        };
+    };
+    unsubscribe_v1_unsubscribe__token__post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                token: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Unsubscribed"];
+                };
+            };
+            /** @description Not Found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ProblemDetails"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
                 };
             };
         };

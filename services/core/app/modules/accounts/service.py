@@ -9,7 +9,7 @@ from psycopg.errors import UniqueViolation
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session
 
-from app.modules.accounts import repository
+from app.modules.accounts import clerk, repository
 from app.modules.accounts.models import Business, Membership, User
 
 OWNER_INDEX = "uq_memberships_owner_user_id"
@@ -50,6 +50,35 @@ def _view(business: Business, role: str) -> MemberBusiness:
         role=role,
         created_at=business.created_at,
     )
+
+
+ContactUnavailableError = clerk.ClerkUnavailableError
+
+
+@dataclass(frozen=True)
+class Contact:
+    """Where to email a user, read from Clerk at the moment of sending (spec 28)."""
+
+    email: str
+    first_name: str | None
+
+
+def contact(session: Session, user_id: uuid.UUID) -> Contact | None:
+    """The user's primary email address and first name, from Clerk.
+
+    None when the user, their Clerk user, or a primary address does not exist. Raises
+    `ContactUnavailableError` when Clerk cannot answer now. Nothing read here is stored.
+    """
+    clerk_user_id = repository.clerk_user_id(session, user_id)
+    if clerk_user_id is None:
+        return None
+    user = clerk.get_clerk_users().get(clerk_user_id)
+    if user is None or user.primary_email_address_id is None:
+        return None
+    for address_id, address in user.email_addresses:
+        if address_id == user.primary_email_address_id:
+            return Contact(email=address, first_name=user.first_name or None)
+    return None
 
 
 def get_or_create_user(session: Session, clerk_user_id: str) -> User:

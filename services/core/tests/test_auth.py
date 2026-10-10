@@ -190,6 +190,9 @@ def test_authorized_parties_empty_list_skips_check() -> None:
     assert client.get("/v1/me", headers=bearer(foreign)).status_code == 200
 
 
+UNSUBSCRIBE = ("post", "/v1/unsubscribe/{token}")
+
+
 def test_every_v1_route_requires_token() -> None:
     # The OpenAPI paths list every exposed route, including those of included routers
     # (which FastAPI keeps out of `app.routes`).
@@ -203,6 +206,10 @@ def test_every_v1_route_requires_token() -> None:
     for path, methods in v1.items():
         for method in methods:
             response = client.request(method.upper(), path)
+            if (method, path) == UNSUBSCRIBE:
+                # Spec 28 door 4: public, gated by the token in its path, not a session.
+                assert response.status_code == 404, (method, path)
+                continue
             assert response.status_code == 401, (method, path)
 
     assert client.get("/healthz/live").status_code == 200

@@ -2255,6 +2255,96 @@
         }
       }
     },
+    "/v1/me/email-preferences": {
+      "get": {
+        "tags": [
+          "notifications"
+        ],
+        "summary": "Read Email Preferences",
+        "operationId": "read_email_preferences_v1_me_email_preferences_get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/EmailPreferences"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ]
+      },
+      "put": {
+        "tags": [
+          "notifications"
+        ],
+        "summary": "Update Email Preferences",
+        "operationId": "update_email_preferences_v1_me_email_preferences_put",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/EmailPreferences"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/EmailPreferences"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Unprocessable Entity",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ValidationProblemDetails"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ]
+      }
+    },
     "/v1/webhooks/plaid": {
       "post": {
         "tags": [
@@ -2299,6 +2389,59 @@
               "application/json": {
                 "schema": {
                   "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/unsubscribe/{token}": {
+      "post": {
+        "tags": [
+          "notifications"
+        ],
+        "summary": "Unsubscribe",
+        "description": "One click from an email, or a mail client's RFC 8058 POST; any body is ignored.",
+        "operationId": "unsubscribe_v1_unsubscribe__token__post",
+        "parameters": [
+          {
+            "name": "token",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Token"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Unsubscribed"
+                }
+              }
+            }
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            },
+            "description": "Not Found"
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
                 }
               }
             }
@@ -3706,6 +3849,25 @@
         ],
         "title": "DashboardWeek"
       },
+      "EmailPreferences": {
+        "properties": {
+          "alerts": {
+            "type": "boolean",
+            "title": "Alerts"
+          },
+          "weekly_digest": {
+            "type": "boolean",
+            "title": "Weekly Digest"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "alerts",
+          "weekly_digest"
+        ],
+        "title": "EmailPreferences"
+      },
       "ExpectedPayment": {
         "properties": {
           "id": {
@@ -4713,6 +4875,20 @@
           "next_cursor"
         ],
         "title": "TransactionList"
+      },
+      "Unsubscribed": {
+        "properties": {
+          "status": {
+            "type": "string",
+            "const": "unsubscribed",
+            "title": "Status"
+          }
+        },
+        "type": "object",
+        "required": [
+          "status"
+        ],
+        "title": "Unsubscribed"
       },
       "ValidationError": {
         "properties": {

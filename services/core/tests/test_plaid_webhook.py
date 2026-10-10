@@ -240,7 +240,10 @@ def test_only_public_v1_route(fake: SyncFake) -> None:
             if not clerk_rejected:
                 public.append((method, path))
 
-    assert public == [("post", URL)]
+    # Spec 28 door 4: the email unsubscribe link is the one other public route.
+    assert sorted(public) == sorted(
+        [("post", URL), ("post", "/v1/unsubscribe/{token}")]
+    )
 
 
 def test_background_sync_failure_logged(

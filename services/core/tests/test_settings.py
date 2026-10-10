@@ -196,3 +196,79 @@ def test_forecast_strategy_rejects_unknown(plaid_env: pytest.MonkeyPatch) -> Non
         Settings()
 
     assert "forecast_strategy" in str(excinfo.value)
+
+
+# Spec 28: email settings
+
+
+@pytest.mark.parametrize("raw", [None, "smtp"], ids=["unset", "smtp"])
+def test_email_settings_sender_required(
+    raw: str | None, plaid_env: pytest.MonkeyPatch
+) -> None:
+    """Spec 28 C16: no default sender, and only `console` or `resend`."""
+    if raw is None:
+        plaid_env.delenv("EMAIL_SENDER")
+    else:
+        plaid_env.setenv("EMAIL_SENDER", raw)
+
+    with pytest.raises(ValidationError) as excinfo:
+        Settings()
+
+    assert "email_sender" in str(excinfo.value)
+
+
+@pytest.mark.parametrize("key", [None, ""], ids=["unset", "empty"])
+def test_email_settings_resend_needs_key(
+    key: str | None, plaid_env: pytest.MonkeyPatch
+) -> None:
+    """Spec 28 C16: `resend` with no API key fails, naming the field."""
+    plaid_env.setenv("EMAIL_SENDER", "resend")
+    if key is None:
+        plaid_env.delenv("RESEND_API_KEY")
+    else:
+        plaid_env.setenv("RESEND_API_KEY", key)
+
+    with pytest.raises(ValidationError) as excinfo:
+        Settings()
+
+    assert "resend_api_key" in str(excinfo.value)
+
+
+def test_email_settings_resend_with_key(plaid_env: pytest.MonkeyPatch) -> None:
+    plaid_env.setenv("EMAIL_SENDER", "resend")
+    plaid_env.setenv("RESEND_API_KEY", "re_test_key")
+
+    settings = Settings()
+
+    assert settings.email_sender == "resend"
+    assert settings.resend_api_key == "re_test_key"
+
+
+def test_email_settings_error_hides_value(plaid_env: pytest.MonkeyPatch) -> None:
+    """Spec 28 C16: a rejected sender never appears in the error."""
+    plaid_env.setenv("EMAIL_SENDER", "smtp-secret-host")
+
+    with pytest.raises(ValidationError) as excinfo:
+        Settings()
+
+    assert "smtp-secret-host" not in str(excinfo.value)
+
+
+@pytest.mark.parametrize(
+    "name",
+    [
+        "CLERK_SECRET_KEY",
+        "EMAIL_FROM",
+        "EMAIL_MAILING_ADDRESS",
+        "WEB_URL",
+        "API_PUBLIC_URL",
+    ],
+)
+def test_email_settings_required(name: str, plaid_env: pytest.MonkeyPatch) -> None:
+    """Spec 28 C16: each of these has no default."""
+    plaid_env.delenv(name)
+
+    with pytest.raises(ValidationError) as excinfo:
+        Settings()
+
+    assert name.lower() in str(excinfo.value)

@@ -33,6 +33,15 @@ os.environ.setdefault("PLAID_CLIENT_ID", "test-client-id")
 os.environ.setdefault("PLAID_SECRET", "test-secret")
 os.environ.setdefault("PLAID_ENV", "sandbox")
 os.environ.setdefault("TOKEN_ENCRYPTION_KEYS", Fernet.generate_key().decode())
+# Email (spec 28): tests send through a fake and read contacts from a fake Clerk, so these
+# only have to satisfy Settings. Plain assignment: a developer's .env.local never leaks in.
+os.environ["EMAIL_SENDER"] = "console"
+os.environ["RESEND_API_KEY"] = ""
+os.environ["EMAIL_FROM"] = "Headroom <test@example.test>"
+os.environ["EMAIL_MAILING_ADDRESS"] = "1 Test St, Toronto ON M5V 1A1"
+os.environ["WEB_URL"] = "https://app.example.test"
+os.environ["API_PUBLIC_URL"] = "https://api.example.test"
+os.environ["CLERK_SECRET_KEY"] = "sk_test_not_a_key"
 
 
 CORE = Path(__file__).resolve().parents[1]
@@ -101,3 +110,7 @@ def isolated_database() -> Iterator[str]:
     cannot share the session database with other tests' connections. Yields its URL.
     """
     yield from _database_at_head()
+
+
+# Spec 28: the email tests' fake sender, fake Clerk and test template, as `mail`.
+from tests.email_support import mail  # noqa: F401

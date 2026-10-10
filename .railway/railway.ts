@@ -42,6 +42,16 @@ export default defineRailway((ctx) => {
       PLAID_ENV: preserve(),
       PLAID_WEBHOOK_URL: preserve(),
       TOKEN_ENCRYPTION_KEYS: preserve(),
+      // Email (spec 28), set with `railway variable set`: the sender (`console` or `resend`)
+      // and its key, the From address, the footer's mailing address, the public web and API
+      // URLs for the footer and List-Unsubscribe links, and the Clerk Backend API key.
+      EMAIL_SENDER: preserve(),
+      RESEND_API_KEY: preserve(),
+      EMAIL_FROM: preserve(),
+      EMAIL_MAILING_ADDRESS: preserve(),
+      WEB_URL: preserve(),
+      API_PUBLIC_URL: preserve(),
+      CLERK_SECRET_KEY: preserve(),
     },
   });
 
@@ -82,6 +92,14 @@ export default defineRailway((ctx) => {
       TOKEN_ENCRYPTION_KEYS: "${{api.TOKEN_ENCRYPTION_KEYS}}",
       SENTRY_DSN: "${{api.SENTRY_DSN}}",
       SENTRY_ENVIRONMENT: "${{api.SENTRY_ENVIRONMENT}}",
+      // Spec 28: the email retries job sends through the same settings as `api`.
+      EMAIL_SENDER: "${{api.EMAIL_SENDER}}",
+      RESEND_API_KEY: "${{api.RESEND_API_KEY}}",
+      EMAIL_FROM: "${{api.EMAIL_FROM}}",
+      EMAIL_MAILING_ADDRESS: "${{api.EMAIL_MAILING_ADDRESS}}",
+      WEB_URL: "${{api.WEB_URL}}",
+      API_PUBLIC_URL: "${{api.API_PUBLIC_URL}}",
+      CLERK_SECRET_KEY: "${{api.CLERK_SECRET_KEY}}",
     },
   });
 

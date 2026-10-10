@@ -26,7 +26,9 @@ from app.jobs.run_due import main, run_due
 from app.log import configure_logging
 from app.main import app as api
 from app.modules.bank_sync.models import BankConnection, BankTransaction
+from app.modules.notifications.senders import SendError
 from app.settings import get_settings
+from tests.email_support import Mail
 from tests.test_nightly_sync import (
     TORONTO,
     Conn,
@@ -355,7 +357,40 @@ def test_subscriptions_reach_job_events(
 
 
 def test_jobs_registered() -> None:
-    """Spec 22 ACC-11: the accuracy job runs every hour, after the nightly sync."""
+    """Spec 22 ACC-11: the accuracy job runs every hour, after the nightly sync.
+
+    Spec 28 C24: the email retries run last.
+    """
+    from app.jobs.email_retries import email_retries
     from app.jobs.forecast_accuracy import forecast_accuracy
 
-    assert jobs.JOBS == (nightly.nightly_bank_sync, forecast_accuracy)
+    assert jobs.JOBS == (nightly.nightly_bank_sync, forecast_accuracy, email_retries)
+
+
+def test_email_retries_counts_in_run_finished(
+    isolated_database: str,
+    mail: Mail,
+    monkeypatch: pytest.MonkeyPatch,
+    capsys: pytest.CaptureFixture[str],
+) -> None:
+    """Spec 28 C24: `run_due` merges the email counts into `jobs.run_finished`."""
+    from app.jobs.email_retries import email_retries
+
+    user = mail.user()
+    mail.sender.fail_next(SendError(error_type="503_x", retryable=True))
+    mail.request(user)
+    monkeypatch.setattr(jobs, "JOBS", (email_retries,))
+    configure_logging()
+    capsys.readouterr()
+
+    run_due(utc(2026, 10, 20, 6))
+
+    lines = json_lines(capsys.readouterr().out)
+    [finished] = [line for line in lines if line.get("event") == "jobs.run_finished"]
+    assert {
+        k: finished[k] for k in ("emails_sent", "emails_failed", "emails_pending")
+    } == {
+        "emails_sent": 1,
+        "emails_failed": 0,
+        "emails_pending": 0,
+    }

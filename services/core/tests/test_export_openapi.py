@@ -61,3 +61,11 @@ def test_contract_has_healthz_paths() -> None:
 
     assert "/healthz/live" in paths
     assert "/healthz/ready" in paths
+
+
+def test_email_routes() -> None:
+    """Spec 28 C30: the preferences routes and the public unsubscribe route."""
+    paths = json.loads(CONTRACT.read_text(encoding="utf-8"))["paths"]
+
+    assert set(paths["/v1/me/email-preferences"]) == {"get", "put"}
+    assert set(paths["/v1/unsubscribe/{token}"]) == {"post"}

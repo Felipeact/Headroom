@@ -18,6 +18,10 @@ from app.modules.alerts.api import router as alerts_router
 from app.modules.bank_sync.api import router as bank_sync_router
 from app.modules.bank_sync.api import webhook_router as bank_sync_webhook_router
 from app.modules.forecasting.api import router as forecasting_router
+from app.modules.notifications.api import router as notifications_router
+from app.modules.notifications.api import (
+    unsubscribe_router as notifications_unsubscribe_router,
+)
 from app.monitoring import init_sentry
 from app.problems import ProblemDetails, install_problem_handlers
 from app.settings import get_settings
@@ -59,6 +63,7 @@ v1.include_router(bank_sync_router)
 v1.include_router(forecasting_router)
 v1.include_router(alerts_router)
 v1.include_router(dashboard_router)
+v1.include_router(notifications_router)
 app.include_router(v1)
 
 # The one exception to the rule above (AD-049): providers cannot send a Clerk token, so
@@ -66,6 +71,13 @@ app.include_router(v1)
 webhooks = APIRouter(prefix="/v1/webhooks")
 webhooks.include_router(bank_sync_webhook_router)
 app.include_router(webhooks)
+
+# The second exception (spec 28, door 4): an email's unsubscribe link must work signed
+# out, from the footer's page and from a mail client's one-click POST. The token in the
+# path is its only credential.
+unsubscribe = APIRouter(prefix="/v1/unsubscribe")
+unsubscribe.include_router(notifications_unsubscribe_router)
+app.include_router(unsubscribe)
 
 
 class LiveStatus(BaseModel):

@@ -7,7 +7,8 @@ import app.audit
 import app.modules.accounts.models
 import app.modules.alerts.models
 import app.modules.bank_sync.models
-import app.modules.forecasting.models  # noqa: F401  (registers recurring_patterns)
+import app.modules.forecasting.models
+import app.modules.notifications.models  # noqa: F401  (registers email tables)
 from app.db import Base
 from app.settings import get_settings
 
