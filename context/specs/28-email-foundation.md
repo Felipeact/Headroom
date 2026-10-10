@@ -1,7 +1,7 @@
 # Spec 28: Email foundation
 
 - **Milestone:** 6, emails and bookkeepers
-- **Status:** Not started
+- **Status:** In progress
 - **Depends on:** 10
 
 ## Goal
