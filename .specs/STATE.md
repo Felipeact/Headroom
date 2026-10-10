@@ -106,13 +106,16 @@
 | AD-099 | `GET /v1/businesses/{business_id}/alerts?state=` (`open` default, `dismissed`, `resolved`; other `422`) -> `{"items": [Alert]}` by `starts_on`, `id`; `GET .../alerts/{alert_id}`; `POST .../alerts/{alert_id}/dismiss` (owner only, AD-031; resolved `409` "This alert is already resolved."; dismissed `200` unchanged); unknown or foreign `404` "Alert not found.". `Alert` = `id`, `state`, `starts_on`, `ends_on`, `lowest_week_starts_on`, `lowest_balance_cents`, `minimum_cents`, `shortfall_cents`, `currency`, `created_at`, `updated_at`, `dismissed_at`, `resolved_at`, `items` [`kind`, `date`, `amount_cents`, `currency`, `description`, `counterparty`, `source`, `schedule`]. GETs are `require_member(*Role)`: owner-only until spec 31 adds `bookkeeper` | specs 26 and 27 read these (spec 24 door 5) | active | 2026-10-09 |
 | AD-100 | Table `alert_fixes` (module `alerts`, extends AD-095): PK `(alert_id, position)`, FK `alerts.id` CASCADE, `kind` with `ck_alert_fixes_kind` over exactly `pay_early`, `move_payment`, `draw_credit`, `financing` (Python `FixKind`), `amount_cents`, `currency`, `date`, `original_date`/`repay_on` null, `description`/`counterparty` null, `available_cents` null, `new_lowest_balance_cents`; replaced whole with `alert_items` on every check; a change only to fixes bumps `updated_at` silently | an alert outlives its snapshot, so its fixes are stored with it; specs 27 and 29 read them (spec 25 door 1) | active | 2026-10-09 |
 | AD-101 | `Alert` JSON (AD-099) adds `fixes`: [`kind`, `amount_cents`, `currency`, `date`, `original_date`, `repay_on`, `description`, `counterparty`, `available_cents`, `new_lowest_balance_cents`], in kind order `pay_early`, `move_payment`, `draw_credit`, `financing`; no prose from the API | the text lives in `messages/en.json` (spec 25 door 2) | active | 2026-10-09 |
+| AD-102 | App-level read router `services/core/app/dashboard.py` (`APIRouter(tags=["dashboard"])`, `v1.include_router` in `main.py`): owns no tables or events, imports only `app.modules.<name>.service`, defines its own response models; GET any member `require_member(*Role)` | a screen's read model composes three modules without one module owning it (spec 26 door 1, user decision 2026-10-09) | active | 2026-10-09 |
+| AD-103 | `GET /v1/businesses/{business_id}/dashboard` -> `Dashboard` = `as_of`, `currency`, `cash_on_hand_cents`, `available_credit_cents` (null without a line of credit), `minimum_balance_cents`, `projected_low` {`week_starts_on`, `balance_cents`}, `next_card_payment` {`account_id`, `date`, `amount_cents`}, `accounts` [... `connection_id`, `institution_name`, `next_payment_on`], `connections` [`id`, `institution_name`, `status`, `last_synced_at`], `forecast` (weeks only, no items; null with no snapshot, still `200`), `alerts` (open `Alert`, AD-099/AD-101), `upcoming` (`ForecastItem`, 14 days) | the dashboard shows balances before a forecast exists; text stays in `messages/en.json` (spec 26 door 2) | active | 2026-10-09 |
+| AD-104 | Charts: `npx shadcn@latest add chart` (`components/ui/chart.tsx`, `recharts`); forecast charts build on `ChartContainer` with DESIGN.md's tokens | AGENTS.md: shadcn CLI for components it provides; DESIGN.md names Recharts (spec 26 door 3) | active | 2026-10-09 |
 
 ## Handoff
 
-**Feature**: 25-alerts-suggested-fixes
-**Where**: Done. Built in f839b7e, Verifier PASS 18/18 (validate_verification exit 0); its gaps 1-2 closed by 2 extra tests
-**In progress**: none
-**Next step**: spec 26 (the dashboard) or 27 (the alert page, which renders the fixes from `Alert.fixes`)
+**Feature**: 26-web-dashboard
+**Where**: plan and checks approved (38 checks); building S1
+**In progress**: S1-S4
+**Next step**: build, then dispatch the Verifier
 **Blockers**: none
 **Uncommitted**: none
 **Branch**: development

@@ -1,7 +1,7 @@
 # Spec 26: The dashboard
 
 - **Milestone:** 5, alerts and dashboard
-- **Status:** Not started
+- **Status:** In progress
 - **Depends on:** 13, 21, 24
 
 ## Goal

@@ -79,3 +79,4 @@ Context used per request, measured against a context window of about 250,000 tok
 | Spec 25: suggested fixes (plan, sample forecast probe, 2 open questions) | ~75,000 (~30%) | High (smart zone) |
 | Spec 25: checks, build, verifier dispatch, 2 gap tests | ~70,000 (~28%) | High (smart zone) |
 | Spec 25: verifier sub-agent (separate context) | ~109,000 (~44%) | Medium (attention degrades) |
+| Spec 26: the dashboard (plan, 2 user decisions) | ~85,000 (~34%) | High (smart zone) |
