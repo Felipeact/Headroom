@@ -27,6 +27,7 @@ This reuses the existing module reads (`bank_sync.service.list_connections` and 
 | domain | new term: `projected low` (the glossary term): the week with the lowest `end_balance_cents` of the latest forecast, the earliest on a tie. Spec 24's alert keeps its own `lowest_balance_cents`; both agree on the sample |
 | web | `/` stops rendering `PlaceholderPage`. `e2e/home.spec.ts` and `e2e/shell.spec.ts` reach `/` and may assert placeholder text; they change with this. Step 5 of onboarding (AD-092) already sends the owner to `/` |
 | web | a new dependency: `recharts`, through `npx shadcn@latest add chart` (door 3) |
+| web | `frontend/package.json` declares an empty `allowScripts` (user decision 2026-10-10): npm 12 refuses the user-level `allow-scripts` setting in project installs, and with an empty list no package runs install scripts |
 | contracts | `contracts/openapi.json` and `frontend/lib/api/schema.d.ts` are regenerated: one new route and its schemas |
 | stored data | none. Nothing to migrate or backfill |
 

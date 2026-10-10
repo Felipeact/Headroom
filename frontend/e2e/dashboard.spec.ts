@@ -86,6 +86,25 @@ test.describe('the dashboard with the sample', () => {
     await expect(page.getByTestId('upcoming-table').locator('tbody tr')).toHaveCount(api.upcoming.length)
   })
 
+  test('C25 phone copy at 375 px', async ({ page }) => {
+    // The "below lg" wording of C13, C14, C17, C20, C22 and C23, seen in a real browser.
+    await page.setViewportSize(PHONE)
+    await openDashboard(page)
+    await raiseMinimum(page)
+    await page.reload()
+    await settle(page)
+    await expect(page.getByText(/^Forecast through /)).toBeVisible()
+    await expect(page.getByText(/^(Monday|Tuesday|Wednesday|Thursday|Friday|Saturday|Sunday), .* · Forecast through/)).toBeHidden()
+    await expect(page.getByRole('region', { name: 'Projected low' }).getByText(/, below your minimum$/)).toBeVisible()
+    await expect(page.getByRole('region', { name: 'Available credit' }).getByText('Line of credit, not counted as cash')).toBeVisible()
+    await expect(page.getByRole('region', { name: 'Next card payment' })).toBeHidden()
+    await expect(page.getByTestId('top-fix').getByText('That keeps you above your minimum.')).toBeHidden()
+    await expect(page.getByText('Your minimum', { exact: true })).toBeVisible()
+    await expect(page.getByRole('region', { name: 'Accounts' }).getByText(/^Due /)).toBeVisible()
+    await expect(page.getByTestId('upcoming-table')).toBeHidden()
+    await expect(page.getByTestId('upcoming-list')).toBeVisible()
+  })
+
   test('C26 dismisses an alert', async ({ page }) => {
     await openDashboard(page)
     await raiseMinimum(page)

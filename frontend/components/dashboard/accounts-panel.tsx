@@ -13,7 +13,11 @@ const GROUP = "text-xs font-semibold tracking-[0.06em] text-ink-3 uppercase"
 export function AccountsPanel({ dashboard }: { dashboard: Dashboard }) {
   const t = useTranslations("Dashboard.accounts")
   const cash = dashboard.accounts.filter((a) => a.included && (a.type === "checking" || a.type === "savings"))
-  const credit = dashboard.accounts.filter((a) => a.type === "credit_card" || a.type === "line_of_credit")
+  // Cards first, then lines of credit, as the mockups list them (AC 22).
+  const credit = [
+    ...dashboard.accounts.filter((a) => a.type === "credit_card"),
+    ...dashboard.accounts.filter((a) => a.type === "line_of_credit"),
+  ]
   const where = (a: Account) =>
     a.mask ? t("institution", { institution: a.institution_name, mask: a.mask }) : a.institution_name
 

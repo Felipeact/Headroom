@@ -94,6 +94,13 @@ describe('the dashboard with the sample', () => {
     const { container } = await renderPage(sampleDashboard())
     const section = screen.getByRole('region', { name: '13-week forecast' })
     expect(section.querySelector('[data-slot="chart"]')).not.toBeNull()
+    expect(within(section).getByText('Projected balance at the end of each week')).toBeTruthy()
+    // C21 on the page: the screen-reader summary the chart carries, not only its builder.
+    expect(within(section).getByTestId('chart-summary').textContent).toBe(
+      'Your cash is projected to go from $42,300 today to $25,160 by the week of Dec 21. ' +
+        'The lowest point is $3,150 in the week of Nov 9, $1,850 below your $5,000 minimum.',
+    )
+    expect(within(section).getByTestId('chart-summary').classList.contains('sr-only')).toBe(true)
     expect(container.querySelectorAll('[data-slot="chart"]')).toHaveLength(1)
   })
 
@@ -242,8 +249,8 @@ describe('the dashboard with the sample', () => {
     expect(textAt(panel, 'desktop')).toBe(
       'Accounts Manage Counted as cash Operating checking Primary Harbor Community Bank ••2381 $8,000 ' +
         'Reserve savings Harbor Community Bank ••9025 $34,300 Cash on hand $42,300 ' +
-        'Credit · not counted as cash Line of credit Harbor Community Bank ••7702 $20,000 Available ' +
-        'Business Visa Summit Federal ••5530 $2,450 Payment due Oct 8',
+        'Credit · not counted as cash Business Visa Summit Federal ••5530 $2,450 Payment due Oct 8 ' +
+        'Line of credit Harbor Community Bank ••7702 $20,000 Available',
     )
     expect(textAt(panel, 'phone')).toContain('Business Visa Summit Federal ••5530 $2,450 Due Oct 8')
     view.unmount()
@@ -280,8 +287,12 @@ describe('the dashboard with the sample', () => {
     ])
     const list = screen.getByTestId('upcoming-list')
     expect(list.classList.contains('lg:hidden')).toBe(true)
-    const first = within(list).getAllByRole('listitem')[0]
-    expect(first.textContent).toBe('Fri, Oct 2 · Operating checkingPayrollRecurring, every 2 weeks−$11,200')
+    expect(within(list).getAllByRole('listitem').map((li) => textAt(li, 'phone'))).toEqual([
+      'Fri, Oct 2 · Operating checking Payroll Recurring, every 2 weeks −$11,200',
+      'Tue, Oct 6 · Operating checking Acme Co, invoice 1042 Expected +$8,000',
+      'Wed, Oct 7 · Operating checking Software subscriptions Recurring, monthly −$640',
+      'Thu, Oct 8 · Operating checking Business Visa payment Card payment −$2,450',
+    ])
   })
 
   test('upcoming words', async () => {
