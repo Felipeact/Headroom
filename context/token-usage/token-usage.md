@@ -84,3 +84,12 @@ Context used per request, measured against a context window of about 250,000 tok
 | Spec 26: resume, S1 proofs, frontend build and Vitest proofs (stopped: stale test API on 8100) | ~175,000 (~70%) | Low (past 60%) |
 | Spec 26: e2e fixes, perf, 2 verifier dispatches, gap fixes, visual pass | ~95,000 (~38%) | High (smart zone) |
 | Spec 26: verifier sub-agents, rounds 1-2 (separate contexts) | ~132,000 + ~120,000 (~53%, ~48%) | Medium (attention degrades) |
+| Fix: Sentry router hook, local API_URL, push | ~55,000 (~22%) | High (smart zone) |
+| Spec 27: the alert page (plan) | ~60,000 (~24%) | High (smart zone) |
+| Spec 27: re-check plan for review | ~30,000 (~12%) | High (smart zone) |
+| Spec 28: email foundation (plan) | ~85,000 (~34%) | High (smart zone) |
+| Spec 27: checks, build, 2 verifier dispatches, C26 fix, visual pass | ~95,000 (~38%) | High (smart zone) |
+| Spec 27: verifier sub-agents, rounds 1-2 (separate contexts) | ~117,000 + ~100,000 (~47%, ~40%) | Medium (attention degrades) |
+| Spec 28: email foundation (checks, build, API + web, e2e) | ~200,000 (~80%) | Low (past 60%) |
+| Spec 28: verifier sub-agents, rounds 1-3 (separate contexts) | ~147,000 + ~111,000 + ~120,000 (~59%, ~44%, ~48%) | Medium (attention degrades) |
+| Spec 28: the-judge review and fixes (F1, F3) | ~30,000 (~12%) | High (smart zone) |
