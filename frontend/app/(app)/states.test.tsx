@@ -45,6 +45,7 @@ test('C23 loading state', () => {
   const { container } = withMessages(<Loading />)
   const busy = container.querySelector('[aria-busy="true"]')
   expect(busy).not.toBeNull()
+  expect(busy!.getAttribute('aria-label')).toBe('Loading')
   expect(busy!.querySelectorAll('[data-slot="skeleton"]').length).toBeGreaterThanOrEqual(1)
 })
 

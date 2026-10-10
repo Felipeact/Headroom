@@ -98,8 +98,8 @@ export function AlertView({ businessId, timeZone, alert }: { businessId: string;
           <h2 id="fixes-title" className="text-[17px] font-semibold">
             {t("fixesTitle")}
           </h2>
-          {alert.fixes.map((fix) => (
-            <FixCard key={fix.kind} fix={fix} minimumCents={alert.minimum_cents} arrives={arrives} />
+          {alert.fixes.map((fix, i) => (
+            <FixCard key={i} fix={fix} minimumCents={alert.minimum_cents} arrives={arrives} />
           ))}
         </section>
       )}
