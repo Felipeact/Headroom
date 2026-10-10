@@ -1,6 +1,6 @@
 # Headroom roadmap
 
-*Last updated: October 9, 2026. Update this file whenever a milestone or gate is passed.*
+*Last updated: October 10, 2026. Update this file whenever a milestone or gate is passed.*
 
 **The plan:** generate the project with official tools, then build Headroom one short spec at a time until it's ready for its first clients. Scale up only after they confirm the product is worth paying for.
 
@@ -68,7 +68,7 @@ Specs 01–05 are done. Staging runs on Railway, and its service settings live i
 | [22](specs/22-forecast-accuracy.md) | Forecast accuracy | 21 |
 | [23](specs/23-forecast-minimum-balance-and-first-forecast.md) | Minimum balance and the first forecast (onboarding steps 4 and 5) | 21 |
 
-### Milestone 5: Alerts and dashboard (about 2 weeks)
+### Milestone 5: Alerts and dashboard (about 2 weeks): done October 10, 2026
 
 | Spec | What it does | Depends on |
 |---|---|---|

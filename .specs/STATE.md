@@ -109,13 +109,14 @@
 | AD-102 | App-level read router `services/core/app/dashboard.py` (`APIRouter(tags=["dashboard"])`, `v1.include_router` in `main.py`): owns no tables or events, imports only `app.modules.<name>.service`, defines its own response models; GET any member `require_member(*Role)` | a screen's read model composes three modules without one module owning it (spec 26 door 1, user decision 2026-10-09) | active | 2026-10-09 |
 | AD-103 | `GET /v1/businesses/{business_id}/dashboard` -> `Dashboard` = `as_of`, `currency`, `cash_on_hand_cents`, `available_credit_cents` (null without a line of credit), `minimum_balance_cents`, `projected_low` {`week_starts_on`, `balance_cents`}, `next_card_payment` {`account_id`, `date`, `amount_cents`}, `accounts` [... `connection_id`, `institution_name`, `next_payment_on`], `connections` [`id`, `institution_name`, `status`, `last_synced_at`], `forecast` (weeks only, no items; null with no snapshot, still `200`), `alerts` (open `Alert`, AD-099/AD-101), `upcoming` (`ForecastItem`, 14 days) | the dashboard shows balances before a forecast exists; text stays in `messages/en.json` (spec 26 door 2) | active | 2026-10-09 |
 | AD-104 | Charts: `npx shadcn@latest add chart` (`components/ui/chart.tsx`, `recharts`); forecast charts build on `ChartContainer` with DESIGN.md's tokens | AGENTS.md: shadcn CLI for components it provides; DESIGN.md names Recharts (spec 26 door 3) | active | 2026-10-09 |
+| AD-105 | Web route `/alerts/{alert_id}` (`app/(app)/alerts/[alertId]/page.tsx`): one alert in full; resolves the business like `/`; an unknown, foreign or malformed id renders `not-found.tsx` inside the shell, streamed under `(app)/loading.tsx` so HTTP 200 with `noindex` (user decision 2026-10-10) | the dashboard links here and spec 29's emails will, so the URL cannot move once an email is sent (spec 27 door 1) | active | 2026-10-10 |
 
 ## Handoff
 
-**Feature**: 26-web-dashboard
-**Where**: Done. Built in 91537ff, 0c9d241, 96d5117, 8727465; Verifier round 2 PASS 38/38 (validate_verification exit 0). Visual pass at 1280 and 375 px in the Playwright browser
+**Feature**: 27-web-alert-page
+**Where**: Done. Built in a6f45dc, 03c4dbf, 55e46c3; Verifier round 2 PASS 30/30 (validate_verification exit 0). Visual pass at 375 and 1280 px. Milestone 5 done
 **In progress**: none
-**Next step**: spec 27 (the alert page; the dashboard's "See all 3 fixes" links to /alerts/{id})
+**Next step**: spec 28 (email foundation)
 **Blockers**: none
-**Uncommitted**: none
+**Uncommitted**: none for spec 27
 **Branch**: development
