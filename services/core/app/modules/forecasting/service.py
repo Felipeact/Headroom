@@ -40,6 +40,10 @@ from app.modules.forecasting.models import (
 )
 from app.settings import get_settings
 
+# Types the dashboard's read router names through this module (AD-102); the
+# module's own functions stay public as before.
+__all__ = ["ItemSource", "Schedule"]
+
 log = structlog.get_logger(__name__)
 
 

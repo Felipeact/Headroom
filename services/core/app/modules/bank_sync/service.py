@@ -20,6 +20,7 @@ from app.modules.bank_sync.events import TRANSACTIONS_SYNCED
 from app.modules.bank_sync.models import (
     CASH_CURRENCY,
     CASH_TYPES,
+    AccountType,
     BankAccount,
     BankConnection,
     BankTransaction,
@@ -57,6 +58,10 @@ ACCOUNT_TYPES: dict[tuple[str, str | None], str] = {
     ("credit", "line of credit"): "line_of_credit",
     ("loan", "line of credit"): "line_of_credit",
 }
+
+# Types the dashboard's read router names through this module (AD-102); the
+# module's own functions stay public as before.
+__all__ = ["AccountType"]
 
 log = structlog.get_logger(__name__)
 

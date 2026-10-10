@@ -10,6 +10,7 @@ from sqlalchemy.exc import SQLAlchemyError
 
 from app import subscriptions
 from app.auth import current_user
+from app.dashboard import router as dashboard_router
 from app.db import get_engine
 from app.log import configure_logging
 from app.modules.accounts.api import router as accounts_router
@@ -57,6 +58,7 @@ v1.include_router(accounts_router)
 v1.include_router(bank_sync_router)
 v1.include_router(forecasting_router)
 v1.include_router(alerts_router)
+v1.include_router(dashboard_router)
 app.include_router(v1)
 
 # The one exception to the rule above (AD-049): providers cannot send a Clerk token, so

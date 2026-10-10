@@ -350,6 +350,23 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/v1/businesses/{business_id}/dashboard": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Get Dashboard */
+        get: operations["get_dashboard_v1_businesses__business_id__dashboard_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/v1/webhooks/plaid": {
         parameters: {
             query?: never;
@@ -619,6 +636,269 @@ export interface components {
             /** Items */
             items: components["schemas"]["Connection"][];
         };
+        /** Dashboard */
+        Dashboard: {
+            /**
+             * As Of
+             * Format: date
+             */
+            as_of: string;
+            /** Currency */
+            currency: string;
+            /** Cash On Hand Cents */
+            cash_on_hand_cents: number;
+            /** Available Credit Cents */
+            available_credit_cents: number | null;
+            /** Minimum Balance Cents */
+            minimum_balance_cents: number | null;
+            projected_low: components["schemas"]["ProjectedLow"] | null;
+            next_card_payment: components["schemas"]["NextCardPayment"] | null;
+            /** Accounts */
+            accounts: components["schemas"]["DashboardAccount"][];
+            /** Connections */
+            connections: components["schemas"]["DashboardConnection"][];
+            forecast: components["schemas"]["DashboardForecast"] | null;
+            /** Alerts */
+            alerts: components["schemas"]["DashboardAlert"][];
+            /** Upcoming */
+            upcoming: components["schemas"]["DashboardItem"][];
+        };
+        /** DashboardAccount */
+        DashboardAccount: {
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /**
+             * Connection Id
+             * Format: uuid
+             */
+            connection_id: string;
+            /** Institution Name */
+            institution_name: string;
+            /** Name */
+            name: string;
+            /**
+             * Type
+             * @enum {string}
+             */
+            type: "checking" | "savings" | "credit_card" | "line_of_credit" | "other";
+            /** Mask */
+            mask: string | null;
+            /** Currency */
+            currency: string;
+            /** Balance Cents */
+            balance_cents: number | null;
+            /** Available Cents */
+            available_cents: number | null;
+            /** Included */
+            included: boolean;
+            /** Primary */
+            primary: boolean;
+            /** Next Payment On */
+            next_payment_on: string | null;
+        };
+        /** DashboardAlert */
+        DashboardAlert: {
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /**
+             * State
+             * @enum {string}
+             */
+            state: "open" | "dismissed" | "resolved";
+            /**
+             * Starts On
+             * Format: date
+             */
+            starts_on: string;
+            /**
+             * Ends On
+             * Format: date
+             */
+            ends_on: string;
+            /**
+             * Lowest Week Starts On
+             * Format: date
+             */
+            lowest_week_starts_on: string;
+            /** Lowest Balance Cents */
+            lowest_balance_cents: number;
+            /** Minimum Cents */
+            minimum_cents: number;
+            /** Shortfall Cents */
+            shortfall_cents: number;
+            /** Currency */
+            currency: string;
+            /**
+             * Created At
+             * Format: date-time
+             */
+            created_at: string;
+            /**
+             * Updated At
+             * Format: date-time
+             */
+            updated_at: string;
+            /** Dismissed At */
+            dismissed_at: string | null;
+            /** Resolved At */
+            resolved_at: string | null;
+            /** Items */
+            items: components["schemas"]["DashboardAlertItem"][];
+            /** Fixes */
+            fixes: components["schemas"]["DashboardFix"][];
+        };
+        /** DashboardAlertItem */
+        DashboardAlertItem: {
+            /**
+             * Kind
+             * @enum {string}
+             */
+            kind: "cause" | "arrives_after";
+            /**
+             * Date
+             * Format: date
+             */
+            date: string;
+            /** Amount Cents */
+            amount_cents: number;
+            /** Currency */
+            currency: string;
+            /** Description */
+            description: string | null;
+            /** Counterparty */
+            counterparty: string | null;
+            /** Source */
+            source: string;
+            /** Schedule */
+            schedule: string | null;
+        };
+        /** DashboardConnection */
+        DashboardConnection: {
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /** Institution Name */
+            institution_name: string;
+            /**
+             * Status
+             * @enum {string}
+             */
+            status: "syncing" | "synced" | "login_required" | "sync_failing";
+            /** Last Synced At */
+            last_synced_at: string | null;
+        };
+        /** DashboardFix */
+        DashboardFix: {
+            /**
+             * Kind
+             * @enum {string}
+             */
+            kind: "pay_early" | "move_payment" | "draw_credit" | "financing";
+            /** Amount Cents */
+            amount_cents: number;
+            /** Currency */
+            currency: string;
+            /** Original Date */
+            original_date: string | null;
+            /** Repay On */
+            repay_on: string | null;
+            /**
+             * Date
+             * Format: date
+             */
+            date: string;
+            /** Description */
+            description: string | null;
+            /** Counterparty */
+            counterparty: string | null;
+            /** Available Cents */
+            available_cents: number | null;
+            /** New Lowest Balance Cents */
+            new_lowest_balance_cents: number;
+        };
+        /** DashboardForecast */
+        DashboardForecast: {
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /**
+             * Computed At
+             * Format: date-time
+             */
+            computed_at: string;
+            /** Opening Balance Cents */
+            opening_balance_cents: number;
+            /** Incomplete */
+            incomplete: boolean;
+            /** Weeks */
+            weeks: components["schemas"]["DashboardWeek"][];
+        };
+        /** DashboardItem */
+        DashboardItem: {
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /**
+             * Date
+             * Format: date
+             */
+            date: string;
+            /**
+             * Account Id
+             * Format: uuid
+             */
+            account_id: string;
+            /** Amount Cents */
+            amount_cents: number;
+            /** Currency */
+            currency: string;
+            /**
+             * Source
+             * @enum {string}
+             */
+            source: "recurring_pattern" | "expected_payment" | "card_payment" | "estimate";
+            /** Source Id */
+            source_id: string | null;
+            /** Description */
+            description: string | null;
+            /** Counterparty */
+            counterparty: string | null;
+            /** Schedule */
+            schedule: ("weekly" | "biweekly" | "semimonthly" | "monthly" | "quarterly") | null;
+        };
+        /** DashboardWeek */
+        DashboardWeek: {
+            /** Number */
+            number: number;
+            /**
+             * Starts On
+             * Format: date
+             */
+            starts_on: string;
+            /**
+             * Ends On
+             * Format: date
+             */
+            ends_on: string;
+            /** End Balance Cents */
+            end_balance_cents: number;
+            /** Low Cents */
+            low_cents: number;
+            /** High Cents */
+            high_cents: number;
+        };
         /** ExpectedPayment */
         ExpectedPayment: {
             /**
@@ -877,6 +1157,21 @@ export interface components {
             /** Amount Cents */
             amount_cents: number;
         };
+        /** NextCardPayment */
+        NextCardPayment: {
+            /**
+             * Account Id
+             * Format: uuid
+             */
+            account_id: string;
+            /**
+             * Date
+             * Format: date
+             */
+            date: string;
+            /** Amount Cents */
+            amount_cents: number;
+        };
         /** ProblemDetails */
         ProblemDetails: {
             /**
@@ -892,6 +1187,16 @@ export interface components {
             detail: string;
             /** Instance */
             instance: string;
+        };
+        /** ProjectedLow */
+        ProjectedLow: {
+            /**
+             * Week Starts On
+             * Format: date
+             */
+            week_starts_on: string;
+            /** Balance Cents */
+            balance_cents: number;
         };
         /** ReadyStatus */
         ReadyStatus: {
@@ -2580,6 +2885,55 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    get_dashboard_v1_businesses__business_id__dashboard_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                business_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Dashboard"];
+                };
+            };
+            /** @description Unauthorized */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ProblemDetails"];
+                };
+            };
+            /** @description Not Found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ProblemDetails"];
+                };
+            };
+            /** @description Unprocessable Entity */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ValidationProblemDetails"];
                 };
             };
         };

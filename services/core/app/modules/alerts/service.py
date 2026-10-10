@@ -29,6 +29,10 @@ from app.modules.bank_sync import service as bank_sync_service
 from app.modules.forecasting import service as forecasting_service
 from app.modules.forecasting.events import FORECAST_INPUTS_CHANGED
 
+# Types the dashboard's read router names through this module (AD-102); the
+# module's own functions stay public as before.
+__all__ = ["AlertItemKind", "AlertState", "FixKind"]
+
 log = structlog.get_logger(__name__)
 
 # A shortfall is announced again once it grows by more than either (AC 11).
