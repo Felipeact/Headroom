@@ -290,5 +290,120 @@
       "updated": "Expected payment updated",
       "deleted": "Expected payment deleted"
     }
+  },
+  "Dashboard": {
+    "title": "Cash flow",
+    "dateLine": "{asOf} · Forecast through {through}",
+    "throughLine": "Forecast through {through}",
+    "status": "Updated {when} · {count, plural, one {# bank synced} other {# banks synced}}",
+    "statusWaiting": "Waiting for your bank's first sync",
+    "syncedToday": "today at {time}",
+    "syncedTodayShort": "{time}",
+    "syncedYesterday": "yesterday at {time}",
+    "syncedOn": "{day} at {time}",
+    "addPayment": "Add expected payment",
+    "cards": {
+      "label": "Summary",
+      "cashOnHand": "Cash on hand",
+      "cashAccounts": "{names} · {count, plural, one {# account} other {# accounts}}",
+      "projectedLow": "Projected low",
+      "lowBelow": "Week of {week} · {short} below your minimum",
+      "lowBelowShort": "Week of {week}, below your minimum",
+      "lowWeek": "Week of {week}",
+      "availableCredit": "Available credit",
+      "creditNote": "{names} · not counted as cash",
+      "creditNoteShort": "{names}, not counted as cash",
+      "nextCardPayment": "Next card payment",
+      "cardDue": "{card} · due {date}"
+    },
+    "alert": {
+      "label": "Cash gap",
+      "title": "Cash falls below your {minimum} minimum the week of {week}",
+      "bodyOne": "{first} leaves that week, taking cash down to {low}.",
+      "bodyTwo": "{first} and {second} leave in the same week, taking cash down to {low}.",
+      "bodyMore": "{first}, {second} and {more, plural, one {# more payment} other {# more payments}} leave in the same week, taking cash down to {low}.",
+      "cause": "{name} ({amount})",
+      "topFix": "Top fix:",
+      "fixPayEarly": "ask {name} to pay their {amount} invoice a week early.",
+      "fixMovePayment": "move the {amount} payment to {name} a week later.",
+      "fixDrawCredit": "draw {amount} from your {name}.",
+      "fixFinancing": "arrange {amount} of short-term financing for the length of the gap.",
+      "keepsAbove": "That keeps you above your minimum.",
+      "seeFixes": "{count, plural, =0 {See details} one {See the fix} other {See all # fixes}}",
+      "dismiss": "Dismiss",
+      "dismissing": "Dismissing…",
+      "dismissed": "Alert dismissed",
+      "dismissFailed": "We couldn't dismiss this alert. Try again."
+    },
+    "chart": {
+      "title": "13-week forecast",
+      "subtitle": "Projected balance at the end of each week",
+      "today": "Today",
+      "minimumLabel": "Your {minimum} minimum",
+      "minimumLabelShort": "Min {minimum}",
+      "lowLabel": "Low {low}",
+      "legendBalance": "Projected balance",
+      "legendRange": "Likely range",
+      "legendMinimum": "Your {minimum} minimum",
+      "legendMinimumShort": "Your minimum",
+      "summary": "Your cash is projected to go from {opening} today to {last} by the week of {lastWeek}.",
+      "summaryLowBelow": "The lowest point is {low} in the week of {week}, {short} below your {minimum} minimum.",
+      "summaryLowAbove": "The lowest point is {low} in the week of {week}, above your {minimum} minimum.",
+      "summaryLow": "The lowest point is {low} in the week of {week}."
+    },
+    "accounts": {
+      "title": "Accounts",
+      "manage": "Manage",
+      "cash": "Counted as cash",
+      "credit": "Credit · not counted as cash",
+      "primary": "Primary",
+      "institution": "{institution} ••{mask}",
+      "cashOnHand": "Cash on hand",
+      "paymentDue": "Payment due {date}",
+      "paymentDueShort": "Due {date}",
+      "available": "Available"
+    },
+    "upcoming": {
+      "title": "Next 14 days",
+      "empty": "Nothing is due in the next 14 days.",
+      "columns": {
+        "date": "Date",
+        "description": "Description",
+        "account": "Account",
+        "type": "Type",
+        "amount": "Amount"
+      },
+      "cardPayment": "{card} payment",
+      "dateAccount": "{date} · {account}",
+      "types": {
+        "weekly": "Recurring, every week",
+        "biweekly": "Recurring, every 2 weeks",
+        "semimonthly": "Recurring, twice a month",
+        "monthly": "Recurring, monthly",
+        "quarterly": "Recurring, every 3 months",
+        "expected": "Expected",
+        "card": "Card payment"
+      }
+    },
+    "empty": {
+      "title": "No bank connected yet",
+      "body": "Connect your bank to see your 13-week forecast.",
+      "action": "Connect your bank"
+    },
+    "building": {
+      "title": "Your forecast is on its way",
+      "body": "We're reading your bank data. This usually takes a minute or two.",
+      "action": "See progress"
+    },
+    "error": {
+      "title": "We couldn't load your dashboard.",
+      "body": "Check your connection and try again.",
+      "retry": "Try again"
+    },
+    "stale": {
+      "body": "Some bank data is more than 2 days old, so this forecast may be off.",
+      "action": "Go to bank settings"
+    },
+    "notifications": "Notifications"
   }
 }

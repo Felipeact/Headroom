@@ -10,6 +10,8 @@ export type ExpectedPaymentBody = components["schemas"]["ExpectedPaymentBody"]
 export type SaveResult = { ok: true } | { ok: false; status: number; detail: string | null }
 
 const PAGE = "/expected-payments"
+// The dashboard lists the next 14 days, expected payments included (spec 26 AC 25).
+const DASHBOARD = "/"
 
 // Expected payments (spec 20). Each action forwards the IDs and the values; the API checks that
 // the caller owns the business, the payment and the account. On success the page re-renders
@@ -40,6 +42,7 @@ export async function createExpectedPayment(businessId: string, body: ExpectedPa
     })
     if (response.status !== 201) return failed("POST", path, response, error)
     revalidatePath(PAGE)
+    revalidatePath(DASHBOARD)
     return { ok: true }
   } catch (error) {
     return unreachable(error)
@@ -61,6 +64,7 @@ export async function updateExpectedPayment(
     })
     if (response.status !== 200) return failed("PUT", path, response, error)
     revalidatePath(PAGE)
+    revalidatePath(DASHBOARD)
     return { ok: true }
   } catch (error) {
     return unreachable(error)
@@ -77,6 +81,7 @@ export async function deleteExpectedPayment(businessId: string, paymentId: strin
     })
     if (response.status !== 204) return failed("DELETE", path, response, error)
     revalidatePath(PAGE)
+    revalidatePath(DASHBOARD)
     return { ok: true }
   } catch (error) {
     return unreachable(error)

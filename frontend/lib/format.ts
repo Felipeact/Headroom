@@ -123,3 +123,13 @@ export function parseWholeDollars(text: string): number | null {
 export function formatList(items: string[]): string {
   return new Intl.ListFormat('en', { style: 'long', type: 'conjunction' }).format(items)
 }
+
+/** A chart axis amount in thousands: "$40k", "$0", "−$10k" (spec 26). */
+export function formatCompactMoney(amountCents: number, currency: Currency = 'CAD'): string {
+  if (!Number.isSafeInteger(amountCents)) {
+    throw new RangeError(`amountCents must be a safe integer, got ${amountCents}`)
+  }
+  const thousands = Math.round(amountCents / 100_000)
+  if (thousands === 0) return formatMoney(0, currency)
+  return `${formatMoney(thousands * 100, currency)}k`
+}

@@ -12,6 +12,7 @@
     "test:e2e": "playwright test",
     "api:types": "openapi-typescript ../contracts/openapi.json -o lib/api/schema.d.ts"
   },
+  "allowScripts": {},
   "dependencies": {
     "@clerk/nextjs": "^7.9.10",
     "@sentry/nextjs": "^11.3.0",
@@ -25,6 +26,7 @@
     "react": "19.2.8",
     "react-dom": "19.2.8",
     "react-plaid-link": "^5.0.0",
+    "recharts": "^3.8.0",
     "server-only": "^0.0.1",
     "shadcn": "^4.21.1",
     "sonner": "^2.0.8",
