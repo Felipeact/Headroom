@@ -1,7 +1,7 @@
 # Spec 26: The dashboard
 
 - **Milestone:** 5, alerts and dashboard
-- **Status:** In progress
+- **Status:** Done
 - **Depends on:** 13, 21, 24
 
 ## Goal
@@ -21,6 +21,6 @@ Show everything that matters on one screen.
 
 ## Done when
 
-- [ ] The dashboard matches its mockups on desktop and phone, apart from the parts not in v1.
-- [ ] It renders in under 2 seconds on a mid-range phone, using the sample data.
-- [ ] An axe check finds no violations.
+- [x] The dashboard matches its mockups on desktop and phone, apart from the parts not in v1.
+- [x] It renders in under 2 seconds on a mid-range phone, using the sample data.
+- [x] An axe check finds no violations.

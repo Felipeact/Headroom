@@ -113,9 +113,9 @@
 ## Handoff
 
 **Feature**: 26-web-dashboard
-**Where**: plan and checks approved (38 checks); building S1
-**In progress**: S1-S4
-**Next step**: build, then dispatch the Verifier
+**Where**: Done. Built in 91537ff, 0c9d241, 96d5117, 8727465; Verifier round 2 PASS 38/38 (validate_verification exit 0). Visual pass at 1280 and 375 px in the Playwright browser
+**In progress**: none
+**Next step**: spec 27 (the alert page; the dashboard's "See all 3 fixes" links to /alerts/{id})
 **Blockers**: none
 **Uncommitted**: none
 **Branch**: development

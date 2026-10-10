@@ -80,3 +80,7 @@ Context used per request, measured against a context window of about 250,000 tok
 | Spec 25: checks, build, verifier dispatch, 2 gap tests | ~70,000 (~28%) | High (smart zone) |
 | Spec 25: verifier sub-agent (separate context) | ~109,000 (~44%) | Medium (attention degrades) |
 | Spec 26: the dashboard (plan, 2 user decisions) | ~85,000 (~34%) | High (smart zone) |
+| Spec 26: checks, S1 API build (stopped on 2 environment blockers) | ~120,000 (~48%) | Medium (attention degrades) |
+| Spec 26: resume, S1 proofs, frontend build and Vitest proofs (stopped: stale test API on 8100) | ~175,000 (~70%) | Low (past 60%) |
+| Spec 26: e2e fixes, perf, 2 verifier dispatches, gap fixes, visual pass | ~95,000 (~38%) | High (smart zone) |
+| Spec 26: verifier sub-agents, rounds 1-2 (separate contexts) | ~132,000 + ~120,000 (~53%, ~48%) | Medium (attention degrades) |

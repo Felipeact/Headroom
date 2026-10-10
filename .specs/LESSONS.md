@@ -218,6 +218,24 @@ Seen once or not yet corroborated. Tracked, not trusted.
 - evidence: frontend/e2e/expected-payments.spec.ts:202 (C46) (frontend/e2e)
 - last seen: 2026-10-07T04:33:48Z
 
+### L-035 - When a check lists a group's members, state their order from the mockup, or the test pins whatever order the API returns.
+- signal: `spec_precision_gap` · recurrence: 1 feature(s) · scope: `frontend/tests` · harmful: 0
+- features: 26-web-dashboard
+- evidence: C22 frontend/tests/dashboard-page.test.tsx:245 (frontend/tests)
+- last seen: 2026-10-10T03:28:40Z
+
+### L-036 - Copy that differs by breakpoint through CSS classes needs a Playwright assertion at each width; jsdom can only prove which class a node carries.
+- signal: `spec_precision_gap` · recurrence: 1 feature(s) · scope: `frontend/e2e` · harmful: 0
+- features: 26-web-dashboard
+- evidence: C13/C14/C17/C22/C23 frontend/tests/dashboard-page.test.tsx:77 (frontend/e2e)
+- last seen: 2026-10-10T03:28:40Z
+
+### L-037 - Before e2e proofs, check that ports 3000 and 8100 are free or serve current code, and that the local database is at alembic head; Playwright reuses whatever answers.
+- signal: `gate_fail` · recurrence: 1 feature(s) · scope: `frontend/e2e` · harmful: 0
+- features: 26-web-dashboard
+- evidence: verification.md round 1 (C25-C37 not runnable) (frontend/e2e)
+- last seen: 2026-10-10T03:28:40Z
+
 ## Quarantined (failed when applied - ignore)
 
 A confirmed lesson that recurred alongside failure. Kept for the maintainer to review.

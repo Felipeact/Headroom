@@ -3,7 +3,7 @@
   "promote_threshold": 2,
   "window_days": 45,
   "quarantine_threshold": 2,
-  "next_id": 35,
+  "next_id": 38,
   "lessons": [
     {
       "id": "L-001",
@@ -616,6 +616,60 @@
       ],
       "created": "2026-10-07T04:33:48Z",
       "last_seen": "2026-10-07T04:33:48Z"
+    },
+    {
+      "id": "L-035",
+      "key": "spec_precision_gap::when a check lists a group s members state their order from the mockup or the test pins whatever order the api returns",
+      "text": "When a check lists a group's members, state their order from the mockup, or the test pins whatever order the API returns.",
+      "signal": "spec_precision_gap",
+      "scope": "frontend/tests",
+      "status": "candidate",
+      "features": [
+        "26-web-dashboard"
+      ],
+      "recurrence": 1,
+      "harmful": 0,
+      "evidence": [
+        "C22 frontend/tests/dashboard-page.test.tsx:245 (frontend/tests)"
+      ],
+      "created": "2026-10-10T03:28:40Z",
+      "last_seen": "2026-10-10T03:28:40Z"
+    },
+    {
+      "id": "L-036",
+      "key": "spec_precision_gap::copy that differs by breakpoint through css classes needs a playwright assertion at each width jsdom can only prove which class a node carries",
+      "text": "Copy that differs by breakpoint through CSS classes needs a Playwright assertion at each width; jsdom can only prove which class a node carries.",
+      "signal": "spec_precision_gap",
+      "scope": "frontend/e2e",
+      "status": "candidate",
+      "features": [
+        "26-web-dashboard"
+      ],
+      "recurrence": 1,
+      "harmful": 0,
+      "evidence": [
+        "C13/C14/C17/C22/C23 frontend/tests/dashboard-page.test.tsx:77 (frontend/e2e)"
+      ],
+      "created": "2026-10-10T03:28:40Z",
+      "last_seen": "2026-10-10T03:28:40Z"
+    },
+    {
+      "id": "L-037",
+      "key": "gate_fail::before e2e proofs check that ports 3000 and 8100 are free or serve current code and that the local database is at alembic head playwright reuses whatever answers",
+      "text": "Before e2e proofs, check that ports 3000 and 8100 are free or serve current code, and that the local database is at alembic head; Playwright reuses whatever answers.",
+      "signal": "gate_fail",
+      "scope": "frontend/e2e",
+      "status": "candidate",
+      "features": [
+        "26-web-dashboard"
+      ],
+      "recurrence": 1,
+      "harmful": 0,
+      "evidence": [
+        "verification.md round 1 (C25-C37 not runnable) (frontend/e2e)"
+      ],
+      "created": "2026-10-10T03:28:40Z",
+      "last_seen": "2026-10-10T03:28:40Z"
     }
   ]
 }
