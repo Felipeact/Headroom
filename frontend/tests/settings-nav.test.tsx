@@ -4,7 +4,6 @@ import { beforeEach, describe, expect, test, vi } from 'vitest'
 import SettingsPage from '@/app/(app)/settings/page'
 import BusinessSettingsPage from '@/app/(app)/settings/business/page'
 import DataSettingsPage from '@/app/(app)/settings/data/page'
-import EmailSettingsPage from '@/app/(app)/settings/email/page'
 import MembersSettingsPage from '@/app/(app)/settings/members/page'
 import { SettingsNav } from '@/components/settings/settings-nav'
 import messages from '@/messages/en.json'
@@ -61,10 +60,10 @@ describe('settings', () => {
     ])
   })
 
+  // Email preferences stopped being a placeholder in spec 28 (its own tests).
   test.each([
     ['Business', BusinessSettingsPage],
     ['Members', MembersSettingsPage],
-    ['Email preferences', EmailSettingsPage],
     ['Your data', DataSettingsPage],
   ])('C6 placeholder sections: %s', async (title, Page) => {
     inIntl(await Page())

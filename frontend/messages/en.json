@@ -220,6 +220,16 @@
         "alreadyConnected": "This bank is already connected.",
         "connectFailed": "We couldn't connect your bank. Try again."
       }
+    },
+    "Email": {
+      "title": "Email preferences",
+      "alerts": "Cash gap alerts",
+      "alertsHint": "Email me when cash is projected to fall below my minimum.",
+      "digest": "Weekly digest",
+      "digestHint": "A summary of my forecast every Monday morning.",
+      "saved": "Email preferences saved",
+      "saveFailed": "We couldn't save your email preferences. Try again.",
+      "notifications": "Notifications"
     }
   },
   "ExpectedPayments": {
@@ -445,5 +455,16 @@
     "notFoundTitle": "We couldn't find this alert",
     "notFoundBody": "It may belong to another business, or the link may be wrong.",
     "notFoundAction": "Go to the dashboard"
+  },
+  "Unsubscribe": {
+    "title": "Unsubscribe from Headroom emails?",
+    "body": "You'll stop getting cash gap alerts and the weekly digest.",
+    "button": "Unsubscribe",
+    "pending": "Unsubscribing…",
+    "doneTitle": "You're unsubscribed",
+    "doneBody": "You won't get any more emails from Headroom. To turn them back on, go to <link>Email preferences</link>.",
+    "invalidTitle": "This unsubscribe link isn't valid",
+    "invalidBody": "To change your emails, go to <link>Email preferences</link>.",
+    "failed": "We couldn't unsubscribe you. Try again."
   }
 }
