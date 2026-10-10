@@ -1,7 +1,7 @@
 # Spec 27: The alert page
 
 - **Milestone:** 5, alerts and dashboard
-- **Status:** Not started
+- **Status:** In progress
 - **Depends on:** 25
 
 ## Goal
