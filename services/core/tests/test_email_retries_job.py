@@ -80,3 +80,19 @@ def test_counts(mail: Mail) -> None:
 
     assert counts == {"emails_sent": 1, "emails_failed": 1, "emails_pending": 1}
     assert mail.sender.calls - calls_before == 3
+
+
+def test_render_error_fails_one_row_and_spares_the_rest(mail: Mail) -> None:
+    """A row whose template cannot render is `failed`; the rows after it still send."""
+    bad = mail.user(email="bad@example.test")
+    good = mail.user(email="good@example.test")
+    mail.request(bad, key="bad", params={"body": "no heading"}, deliver=False)
+    mail.sender.fail_next(unavailable())
+    mail.request(good, key="good")
+
+    email_retries(NOW)
+
+    # This module's database is shared, so judge the two rows, not the run's totals.
+    assert mail.deliveries(bad)[0].state == "failed"
+    assert mail.deliveries(good)[0].state == "sent"
+    assert [email.to for email in mail.sender.sent] == ["good@example.test"]

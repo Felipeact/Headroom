@@ -11,6 +11,7 @@ from dataclasses import dataclass
 from typing import Any, Literal
 
 import structlog
+from jinja2 import TemplateError
 from sqlalchemy import func
 from sqlalchemy.orm import Session
 
@@ -160,17 +161,21 @@ def _attempt(session: Session, delivery: EmailDelivery) -> Outcome:
 
     settings = get_settings()
     token = repository.ensure_token(session, delivery.user_id)
-    rendered = rendering.render(
-        delivery.template,
-        delivery.params,
-        first_name=contact.first_name,
-        footer=rendering.Footer(
-            reason=delivery.reason,
-            preferences_url=f"{settings.web_url}/settings/email",
-            unsubscribe_url=f"{settings.web_url}/unsubscribe/{token}",
-            mailing_address=settings.email_mailing_address,
-        ),
-    )
+    try:
+        rendered = rendering.render(
+            delivery.template,
+            delivery.params,
+            first_name=contact.first_name,
+            footer=rendering.Footer(
+                reason=delivery.reason,
+                preferences_url=f"{settings.web_url}/settings/email",
+                unsubscribe_url=f"{settings.web_url}/unsubscribe/{token}",
+                mailing_address=settings.email_mailing_address,
+            ),
+        )
+    except TemplateError as exc:
+        # A row that cannot render never will; failing it keeps the queue behind it moving.
+        return _failed(delivery, type(exc).__name__, retryable=False)
     email = senders.OutgoingEmail(
         to=contact.email,
         sender=settings.email_from,

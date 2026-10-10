@@ -8,6 +8,7 @@ from dataclasses import dataclass
 from functools import lru_cache
 from typing import Protocol
 
+import httpx
 from clerk_backend_api import Clerk, models
 
 from app.settings import get_settings
@@ -48,7 +49,7 @@ class BackendClerkUsers:
             if exc.status_code == 404:
                 return None
             raise ClerkUnavailableError(f"http_{exc.status_code}") from None
-        except Exception as exc:  # noqa: BLE001 - network errors come from the HTTP client
+        except (httpx.HTTPError, models.NoResponseError) as exc:
             raise ClerkUnavailableError(type(exc).__name__) from None
         return ClerkUser(
             primary_email_address_id=user.primary_email_address_id,
