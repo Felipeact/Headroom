@@ -2,11 +2,13 @@ import AxeBuilder from '@axe-core/playwright'
 import { expect, test, type Locator, type Page } from '@playwright/test'
 import messages from '../messages/en.json'
 
+// `heading` is each page's h1. Since spec 26 the dashboard's is its empty state: the shared test
+// user has a business and no bank.
 const PAGES = [
-  { path: '/', title: 'Dashboard' },
-  { path: '/expected-payments', title: 'Expected payments' },
-  { path: '/alerts', title: 'Alerts' },
-  { path: '/settings', title: 'Settings' },
+  { path: '/', title: 'Dashboard', heading: 'No bank connected yet' },
+  { path: '/expected-payments', title: 'Expected payments', heading: 'Expected payments' },
+  { path: '/alerts', title: 'Alerts', heading: 'Alerts' },
+  { path: '/settings', title: 'Settings', heading: 'Settings' },
 ] as const
 
 const NAV_ORDER = PAGES.map(({ title, path }) => ({ name: title, href: path }))
@@ -62,12 +64,12 @@ async function pageStrings(page: Page): Promise<string[]> {
 }
 
 test('shell pages (C1)', async ({ page }) => {
-  for (const { path, title } of PAGES) {
+  for (const { path, heading } of PAGES) {
     const response = await page.goto(path)
     expect(response?.status(), path).toBe(200)
     await expect(page.locator('header')).toHaveCount(1)
     await expect(page.locator('main')).toHaveCount(1)
-    await expect(page.locator('main h1')).toHaveText(title)
+    await expect(page.locator('main h1')).toHaveText(heading)
   }
 })
 
@@ -293,9 +295,9 @@ test('skip link (C15)', async ({ page }) => {
 for (const [label, viewport] of [['1440', DESKTOP], ['375', PHONE]] as const) {
   test(`axe at ${label} (C18)`, async ({ page }) => {
     await page.setViewportSize(viewport)
-    for (const { path, title } of PAGES) {
+    for (const { path, heading } of PAGES) {
       await page.goto(path)
-      await expect(page.locator('main h1')).toHaveText(title)
+      await expect(page.locator('main h1')).toHaveText(heading)
       // The Next.js dev tools overlay is not part of the page under test.
       const results = await new AxeBuilder({ page }).exclude('nextjs-portal').analyze()
       expect(results.violations, path).toEqual([])
@@ -352,9 +354,9 @@ test('no sentry without dsn (C42)', async ({ page }) => {
   page.on('request', (request) => {
     if (new URL(request.url()).hostname.includes('sentry')) sentryRequests.push(request.url())
   })
-  for (const { path, title } of PAGES) {
+  for (const { path, heading } of PAGES) {
     await page.goto(path)
-    await expect(page.locator('main h1')).toHaveText(title)
+    await expect(page.locator('main h1')).toHaveText(heading)
   }
   expect(errors).toEqual([])
   expect(sentryRequests).toEqual([])

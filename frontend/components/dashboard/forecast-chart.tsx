@@ -79,7 +79,8 @@ export function ForecastChart({
         aria-hidden="true"
         data-points={points.length}
         className="aspect-auto h-[240px] w-full lg:h-[280px]">
-        <ComposedChart data={points} margin={{ top: 24, right: 12, bottom: 0, left: 0 }}>
+        {/* The text summary beside the chart is what screen readers get, so the drawing takes no focus. */}
+        <ComposedChart data={points} accessibilityLayer={false} margin={{ top: 24, right: 12, bottom: 0, left: 0 }}>
           <CartesianGrid vertical={false} stroke="var(--line-soft)" />
           <XAxis
             dataKey="label"
