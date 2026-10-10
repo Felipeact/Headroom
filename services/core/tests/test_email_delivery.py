@@ -7,6 +7,7 @@ from typing import Any
 import pytest
 import requests
 import resend
+from markupsafe import escape
 from sqlalchemy import inspect, select, text
 from sqlalchemy.exc import IntegrityError
 
@@ -16,7 +17,7 @@ from app.modules.notifications import senders
 from app.modules.notifications import service as notifications_service
 from app.modules.notifications.models import EmailDelivery, EmailPreferences
 from app.modules.notifications.senders import ResendSender
-from tests.email_support import Mail, log_lines
+from tests.email_support import REASON, Mail, log_lines
 
 pytestmark = pytest.mark.usefixtures("migrated_database")
 
@@ -385,3 +386,25 @@ def test_preferences_row_holds_token_only(mail: Mail) -> None:
         row = session.get(EmailPreferences, user)
         assert row is not None
         assert (row.alerts, row.weekly_digest) == (True, True)
+
+
+def test_footer_in_sent_email(mail: Mail) -> None:
+    """C11, C12 at the send boundary: the delivered email's footer carries this user's
+    links, from WEB_URL and their own token, and the mailing address."""
+    user = mail.user()
+
+    mail.request(user)
+
+    [email] = mail.sender.sent
+    token = mail.token(user)
+    preferences = "https://app.example.test/settings/email"
+    unsubscribe = f"https://app.example.test/unsubscribe/{token}"
+    assert f'href="{preferences}"' in email.html
+    assert f'href="{unsubscribe}"' in email.html
+    assert "Headroom · 1 Test St, Toronto ON M5V 1A1" in email.html
+    assert str(escape(REASON)) in email.html
+    text_lines = email.text.splitlines()
+    assert f"Email preferences: {preferences}" in text_lines
+    assert f"Unsubscribe: {unsubscribe}" in text_lines
+    assert "Headroom · 1 Test St, Toronto ON M5V 1A1" in text_lines
+    assert REASON in text_lines

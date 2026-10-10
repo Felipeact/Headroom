@@ -44,9 +44,11 @@ Proof: `uv run pytest tests/test_email_template.py -k "layout"`
 
 **C11** - The HTML footer's text, in order, is the reason "You're getting this email because you're an owner of Harbor Street Plumbing on Headroom.", then "Email preferences" with `href="https://app.example.test/settings/email"`, " · ", "Unsubscribe" with `href="https://app.example.test/unsubscribe/<the user's token>"`, then "Headroom · 1 Test St, Toronto ON M5V 1A1" (AC 10, door 3)
 Proof: `uv run pytest tests/test_email_template.py -k "footer"`
+Proof: `uv run pytest tests/test_email_delivery.py -k "footer_in_sent_email"`
 
 **C12** - The plain-text part holds the heading, the paragraph, the reason line, "Email preferences: https://app.example.test/settings/email", "Unsubscribe: https://app.example.test/unsubscribe/<token>" and "Headroom · 1 Test St, Toronto ON M5V 1A1", and contains no `<` tag (AC 11)
 Proof: `uv run pytest tests/test_email_template.py -k "plain_text"`
+Proof: `uv run pytest tests/test_email_delivery.py -k "footer_in_sent_email"`
 
 **C13** - Every send carries headers `List-Unsubscribe: <https://api.example.test/v1/unsubscribe/<token>>` and `List-Unsubscribe-Post: List-Unsubscribe=One-Click`, and `ResendSender` passes them in `params["headers"]` (AC 12, door 3)
 Proof: `uv run pytest tests/test_email_delivery.py -k "unsubscribe_headers"`
@@ -88,6 +90,7 @@ Proof: `uv run pytest tests/test_email_delivery.py -k "permanent_errors"`
 **C24** - `email_retries(now)` returns exactly the keys `emails_sent`, `emails_failed`, `emails_pending`: with one delivery that sends, one that fails permanently and one that fails retryably, it returns `{"emails_sent": 1, "emails_failed": 1, "emails_pending": 1}`. `sent`, `failed` and `skipped` rows are not attempted. `JOBS` is `(nightly_bank_sync, forecast_accuracy, email_retries)`, and `run_due` merges its counts into `jobs.run_finished` (AC 20)
 Proof: `uv run pytest tests/test_email_retries_job.py -k "counts"`
 Proof: `uv run pytest tests/test_run_due.py -k "email_retries"`
+Proof: `uv run pytest tests/test_run_due.py -k "jobs_registered"`
 
 ### S3 - Email preferences · 14 files · 90 KB · ~23k
 
