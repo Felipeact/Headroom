@@ -84,6 +84,8 @@ class AlertView:
     lowest_balance_cents: int
     minimum_cents: int
     shortfall_cents: int
+    # The shortfall the owner was last told about (AD-096); alert emails key on it.
+    notified_shortfall_cents: int
     currency: str
     created_at: datetime
     updated_at: datetime
@@ -319,6 +321,7 @@ def _views(session: Session, alerts: list[Alert]) -> list[AlertView]:
             lowest_balance_cents=a.lowest_balance_cents,
             minimum_cents=a.minimum_cents,
             shortfall_cents=a.shortfall_cents,
+            notified_shortfall_cents=a.notified_shortfall_cents,
             currency=a.currency,
             created_at=a.created_at,
             updated_at=a.updated_at,

@@ -1,0 +1,7 @@
+{#- Copy shared by alert.html and alert.txt; it mirrors Dashboard.alert in frontend/messages/en.json. -#}
+{%- macro label() -%}
+{% if change == "updated" %}Cash gap got bigger{% else %}Cash gap{% endif %}
+{%- endmacro -%}
+{%- macro button() -%}
+{% if fix_count == 0 %}See details{% elif fix_count == 1 %}See the fix{% else %}See all {{ fix_count }} fixes{% endif %}
+{%- endmacro -%}

@@ -1,0 +1,13 @@
+{% extends "base.txt" %}
+{%- import "_alert_copy.jinja" as copy with context -%}
+{% block content %}{{ copy.label() }}
+{{ subject }}
+
+{% if first_name %}Hi {{ first_name }}, the{% else %}The{% endif %} forecast for {{ business_name }} shows cash dropping to {{ lowest_balance_cents|money(currency) }} in the week of {{ lowest_week_starts_on|day }}.
+{% if causes %}
+What's causing it
+{% for cause in causes %}- {{ cause.name }}, {{ cause.amount_cents|money(currency) }}, on {{ cause.date|day(weekday=True) }}
+{% endfor %}{% endif %}{% if top_fix %}{% set amount = top_fix.amount_cents|money(currency) %}
+Top fix: {% if top_fix.kind == "pay_early" %}ask {{ top_fix.name }} to pay their {{ amount }} invoice a week early.{% elif top_fix.kind == "move_payment" %}move the {{ amount }} payment to {{ top_fix.name }} a week later.{% elif top_fix.kind == "draw_credit" %}draw {{ amount }} from your {{ top_fix.name }}.{% else %}arrange {{ amount }} of short-term financing for the length of the gap.{% endif %}{% if top_fix.keeps_above %} That keeps you above your minimum.{% endif %}
+{% endif %}
+{{ copy.button() }}: {{ web_url }}/alerts/{{ alert_id }}{% endblock %}

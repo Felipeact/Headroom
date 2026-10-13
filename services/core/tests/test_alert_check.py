@@ -443,7 +443,8 @@ def test_subscriptions() -> None:
         "forecast_inputs.changed",
         alerts_service.check_cash_gaps,
     )
-    assert len(subscriptions.SUBSCRIPTIONS) == 6
+    # Spec 29 appends its two alert email handlers after these.
+    assert len(subscriptions.SUBSCRIPTIONS) == 8
 
 
 # Spec 25: the fixes stored with each alert (C10-C13).

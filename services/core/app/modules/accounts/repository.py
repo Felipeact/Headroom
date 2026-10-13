@@ -58,6 +58,18 @@ def get_membership(
     return session.get(Membership, (business_id, user_id))
 
 
+def member_ids(
+    session: Session, *, business_id: uuid.UUID, roles: Collection[str]
+) -> list[uuid.UUID]:
+    return list(
+        session.scalars(
+            select(Membership.user_id)
+            .where(Membership.business_id == business_id, Membership.role.in_(roles))
+            .order_by(Membership.created_at, Membership.user_id)
+        )
+    )
+
+
 def businesses_for_user(
     session: Session, user_id: uuid.UUID
 ) -> list[tuple[Business, str]]:

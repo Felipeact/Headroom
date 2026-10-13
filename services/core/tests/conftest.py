@@ -95,6 +95,22 @@ def _database_at_head() -> Iterator[str]:
     admin.dispose()
 
 
+class _NoClerkUsers:
+    """Clerk with no users: an email to anyone fails as `no_contact`, without a call."""
+
+    def get(self, clerk_user_id: str) -> None:
+        return None
+
+
+@pytest.fixture(autouse=True)
+def _no_real_clerk(monkeypatch: pytest.MonkeyPatch) -> None:
+    """Since spec 29 every alert emails its owners, so any test can reach Clerk. Tests
+    that send email install their own fake (`tests/email_support.py`)."""
+    from app.modules.accounts import clerk
+
+    monkeypatch.setattr(clerk, "get_clerk_users", lambda: _NoClerkUsers())
+
+
 @pytest.fixture(scope="session")
 def migrated_database() -> Iterator[None]:
     """A fresh database at Alembic head, used by the app for the whole session."""

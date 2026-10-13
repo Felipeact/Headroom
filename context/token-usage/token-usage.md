@@ -93,3 +93,4 @@ Context used per request, measured against a context window of about 250,000 tok
 | Spec 28: email foundation (checks, build, API + web, e2e) | ~200,000 (~80%) | Low (past 60%) |
 | Spec 28: verifier sub-agents, rounds 1-3 (separate contexts) | ~147,000 + ~111,000 + ~120,000 (~59%, ~44%, ~48%) | Medium (attention degrades) |
 | Spec 28: the-judge review and fixes (F1, F3) | ~30,000 (~12%) | High (smart zone) |
+| Spec 29: alert emails (plan) | ~140,000 (~56%) | Medium (attention degrades) |

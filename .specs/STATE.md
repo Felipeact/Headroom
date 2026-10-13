@@ -116,13 +116,18 @@
 | AD-109 | Public unsubscribe: `app/main.py` `unsubscribe = APIRouter(prefix="/v1/unsubscribe")` outside `current_user`, beside AD-049's `webhooks`; `POST /v1/unsubscribe/{token}` ignores any body, `200 {"status": "unsubscribed"}` or `404`. Web `app/unsubscribe/[token]/page.tsx` is the one page besides sign-in/up without `auth.protect()` (extends AD-026; `tests/auth-protect.test.ts` exempts exactly it); opening it changes nothing, its button unsubscribes | the link must work signed out; link scanners open every link (spec 28 door 4; extends AD-049, AD-026) | active | 2026-10-10 |
 | AD-110 | Email sending: `EmailSender` Protocol, `ResendSender` (`resend`, `Emails.send(params, {"idempotency_key": ...})`) or `ConsoleSender` (stdout, never the logger) chosen by `EMAIL_SENDER` (`console`/`resend`, no default; `RESEND_API_KEY` required for `resend`); Jinja2 templates `<name>.subject.txt`, `<name>.html` extending `base.html`, `<name>.txt` extending `base.txt`, autoescape for HTML only; settings `EMAIL_FROM`, `EMAIL_MAILING_ADDRESS`, `WEB_URL`, `API_PUBLIC_URL` required | the jobs process sends too and has no Node; one footer for every email (spec 28 door 5) | active | 2026-10-10 |
 | AD-111 | Recipient contact: `accounts.service.contact(session, user_id)` reads the primary address (`primary_email_address_id` matched in `email_addresses`) and `first_name` from Clerk's Backend API (`clerk-backend-api`, `CLERK_SECRET_KEY`) through `accounts.clerk.get_clerk_users()`; never stored; 404 or no primary address = no contact, other failures raise `ContactUnavailableError` | keeps AD-020: no PII in our database (spec 28 door 6) | active | 2026-10-10 |
+| AD-112 | Alert emails: `SUBSCRIPTIONS` appends `(alert.created, notifications.service.email_alert)` and `(alert.updated, email_alert)` after the alert handlers; `email_alert` reads the alert through `alerts.service.get_alert` scoped to the event's business, emails only an `open` alert, one delivery per owner (`accounts.service.owner_ids`), template `alert`, reason "You're getting this email because you're an owner of {name} on Headroom."; `alert.resolved` sends nothing | modules talk through events; Clerk and Resend stay out of the alerts lock (spec 29 door 1) | active | 2026-10-13 |
+| AD-113 | Alert email dedup key `alert:{alert_id}:{notified_shortfall_cents}` (AD-106 index); `AlertView` carries `notified_shortfall_cents` | one email per created or grown gap, replay-safe; a dismissed alert regrowing to exactly the emailed amount sends nothing (spec 29 door 2) | active | 2026-10-13 |
+| AD-114 | `alert` email params (stored, re-rendered by retries): `alert_id`, `business_name`, `change` (`created`/`updated`), `currency`, `minimum_cents`, `lowest_balance_cents`, `lowest_week_starts_on`, `causes` [`name`, `amount_cents` unsigned, `date`], `top_fix` {`kind`, `name`, `amount_cents` unsigned, `keeps_above`} or null, `fix_count`; no account data | the template must keep reading rows written before it changed (spec 29 door 3) | active | 2026-10-13 |
+| AD-115 | Email formatting: Jinja filters `money(cents, currency)` (whole dollars, half away from zero, U+2212, CAD only, else raises) and `day(iso, weekday=False)` (English names, locale-free) in `rendering.environment()`; render context carries `web_url`. Mirrors `frontend/lib/format.ts`; spec 30 reuses them | one formatter for every email, no new dependency (spec 29 door 4) | active | 2026-10-13 |
+| AD-116 | Alert emails go to owners only until spec 31, which adds bookkeepers who opt in through the same recipient query | no bookkeeper role exists before spec 31 (user decision 2026-10-13) | active | 2026-10-13 |
 
 ## Handoff
 
-**Feature**: 27-web-alert-page
-**Where**: Done. Built in a6f45dc, 03c4dbf, 55e46c3; Verifier round 2 PASS 30/30 (validate_verification exit 0). Visual pass at 375 and 1280 px. Milestone 5 done
-**In progress**: none
-**Next step**: spec 28 (email foundation)
-**Blockers**: none
-**Uncommitted**: none for spec 27
+**Feature**: 29-email-alerts
+**Where**: Built (handler, templates, filters, sample command, tests); not yet proven. This PC's local Postgres is broken (temp cleanup deleted its files) and has no Docker, so every database proof runs on the user's other computer
+**In progress**: spec 29
+**Next step**: on a machine with Postgres: `uv run pytest tests/test_alert_emails.py tests/test_alert_email_template.py` and the full suite, then dispatch the Verifier over the spec 29 commits; the user sends the sample email (C22) and saves gmail.png, outlook.png, apple-mail.png
+**Blockers**: no local database here; C22 needs the user's Resend key and three inboxes
+**Uncommitted**: frontend/README.md and services/core/README.md changed outside this work, left alone
 **Branch**: development

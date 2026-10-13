@@ -2,7 +2,7 @@
 
 A caller (spec 29's handler, spec 30's job) calls `request_email` in its own transaction,
 commits, then calls `deliver` with the id it got back. The hourly `email_retries` job calls
-`retry_pending` for whatever is still pending.
+`retry_pending` for whatever is still pending. `email_alert` is spec 29's caller.
 """
 
 import uuid
@@ -15,8 +15,11 @@ from jinja2 import TemplateError
 from sqlalchemy import func
 from sqlalchemy.orm import Session
 
+from app import events
 from app.db import get_sessionmaker
 from app.modules.accounts import service as accounts_service
+from app.modules.alerts import service as alerts_service
+from app.modules.alerts.events import ALERT_CREATED
 from app.modules.notifications import rendering, repository, senders
 from app.modules.notifications.models import EmailDelivery, EmailKind, EmailPreferences
 from app.settings import get_settings
@@ -217,3 +220,113 @@ def _failed(delivery: EmailDelivery, error_type: str, *, retryable: bool) -> Out
     delivery.state = "failed"
     log.error("email.failed", **fields)
     return "failed"
+
+
+def _name(counterparty: str | None, description: str | None) -> str:
+    # As on the dashboard: the counterparty, else the description up to its first comma.
+    if counterparty is not None:
+        return counterparty
+    return (description or "").split(",")[0].strip()
+
+
+def alert_params(
+    alert: alerts_service.AlertView, *, business_name: str, change: str
+) -> dict[str, Any]:
+    """The params of an `alert` email (spec 29, door 3): JSON values, no account data.
+
+    Causes largest first, ties by earlier date; amounts unsigned. The top fix is the first
+    in kind order (AD-101).
+    """
+    causes = sorted(
+        (i for i in alert.items if i.kind == "cause"),
+        key=lambda i: (-abs(i.amount_cents), i.date),
+    )
+    top = alert.fixes[0] if alert.fixes else None
+    return {
+        "alert_id": str(alert.id),
+        "business_name": business_name,
+        "change": change,
+        "currency": alert.currency,
+        "minimum_cents": alert.minimum_cents,
+        "lowest_balance_cents": alert.lowest_balance_cents,
+        "lowest_week_starts_on": alert.lowest_week_starts_on.isoformat(),
+        "causes": [
+            {
+                "name": _name(c.counterparty, c.description),
+                "amount_cents": abs(c.amount_cents),
+                "date": c.date.isoformat(),
+            }
+            for c in causes
+        ],
+        "top_fix": None
+        if top is None
+        else {
+            "kind": top.kind,
+            # A draw names the line of credit, which is the fix's description.
+            "name": (top.description or "")
+            if top.kind == "draw_credit"
+            else _name(top.counterparty, top.description),
+            "amount_cents": abs(top.amount_cents),
+            "keeps_above": top.new_lowest_balance_cents >= alert.minimum_cents,
+        },
+        "fix_count": len(alert.fixes),
+    }
+
+
+def email_alert(event: events.Event) -> None:
+    """Email every owner of the business about a new or grown cash gap (spec 29).
+
+    The handler of `alert.created` and `alert.updated`. In one transaction it records one
+    `alert` delivery per owner, keyed `alert:{alert_id}:{notified_shortfall_cents}`, so
+    handling the same event twice emails once; after the commit it attempts each. An alert
+    that is no longer open, or isn't the event's business's, sends nothing.
+    """
+    alert_id = uuid.UUID(str(event.payload["alert_id"]))
+    pending: list[uuid.UUID] = []
+    with get_sessionmaker()() as session:
+        try:
+            alert = alerts_service.get_alert(
+                session, business_id=event.business_id, alert_id=alert_id
+            )
+        except alerts_service.AlertNotFoundError:
+            log.info("email.alert_skipped", alert_id=str(alert_id), state="not_found")
+            return
+        if alert.state != "open":
+            log.info("email.alert_skipped", alert_id=str(alert_id), state=alert.state)
+            return
+        business = accounts_service.get_business(
+            session, business_id=event.business_id, role=accounts_service.Role.OWNER
+        )
+        params = alert_params(
+            alert,
+            business_name=business.name,
+            change="created" if event.name == ALERT_CREATED else "updated",
+        )
+        reason = (
+            "You're getting this email because you're an owner of"
+            f" {business.name} on Headroom."
+        )
+        for user_id in accounts_service.owner_ids(
+            session, business_id=event.business_id
+        ):
+            delivery_id = request_email(
+                session,
+                dedup_key=f"alert:{alert.id}:{alert.notified_shortfall_cents}",
+                user_id=user_id,
+                business_id=event.business_id,
+                kind="alert",
+                template="alert",
+                params=params,
+                reason=reason,
+            )
+            if delivery_id is not None:
+                pending.append(delivery_id)
+        session.commit()
+    log.info(
+        "email.alert_requested",
+        alert_id=str(alert_id),
+        event_name=event.name,
+        deliveries=len(pending),
+    )
+    for delivery_id in pending:
+        deliver(delivery_id)

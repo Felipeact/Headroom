@@ -153,6 +153,14 @@ def get_business(
     return _view(repository.get_business(session, business_id), role)
 
 
+def owner_ids(session: Session, *, business_id: uuid.UUID) -> list[uuid.UUID]:
+    """The user IDs of the business's owners, oldest membership first.
+
+    Who gets the business's alert emails (spec 29); spec 31 adds bookkeepers who opt in.
+    """
+    return repository.member_ids(session, business_id=business_id, roles=[Role.OWNER])
+
+
 def update_business(
     session: Session,
     *,
