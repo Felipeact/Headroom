@@ -365,10 +365,12 @@ def test_jobs_registered() -> None:
     from app.jobs.email_retries import email_retries
     from app.jobs.forecast_accuracy import forecast_accuracy
     from app.jobs.weekly_digest import weekly_digest
+    from app.jobs.weekly_metrics import weekly_metrics
 
     assert jobs.JOBS == (
         nightly.nightly_bank_sync,
         forecast_accuracy,
+        weekly_metrics,
         weekly_digest,
         email_retries,
     )

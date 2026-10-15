@@ -1,0 +1,20 @@
+{% extends "base.txt" %}
+{% block content %}{{ subject }}
+
+Week of {{ week_start|day(weekday=True) }} to {{ week_end|day(weekday=True) }} (UTC).
+
+Weekly active businesses: {% if weekly_active_businesses is none %}unavailable{% else %}{{ weekly_active_businesses }}{% endif %}
+
+  Businesses where someone opened the dashboard.
+
+Alerts opened: {% if alerts_opened is none %}unavailable{% else %}{{ alerts_opened }}{% endif %}
+
+  Different alerts someone opened.
+
+Activation: {% if activation_percent is none %}no sign-ups{% else %}{{ activation_percent }}% ({{ activated }} of {{ signups }}){% endif %}
+
+  New owners who connected a bank within 24 hours of signing up.
+
+4-week forecast error: {% if forecast_error_percent is none %}no data yet{% else %}{{ forecast_error_percent }}% across {{ forecast_error_businesses }} business{{ "" if forecast_error_businesses == 1 else "es" }}{% endif %}
+
+  How far the forecast made four weeks earlier was from the actual balance, on average.{% endblock %}

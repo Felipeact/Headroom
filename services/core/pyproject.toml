@@ -10,6 +10,7 @@ dependencies = [
     "cryptography>=50.0.2",
     "fastapi[standard]>=0.142.2",
     "holidays>=0.106",
+    "httpx>=0.28.1",
     "jinja2>=3.1.6",
     "plaid-python>=45.0.0",
     "psycopg[binary]>=3.3.6",

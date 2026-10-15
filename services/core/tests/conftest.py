@@ -42,6 +42,12 @@ os.environ["EMAIL_MAILING_ADDRESS"] = "1 Test St, Toronto ON M5V 1A1"
 os.environ["WEB_URL"] = "https://app.example.test"
 os.environ["API_PUBLIC_URL"] = "https://api.example.test"
 os.environ["CLERK_SECRET_KEY"] = "sk_test_not_a_key"
+# Spec 32: no test reads PostHog or sends the metrics report because of a developer's
+# .env.local; the tests that need either set them on purpose.
+os.environ["POSTHOG_APP_HOST"] = ""
+os.environ["POSTHOG_PROJECT_ID"] = ""
+os.environ["POSTHOG_PERSONAL_API_KEY"] = ""
+os.environ["METRICS_REPORT_RECIPIENTS"] = ""
 
 
 CORE = Path(__file__).resolve().parents[1]

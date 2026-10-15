@@ -524,3 +524,36 @@ def set_alert_emails(
         name=None,
         email=None,
     )
+
+
+@dataclass(frozen=True)
+class Signup:
+    user_id: uuid.UUID
+    created_at: datetime
+    # The business the user owns; empty until they create one.
+    owned_business_ids: tuple[uuid.UUID, ...]
+
+
+def signup_cohort(session: Session, *, start: datetime, end: datetime) -> list[Signup]:
+    """New owners: users created from `start` (inclusive) to `end` (exclusive).
+
+    For spec 32's activation figure (a read across businesses, with no HTTP route). A user
+    whose only memberships are `bookkeeper` is left out: they signed up to accept an
+    invitation and never connect a bank, so counting them would measure something else.
+    """
+    users = repository.users_created_between(session, start=start, end=end)
+    memberships = repository.user_memberships(
+        session, user_ids=[user.id for user in users]
+    )
+    cohort: list[Signup] = []
+    for user in users:
+        mine = [m for m in memberships if m.user_id == user.id]
+        owned = tuple(m.business_id for m in mine if m.role == Role.OWNER)
+        if mine and not owned:
+            continue
+        cohort.append(
+            Signup(
+                user_id=user.id, created_at=user.created_at, owned_business_ids=owned
+            )
+        )
+    return cohort

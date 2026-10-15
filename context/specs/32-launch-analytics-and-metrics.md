@@ -1,7 +1,7 @@
 # Spec 32: Analytics and the weekly metrics report
 
 - **Milestone:** 7, production
-- **Status:** Not started
+- **Status:** In progress
 - **Depends on:** 26
 
 ## Goal

@@ -6,7 +6,7 @@ commits, then calls `deliver` with the id it got back. The hourly `email_retries
 """
 
 import uuid
-from collections.abc import Mapping
+from collections.abc import Mapping, Sequence
 from dataclasses import dataclass
 from datetime import datetime, time, timedelta
 from typing import Any, Literal
@@ -497,3 +497,42 @@ def send_weekly_digests(now: datetime) -> dict[str, int]:
             deliver(delivery_id)
         counts["digests_requested"] += len(pending)
     return counts
+
+
+def send_metrics_report(recipients: Sequence[str], params: Mapping[str, Any]) -> int:
+    """Email the weekly metrics report (spec 32) to each address; returns how many went out.
+
+    An internal operations email: no `email_deliveries` row, no preferences and no unsubscribe
+    link, and no retry. A recipient the provider refuses is logged (error type only) and the
+    others still get theirs. `params` holds aggregates only.
+    """
+    settings = get_settings()
+    rendered = rendering.render(
+        "metrics_report",
+        params,
+        first_name=None,
+        footer=rendering.Footer(
+            reason="You're getting this email because you're on the Headroom metrics report list.",
+            preferences_url=None,
+            unsubscribe_url=None,
+            mailing_address=settings.email_mailing_address,
+        ),
+    )
+    sent = 0
+    for address in recipients:
+        email = senders.OutgoingEmail(
+            to=address,
+            sender=settings.email_from,
+            subject=rendered.subject,
+            html=rendered.html,
+            text=rendered.text,
+            headers={},
+            idempotency_key=str(uuid.uuid4()),
+        )
+        try:
+            senders.get_email_sender().send(email)
+        except senders.SendError as exc:
+            log.warning("metrics.report_failed", error_type=exc.error_type)
+            continue
+        sent += 1
+    return sent

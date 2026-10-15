@@ -236,3 +236,27 @@ def find_invitation_by_token(session: Session, token_hash: str) -> Invitation | 
     return session.scalars(
         select(Invitation).where(Invitation.token_hash == token_hash)
     ).one_or_none()
+
+
+def users_created_between(
+    session: Session, *, start: datetime, end: datetime
+) -> list[User]:
+    """Users whose row was created from `start` (inclusive) to `end` (exclusive)."""
+    return list(
+        session.scalars(
+            select(User)
+            .where(User.created_at >= start, User.created_at < end)
+            .order_by(User.created_at, User.id)
+        )
+    )
+
+
+def user_memberships(
+    session: Session, *, user_ids: Collection[uuid.UUID]
+) -> list[Membership]:
+    """Every membership of the given users, in any business."""
+    if not user_ids:
+        return []
+    return list(
+        session.scalars(select(Membership).where(Membership.user_id.in_(user_ids)))
+    )

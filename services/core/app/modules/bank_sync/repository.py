@@ -1,8 +1,8 @@
 import uuid
 from collections.abc import Sequence
-from datetime import date
+from datetime import date, datetime
 
-from sqlalchemy import delete, select, tuple_
+from sqlalchemy import delete, func, select, tuple_
 from sqlalchemy.orm import Session
 
 from app.modules.bank_sync.models import BankAccount, BankConnection, BankTransaction
@@ -280,5 +280,14 @@ def get_connection(
         select(BankConnection).where(
             BankConnection.business_id == business_id,
             BankConnection.id == connection_id,
+        )
+    )
+
+
+def first_connection_at(session: Session, *, business_id: uuid.UUID) -> datetime | None:
+    """When the business's oldest current connection was created; None without one."""
+    return session.scalar(
+        select(func.min(BankConnection.created_at)).where(
+            BankConnection.business_id == business_id
         )
     )

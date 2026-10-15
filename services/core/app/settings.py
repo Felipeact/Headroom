@@ -48,6 +48,14 @@ class Settings(BaseSettings):
     api_public_url: str
     # Clerk Backend API key: the API reads a recipient's address from Clerk at send time.
     clerk_secret_key: str
+    # The weekly metrics report (spec 32). All optional: with no recipients the job sends
+    # nothing, and with no PostHog settings the two figures that come from PostHog read
+    # "unavailable". `posthog_app_host` is the region's app host (`https://us.posthog.com`),
+    # not the ingestion host the web app sends events to.
+    posthog_app_host: str | None = None
+    posthog_project_id: str | None = None
+    posthog_personal_api_key: str | None = None
+    metrics_report_recipients: Annotated[list[str], NoDecode] = []
 
     @model_validator(mode="after")
     def require_resend_key(self) -> "Settings":
@@ -75,6 +83,25 @@ class Settings(BaseSettings):
         # `PLAID_WEBHOOK_URL=` copied from .env.example means "no webhook", not "".
         if isinstance(value, str) and not value.strip():
             return None
+        return value
+
+    @field_validator(
+        "posthog_app_host",
+        "posthog_project_id",
+        "posthog_personal_api_key",
+        mode="before",
+    )
+    @classmethod
+    def empty_posthog_setting_is_unset(cls, value: object) -> object:
+        if isinstance(value, str) and not value.strip():
+            return None
+        return value
+
+    @field_validator("metrics_report_recipients", mode="before")
+    @classmethod
+    def split_recipients(cls, value: object) -> object:
+        if isinstance(value, str):
+            return [address.strip() for address in value.split(",") if address.strip()]
         return value
 
     @field_validator("clerk_authorized_parties", mode="before")

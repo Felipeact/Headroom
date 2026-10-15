@@ -515,6 +515,7 @@ def test_registered_in_jobs() -> None:
     assert names == [
         "nightly_bank_sync",
         "forecast_accuracy",
+        "weekly_metrics",
         "weekly_digest",
         "email_retries",
     ]

@@ -1199,3 +1199,18 @@ def disconnect_bank(
             relabeled=relabeled,
         ),
     )
+
+
+def first_connection_times(
+    session: Session, *, business_ids: Iterable[uuid.UUID]
+) -> dict[uuid.UUID, datetime]:
+    """When each business first connected a bank, for the businesses that have one.
+
+    For spec 32's activation figure. Disconnecting deletes a connection (AD-064), so a
+    business that disconnected its only bank is absent.
+    """
+    found = {
+        business_id: repository.first_connection_at(session, business_id=business_id)
+        for business_id in business_ids
+    }
+    return {b: created for b, created in found.items() if created is not None}
