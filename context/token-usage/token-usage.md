@@ -95,3 +95,4 @@ Context used per request, measured against a context window of about 250,000 tok
 | Spec 28: the-judge review and fixes (F1, F3) | ~30,000 (~12%) | High (smart zone) |
 | Spec 29: alert emails (plan) | ~140,000 (~56%) | Medium (attention degrades) |
 | Audit: missed steps across Done specs 01-28 | ~110,000 (~44%) | Medium (attention degrades) |
+| Re-audit: specs 01-28 at HEAD (all suites, sandbox proofs, e2e), .env.example quoting fix | ~95,000 (~38%) | High (smart zone) |
