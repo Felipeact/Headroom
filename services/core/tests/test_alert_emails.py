@@ -16,6 +16,7 @@ from app.modules.accounts.models import Business
 from app.modules.alerts import service as alerts_service
 from app.modules.alerts.models import Alert, AlertItem
 from app.modules.bank_sync.models import BankAccount
+from app.modules.notifications import sample_alert
 from app.modules.notifications import service as notifications_service
 from app.modules.notifications.models import EmailDelivery
 from tests.alert_email_support import DANA, SampleEmail, send_sample
@@ -429,3 +430,33 @@ def test_no_real_clerk_in_tests() -> None:
     users = clerk.get_clerk_users()
     assert not isinstance(users, clerk.BackendClerkUsers)
     assert users.get("user_anything") is None
+
+
+def test_non_cad_fails_one_delivery(mail: Mail) -> None:
+    """Door 4: a currency other than CAD fails that delivery; the next one still sends."""
+    bad = mail.user(email="bad@example.test")
+    good = mail.user(email="good@example.test")
+    ids = []
+    for user_id, currency in ((bad, "USD"), (good, "CAD")):
+        with get_sessionmaker()() as session:
+            ids.append(
+                notifications_service.request_email(
+                    session,
+                    dedup_key=f"alert:non-cad:{currency}",
+                    user_id=user_id,
+                    business_id=mail.business_id,
+                    kind="alert",
+                    template="alert",
+                    params={**sample_alert.SAMPLE, "currency": currency},
+                    reason="You're getting this email because you're an owner.",
+                )
+            )
+            session.commit()
+
+    for delivery_id in ids:
+        assert delivery_id is not None
+        notifications_service.deliver(delivery_id)
+
+    assert mail.deliveries(bad)[0].state == "failed"
+    assert mail.deliveries(good)[0].state == "sent"
+    assert [email.to for email in mail.sender.sent] == ["good@example.test"]

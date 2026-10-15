@@ -176,8 +176,9 @@ def _attempt(session: Session, delivery: EmailDelivery) -> Outcome:
                 mailing_address=settings.email_mailing_address,
             ),
         )
-    except TemplateError as exc:
-        # A row that cannot render never will; failing it keeps the queue behind it moving.
+    except (TemplateError, ValueError) as exc:
+        # A row that cannot render never will (a bad template, or a currency the `money`
+        # filter refuses); failing it keeps the queue behind it moving.
         return _failed(delivery, type(exc).__name__, retryable=False)
     email = senders.OutgoingEmail(
         to=contact.email,
