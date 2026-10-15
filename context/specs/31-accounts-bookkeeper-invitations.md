@@ -1,7 +1,7 @@
 # Spec 31: Bookkeeper invitations
 
 - **Milestone:** 6, emails and bookkeepers
-- **Status:** Not started
+- **Status:** In progress
 - **Depends on:** 11, 28
 
 ## Goal
