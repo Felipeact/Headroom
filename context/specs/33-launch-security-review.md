@@ -1,7 +1,7 @@
 # Spec 33: Security review
 
 - **Milestone:** 7, production
-- **Status:** Not started
+- **Status:** In progress
 - **Depends on:** 17, 20, 27, 29, 30, 31, 32
 
 ## Goal

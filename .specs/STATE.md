@@ -135,8 +135,8 @@
 
 ## Handoff
 
-**Feature**: none in progress; specs 30, 31 and 32 are Done (2026-10-15)
-**Where**: verification reports pass `validate_verification.py` (30 and 32 round 2, 31 round 4); C27, C33 and C34 rest on the user's confirmations (AD-126, AD-127, C33 note)
-**Next step**: check that Railway's `jobs.RESEND_API_KEY` reference points at a real api variable before go-live (the metrics email is sent by the jobs process)
-**Blockers**: none
+**Feature**: spec 33 (security review) In progress; checks C1-C14, C16-C26, C28 green locally (API suite 1108 passed on an embedded Postgres); gated: C15 signed-in screens, C27 (7 of 8 services have no 2FA yet), C29 rehearsal
+**Where**: `.specs/features/33-launch-security-review/` (plan, checks), `context/security/` (rules, access, incident-response); nothing committed
+**Next step**: rehearsal on 2026-10-16 (user's choice, tabletop on staging, ~1 h); after it write `context/security/rehearsal-2026-10-16.md`, set `Last rehearsed:` in incident-response.md, then AD-128..AD-133 for the six doors, Roadmap, token-usage file, Verifier, `/the-judge`
+**Blockers**: `test_recipients` fails only because this machine's `.env.local` sets METRICS_REPORT_RECIPIENTS; `.env.example` still carries the user's uncommitted `EMAIL_SENDER=resend`; local API tests need `uv run --with pgserver` Postgres (no Docker)
 **Branch**: development
