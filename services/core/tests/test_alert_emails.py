@@ -9,6 +9,7 @@ from sqlalchemy import select
 
 from app import events, subscriptions
 from app.db import get_sessionmaker
+from app.log import configure_logging
 from app.modules.accounts import clerk
 from app.modules.accounts import repository as accounts_repository
 from app.modules.accounts.models import Business
@@ -204,6 +205,7 @@ def test_not_open_skipped(
             )
         )
         session.commit()
+    configure_logging()
     capsys.readouterr()
 
     notifications_service.email_alert(alert_event("alert.created", dismissed, alert.id))
@@ -229,6 +231,7 @@ def test_foreign_alert_skipped(
     check(a)
     alert = the_alert(a)
     before = len(deliveries())
+    configure_logging()
     capsys.readouterr()
     stranger = uuid.uuid4()
 
@@ -274,6 +277,7 @@ def test_requested_logged(
     """C9."""
     business_id = owned(mail, fake)
     second_owner(mail, business_id, "sam@example.test")
+    configure_logging()
     capsys.readouterr()
     check(business_id)
     alert = the_alert(business_id)
