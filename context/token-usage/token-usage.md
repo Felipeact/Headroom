@@ -96,3 +96,6 @@ Context used per request, measured against a context window of about 250,000 tok
 | Spec 29: alert emails (plan) | ~140,000 (~56%) | Medium (attention degrades) |
 | Audit: missed steps across Done specs 01-28 | ~110,000 (~44%) | Medium (attention degrades) |
 | Re-audit: specs 01-28 at HEAD (all suites, sandbox proofs, e2e), .env.example quoting fix | ~95,000 (~38%) | High (smart zone) |
+| Spec 29: proofs on local Postgres, C5/C6/C9 log-capture fix, F1 fix (non-CAD render), verifier rounds 1-2 | ~85,000 (~34%) | High (smart zone) |
+| Spec 29: verifier sub-agent, round 1 (separate context) | ~113,000 (~45%) | Medium (attention degrades) |
+| Spec 29: verifier sub-agent, round 2 (separate context) | ~82,000 (~33%) | High (smart zone) |
