@@ -58,6 +58,22 @@ def _problem(
     )
 
 
+def problem_response(
+    path: str,
+    status: int,
+    detail: str,
+    headers: Mapping[str, str] | None = None,
+) -> JSONResponse:
+    """A problem details response for code that runs before routing (spec 33)."""
+    problem = ProblemDetails(
+        title=_phrase(status),
+        status=status,
+        detail=detail,
+        instance=TOKEN_PATTERN.sub(REDACTED, path),
+    )
+    return _problem(problem, headers)
+
+
 def _http_exception(request: Request, exc: Exception) -> Response:
     assert isinstance(exc, HTTPException)
     if exc.status_code in {HTTPStatus.NO_CONTENT, HTTPStatus.NOT_MODIFIED}:

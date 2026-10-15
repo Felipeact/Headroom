@@ -24,7 +24,9 @@ from app.modules.notifications.api import (
 )
 from app.monitoring import init_sentry
 from app.problems import ProblemDetails, install_problem_handlers
-from app.settings import get_settings
+from app.ratelimit import PublicRouteLimit
+from app.security import SecurityMiddleware
+from app.settings import docs_enabled, get_settings
 
 log = structlog.get_logger(__name__)
 
@@ -48,8 +50,21 @@ async def lifespan(app: FastAPI) -> AsyncIterator[None]:
     yield
 
 
-app = FastAPI(title="Headroom API", lifespan=lifespan)
+# /docs, /redoc and /openapi.json hand a scanner the route list, so they exist only when
+# API_DOCS_ENABLED=true (spec 33, door 6). `app.openapi()` still works for the export.
+_docs = docs_enabled()
+app = FastAPI(
+    title="Headroom API",
+    lifespan=lifespan,
+    docs_url="/docs" if _docs else None,
+    redoc_url="/redoc" if _docs else None,
+    openapi_url="/openapi.json" if _docs else None,
+)
 install_problem_handlers(app)
+# Added first = inner. Security is outermost so every answer, a refusal included, carries
+# the headers; the origin rule runs before anything else (spec 33).
+app.add_middleware(PublicRouteLimit)
+app.add_middleware(SecurityMiddleware)
 
 # Every /v1 route requires a verified Clerk session token: module routers go in here,
 # so a new route cannot become public by forgetting a dependency (spec 10, AD-022).

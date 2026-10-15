@@ -117,6 +117,16 @@ def _no_real_clerk(monkeypatch: pytest.MonkeyPatch) -> None:
     monkeypatch.setattr(clerk, "get_clerk_users", lambda: _NoClerkUsers())
 
 
+@pytest.fixture(autouse=True)
+def _fresh_rate_limits() -> Iterator[None]:
+    """Spec 33: no test inherits another's request counts (every TestClient is one IP)."""
+    from app import ratelimit
+
+    ratelimit.reset()
+    yield
+    ratelimit.reset()
+
+
 @pytest.fixture(scope="session")
 def migrated_database() -> Iterator[None]:
     """A fresh database at Alembic head, used by the app for the whole session."""

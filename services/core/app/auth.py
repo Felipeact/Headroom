@@ -5,10 +5,11 @@ from typing import Annotated, Literal
 
 import jwt
 import structlog
-from fastapi import Depends, HTTPException, status
+from fastapi import Depends, HTTPException, Request, status
 from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
 from sqlalchemy.orm import Session
 
+from app import ratelimit
 from app.db import get_session
 from app.modules.accounts import service as accounts
 from app.modules.accounts.models import User
@@ -26,9 +27,23 @@ log = structlog.get_logger(__name__)
 bearer = HTTPBearer(auto_error=False)
 
 
-def _rejected(reason: Reason) -> HTTPException:
+def _ip(request: Request) -> str:
+    client = request.client
+    return ratelimit.client_ip(request.headers, client.host if client else "unknown")
+
+
+def _route(request: Request) -> str:
+    """The request path with each path parameter's value replaced by its name."""
+    path = request.url.path
+    for name, value in request.path_params.items():
+        path = path.replace(str(value), "{" + name + "}")
+    return path
+
+
+def _rejected(reason: Reason, request: Request) -> HTTPException:
     # One response for every cause; only the log says which. Never log the token.
     log.info("auth.rejected", reason=reason)
+    ratelimit.count_rejected_authentication(_ip(request))
     return HTTPException(
         status.HTTP_401_UNAUTHORIZED,
         detail=AUTHENTICATION_REQUIRED,
@@ -37,11 +52,17 @@ def _rejected(reason: Reason) -> HTTPException:
 
 
 def verified_clerk_user_id(
+    request: Request,
     credentials: Annotated[HTTPAuthorizationCredentials | None, Depends(bearer)],
 ) -> str:
-    """Verify the Clerk session token in `Authorization: Bearer` and return its `sub`."""
+    """Verify the Clerk session token in `Authorization: Bearer` and return its `sub`.
+
+    Also the one place `/v1` is rate limited (spec 33): a client IP that keeps failing
+    authentication is refused, and a verified user gets 300 requests a minute.
+    """
+    ratelimit.check_ip_not_blocked(_ip(request), _route(request))
     if credentials is None:
-        raise _rejected("missing")
+        raise _rejected("missing", request)
     settings = get_settings()
     try:
         claims = jwt.decode(
@@ -52,16 +73,17 @@ def verified_clerk_user_id(
             leeway=LEEWAY_SECONDS,
         )
     except jwt.ExpiredSignatureError:
-        raise _rejected("expired") from None
+        raise _rejected("expired", request) from None
     except jwt.InvalidTokenError:
-        raise _rejected("invalid") from None
+        raise _rejected("invalid", request) from None
     azp = claims.get("azp")
     parties = settings.clerk_authorized_parties
     if parties and azp is not None and azp not in parties:
-        raise _rejected("unauthorized_party")
+        raise _rejected("unauthorized_party", request)
     sub = claims["sub"]
     if not isinstance(sub, str) or not sub:
-        raise _rejected("invalid")
+        raise _rejected("invalid", request)
+    ratelimit.hit_user(sub, _route(request))
     return sub
 
 

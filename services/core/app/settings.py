@@ -136,3 +136,19 @@ class Settings(BaseSettings):
 @lru_cache
 def get_settings() -> Settings:
     return Settings()
+
+
+class DocsSettings(BaseSettings):
+    """Only the docs switch (spec 33, door 6).
+
+    The routes are chosen when `app.main` is imported, which must work without the other
+    settings (AD-001), so this reads nothing else.
+    """
+
+    model_config = SettingsConfigDict(env_file=".env.local", extra="ignore")
+
+    api_docs_enabled: bool = False
+
+
+def docs_enabled() -> bool:
+    return DocsSettings().api_docs_enabled

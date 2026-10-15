@@ -105,7 +105,7 @@ docker compose up -d postgres
 cp .env.example .env.local            # point DATABASE_URL at the local database; use sandbox and test keys only
 uv sync
 uv run alembic upgrade head
-uv run fastapi dev app/main.py        # API docs at http://localhost:8000/docs
+uv run fastapi dev app/main.py        # API docs at http://localhost:8000/docs (set API_DOCS_ENABLED=true in .env.local)
 
 # Web (from frontend, in a second terminal)
 cp .env.example .env.local
