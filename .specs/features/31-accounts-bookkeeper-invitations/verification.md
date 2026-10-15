@@ -3,7 +3,7 @@
 **Verdict**: FAIL
 **Profile**: light
 **Diff range**: e8189be^..HEAD (7c34c42)
-**Round**: 1 - full
+**Round**: 3 - scoped (rounds 1 and 2 kept below; C29 superseded by Round 3)
 **Verifier**: independent sub-agent (author != verifier)
 
 C29 (Playwright) could not be run here: it needs a live web app, API and real Clerk test users, and none was running. Every other check (28 of 29) is proven with a located assertion. One frontend test is flaky, noted under Findings.
@@ -58,3 +58,58 @@ Proofs run at HEAD from `services/core` with DATABASE_URL set to the local Postg
 ## Gate
 
 `uv run pytest tests/test_invitations.py tests/test_bookkeeper_access.py tests/test_bookkeeper_alert_emails.py tests/test_invitation_email.py tests/test_run_due.py -v` - 40 passed, 0 failed; `npx vitest run members-section invite-page` - 17 passed (one earlier run: 1 failed); `tests/settings-nav.test.tsx` - 5 passed.
+
+## Round 2 - scoped
+
+Verified at 88ab052. Scope: C29 (the only row that was not PASS) and the flaky `invite-page` test. The other 28 checks are carried from round 1 (verified at 7c34c42).
+
+Environment: local Postgres on 127.0.0.1:58513 was already up; `uv run --no-sync alembic upgrade head` ran clean. A `next dev --webpack` already served localhost:3000 (I could not confirm its API_URL: my attempt to start a second one was refused because the port was in use, and I did not kill the existing process). Playwright started the API on 8100 itself (`webServer` in `frontend/playwright.config.ts`) with `EMAIL_SENDER=console`.
+
+Flaky-fix proof: `npx vitest run invite-page` from `frontend`, 5 runs, each `Tests 10 passed (10)`. The fix is the `waitFor` at `frontend/tests/invite-page.test.tsx:85`: `await waitFor(() => expect(screen.getByRole('button', { name: 'Accept invitation' })).toBeTruthy())`. Five greens is consistent with the fix; it cannot prove a rare flake gone.
+
+C29 proof: `EMAIL_SENDER=console npx playwright test members.spec.ts invite.spec.ts --reporter=line --timeout=90000` from `frontend`, run three times:
+
+| Run | Result | Failed tests |
+| --- | --- | --- |
+| 1 | 7 passed, 5 failed | `invite.spec.ts:36, :52, :62, :70, :76` |
+| 2 | 10 passed, 2 failed | `invite.spec.ts:36, :70` |
+| 3 | 11 passed, 1 failed | `members.spec.ts:31` |
+
+Every test passed in at least one run, but no single run was 12 of 12 (the author reports one run of 12 passed; I did not reproduce it). Every failure is the same: "Test timeout of 90000ms exceeded while running beforeEach hook", stuck at `frontend/e2e/onboarding-steps.ts:7` (`getByRole('option', { name: 'Ontario' }).click()`, the province select on step 2 of onboarding, a helper from an earlier spec). The failing step is in the shared sign-in and onboarding set-up, not in the members or invite screens. That is consistent with dev-mode cold compile and hydration, but I did not prove the cause.
+
+| Check | Claim | Proof run | Evidence | Result |
+| --- | --- | --- | --- | --- |
+| C29 | Playwright on `/settings/members` and `/invite/{token}`: states, 375 px, keyboard, touch targets, axe | the three runs above | `frontend/e2e/members.spec.ts` and `frontend/e2e/invite.spec.ts` (12 tests); runs 1-3 each had 1 to 5 failures at `frontend/e2e/onboarding-steps.ts:7`; no run was fully green | FAIL (superseded in round 3) |
+
+The verdict stays FAIL on C29 alone. One clean 12 of 12 run, ideally against a freshly started webpack dev server or a production build, clears it. A likely fix is to wait for the combobox to be hydrated before clicking in `completeBusinessStep`; that file is outside this spec.
+
+## Gate (round 2)
+
+`npx vitest run invite-page` x5 - 10 passed each; `npx playwright test members.spec.ts invite.spec.ts` x3 - 7, 10 and 11 of 12 passed.
+
+## Round 3 - scoped
+
+Verified at 88ab052 plus the author's uncommitted changes. Scope: C29 only; the other 28 checks are carried from round 1 and round 2. Environment: production build `next start` on localhost:3000 (`curl /sign-in` returned 200, not touched by me), Postgres 127.0.0.1:58513 reachable, API started by Playwright on 8100.
+
+Proof run: `DATABASE_URL=postgresql+psycopg://headroom:localdev@127.0.0.1:58513/headroom EMAIL_SENDER=console npx playwright test members.spec.ts invite.spec.ts --reporter=line --timeout=90000` from `frontend`.
+
+| Run | Result | Failed tests |
+| --- | --- | --- |
+| 1 | 12 passed (22.6s) | none |
+| 2 | 11 passed, 1 failed | `members.spec.ts:53` phone width, keyboard and axe |
+| 3 (extra, whole suite) | 11 passed, 1 failed | `members.spec.ts:53` (same) |
+| 4 (extra, members.spec.ts alone) | 5 passed, 1 failed | `members.spec.ts:53` (same) |
+
+The dev-mode onboarding flake at `frontend/e2e/onboarding-steps.ts:7` did not recur: the production build fixed it. A different failure now appears in 3 of 4 runs: `members.spec.ts:72-73` (`const axe = await new AxeBuilder({ page }).analyze(); expect(axe.violations).toEqual([])`) reports one `color-contrast` violation (serious): the sonner toast text "Invitation sent to pat@example.test" (`.cn-toast`), foreground #b1b3b4 on #f8f7f3, ratio 1.96, expected 4.5. The scan runs straight after `members.spec.ts:70` (`toBeVisible()` of the toast text), while the toast is still fading in, so the measured colour is partly transparent. Whether this is only a timing flake of the test or a real low-contrast toast was not proven; the settled toast colour was not measured.
+
+Located assertions (all 12 tests exist and each passed in run 1): `members.spec.ts:33,35,40-42` (members heading, one member row, invitation toast, one pending invitation, empty state gone), `:57-71` (375 px overflow `<= 0`, send button and rows height `>= 44`, keyboard Tab then Enter), `:72-73` (axe, no violations); `invite.spec.ts:48-49` (accept gives the Email preferences link, no Members link), `:67` (expired link has no Accept button), `:81-87` (phone width, axe).
+
+| Check | Claim | Proof run | Evidence | Result |
+| --- | --- | --- | --- | --- |
+| C29 | Playwright on `/settings/members` and `/invite/{token}`: states, 375 px, keyboard, touch targets, axe | runs 1-4 above | run 1 12 of 12; runs 2-4 each failed `frontend/e2e/members.spec.ts:73` on `color-contrast` of the toast (1.96) | FAIL (not green on repeat; axe contrast of the success toast) |
+
+The verdict stays FAIL on C29 alone; the criterion needs two clean runs and only one was clean. Likely fixes, both outside what I may edit: wait for the toast animation to finish before the axe scan (or scan a region that excludes `.cn-toast`), or, if the settled toast is also under 4.5:1, fix its colour (design files need approval). Check the settled colour first.
+
+## Gate (round 3)
+
+`npx playwright test members.spec.ts invite.spec.ts` x2 as required: 12 passed, then 11 passed with 1 failed. Two extra runs reproduced that one failure.

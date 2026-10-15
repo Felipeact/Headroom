@@ -1,9 +1,9 @@
 # Spec 32: Analytics and the weekly metrics report verification
 
-**Verdict**: FAIL
+**Verdict**: PASS
 **Profile**: light
 **Diff range**: 856e7eb..HEAD (45c34c3)
-**Round**: 1 - full
+**Round**: 2 - scoped (round 1 kept below; C33 and C34 superseded by Round 2)
 **Verifier**: independent sub-agent (author != verifier)
 
 Why FAIL: C1-C32 pass; C33 and C34 are GATED and unproven, and the gate does not accept a PASS over a non-PASS row.
@@ -48,8 +48,8 @@ Web proofs ran from `frontend` as one `npx vitest run` over the five files (41 p
 | C30 | `JOBS` order; `metrics_reports` count; no shared counts key | pytest `test_registered_in_jobs` passed | `test_weekly_metrics_job.py:122-128` - names equal the five jobs in order; `:132` `summary["weekly_metrics"] == {"metrics_reports": 2}`; `:134` `len(keys) == len(set(keys))` | PASS |
 | C31 | `app/metrics.py` imports only `service` modules; no table or event | pytest `test_imports_only_services` passed | `test_metrics.py:178,180,182-183` - names equal `["service"]`, `parts[-1] == "service"`, no `Base` subclass, `"subscribe(" not in source` | PASS |
 | C32 | settings load without the four; recipients parse to a list of 2; one `get_settings()` | pytest `test_metrics_settings.py`, 4 tests passed | `test_metrics_settings.py:33-36` - the three settings `is None`, recipients `== []`; `:41` `Settings().metrics_report_recipients == [...]`; `:59` `module.get_settings is get_settings` | PASS |
-| C33 | `.railway/railway.ts` lists the variables; `railway config plan --detailed-exit-code` exits 0 after `apply` | NOT RUN - gated on the user's go-ahead | Static read only: `.railway/railway.ts:57-60` api `preserve()`, `:79-80` web `POSTHOG_KEY`/`POSTHOG_HOST` `preserve()`, `:114-117` jobs `${{api.NAME}}`. The plan exit code is not proven | GATED |
-| C34 | live PostHog walk-through, `posthog_events.py` exits 0 | NOT RUN - gated on credentials and the user's staging walk-through; PostHog was not called | script present at `.specs/features/32-launch-analytics-and-metrics/posthog_events.py`; nothing executed | GATED |
+| C33 | `.railway/railway.ts` lists the variables; `railway config plan --detailed-exit-code` exits 0 after `apply` | NOT RUN - gated on the user's go-ahead | Static read only: `.railway/railway.ts:57-60` api `preserve()`, `:79-80` web `POSTHOG_KEY`/`POSTHOG_HOST` `preserve()`, `:114-117` jobs `${{api.NAME}}`. The plan exit code is not proven | GATED in round 1, superseded: PASS by attestation in round 2 |
+| C34 | live PostHog walk-through, `posthog_events.py` exits 0 | NOT RUN - gated on credentials and the user's staging walk-through; PostHog was not called | script present at `.specs/features/32-launch-analytics-and-metrics/posthog_events.py`; nothing executed | GATED in round 1, superseded: PASS by attestation in round 2 |
 
 ## Coverage
 
@@ -77,3 +77,23 @@ Light profile: sets are not recomputed. The checks' own join was spot-read again
 ## Gate
 
 `npx vitest run` (5 files) - 41 passed, 0 failed; `uv run pytest` (5 feature files) - 25 passed, 0 failed; full `services/core` suite - 1060 passed, 28 failed (all 28 in the known outside-the-feature list above).
+
+## Round 2 - scoped
+
+Verified at 88ab052. Scope: C33 and C34, the two rows that were not PASS. C1-C32 are carried from round 1 (verified at 45c34c3); no proof was re-run for them. I did not run Railway or call PostHog.
+
+| Check | Claim | Proof run | Evidence | Result |
+| --- | --- | --- | --- | --- |
+| C33 | `.railway/railway.ts` lists the variables; `railway config plan --detailed-exit-code` exits 0 after `apply` | not run (the user's session); static read plus the user's recorded result | `.railway/railway.ts:57-60` api `POSTHOG_APP_HOST`, `POSTHOG_PROJECT_ID`, `POSTHOG_PERSONAL_API_KEY`, `METRICS_REPORT_RECIPIENTS` all `preserve()`; `.railway/railway.ts:79-80` web `POSTHOG_KEY`, `POSTHOG_HOST` `preserve()`; `.railway/railway.ts:114-117` jobs the same four as `"${{api.NAME}}"`. `.specs/STATE.md:141` (Handoff): "C33 done 2026-10-15 (variables set on api and web, `railway config apply --yes`, then `config plan --detailed-exit-code` exit 0 ...)" | PASS (by attestation of the user's session; I did not run railway) |
+| C34 | live PostHog walk-through, `posthog_events.py` exits 0 | not run; PostHog not called | `.specs/STATE.md:134` AD-127: the user went through the eight steps on staging against the real PostHog project and confirmed the eight events arrive (user statement 2026-10-15); `posthog_events.py` output was not shown to the agent. The script exists at `.specs/features/32-launch-analytics-and-metrics/posthog_events.py` | PASS (by user attestation) |
+
+Findings carried, not blocking:
+
+1. Both rows are attestations. The `plan` exit code and the claim that all eight events arrive with only `business_id`, `alert_id`, `role` keys were not seen by the Verifier. C34's "exits 0" clause is replaced by the user's confirmation (AD-127).
+2. `.specs/STATE.md:141` records that `railway config apply` also created `jobs.RESEND_API_KEY`, a reference to an api variable that does not exist. The jobs process sends the metrics email, so this is worth a look before go-live.
+3. Round 1 notes P1, P2 and N1-N4 stand. Open items from STATE: set `METRICS_REPORT_RECIPIENTS`, push `development`.
+4. The round 1 Result cells of C33 and C34 were annotated "superseded in round 2" in place; nothing else in round 1 was changed except the Verdict and Round header lines.
+
+## Gate (round 2)
+
+No proofs re-run (the two rows are attestations). The round 1 gate stands: `npx vitest run` (5 files) 41 passed; `uv run pytest` (5 feature files) 25 passed.

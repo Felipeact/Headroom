@@ -67,7 +67,10 @@ test.describe('members and invite: members section', () => {
     await tabTo(page, input)
     await input.fill('pat@example.test')
     await page.keyboard.press('Enter')
-    await expect(page.getByText('Invitation sent to pat@example.test')).toBeVisible()
+    const toast = page.getByText('Invitation sent to pat@example.test')
+    await expect(toast).toBeVisible()
+    // axe measures colour while the toast is still fading in; scan the settled toast.
+    await expect(page.locator('[data-sonner-toast]')).toHaveCSS('opacity', '1')
 
     const axe = await new AxeBuilder({ page }).analyze()
     expect(axe.violations).toEqual([])
