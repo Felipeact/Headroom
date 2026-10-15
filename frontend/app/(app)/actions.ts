@@ -4,6 +4,7 @@ import * as Sentry from "@sentry/nextjs"
 import { revalidatePath } from "next/cache"
 import { authHeaders } from "@/lib/api/auth"
 import { api } from "@/lib/api/client"
+import { capture } from "@/lib/analytics"
 
 export type DismissResult = { error: null } | { error: "dismissFailed" }
 
@@ -23,6 +24,7 @@ export async function dismissAlert(businessId: string, alertId: string): Promise
     Sentry.captureException(error)
     return { error: "dismissFailed" }
   }
+  await capture("alert_dismissed", { business_id: businessId, alert_id: alertId })
   revalidatePath("/")
   return { error: null }
 }

@@ -4,6 +4,7 @@ import * as Sentry from "@sentry/nextjs"
 import { redirect } from "next/navigation"
 import { authHeaders } from "@/lib/api/auth"
 import { api } from "@/lib/api/client"
+import { capture } from "@/lib/analytics"
 
 export type ConnectBankError = "alreadyConnected" | "connectFailed"
 export type ConnectBankResult = { error: ConnectBankError }
@@ -34,7 +35,10 @@ export async function connectBank(
     return { error: "connectFailed" }
   }
 
-  if (status === 201) redirect(RETURNS.includes(returnTo) ? returnTo : "/onboarding/accounts")
+  if (status === 201) {
+    await capture("bank_connected", { business_id: businessId })
+    redirect(RETURNS.includes(returnTo) ? returnTo : "/onboarding/accounts")
+  }
   if (status === 409) return { error: "alreadyConnected" }
   Sentry.captureMessage(`POST /v1/businesses/{business_id}/bank/connections returned ${status}`)
   return { error: "connectFailed" }

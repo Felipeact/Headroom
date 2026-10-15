@@ -3,6 +3,7 @@
 import * as Sentry from "@sentry/nextjs"
 import { authHeaders } from "@/lib/api/auth"
 import { api } from "@/lib/api/client"
+import { capture } from "@/lib/analytics"
 
 export type SaveMinimumBalanceResult = { error: "saveFailed" | null }
 
@@ -18,7 +19,10 @@ export async function saveMinimumBalance(
       body: { amount_cents: amountCents },
       headers: await authHeaders(),
     })
-    if (response.status === 200) return { error: null }
+    if (response.status === 200) {
+      await capture("minimum_balance_set", { business_id: businessId })
+      return { error: null }
+    }
     Sentry.captureMessage(`PUT /v1/businesses/{business_id}/minimum-balance returned ${response.status}`)
   } catch (error) {
     Sentry.captureException(error)

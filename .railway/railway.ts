@@ -52,6 +52,12 @@ export default defineRailway((ctx) => {
       WEB_URL: preserve(),
       API_PUBLIC_URL: preserve(),
       CLERK_SECRET_KEY: preserve(),
+      // The weekly metrics report (spec 32), set with `railway variable set`: the region's PostHog
+      // app host, the project and a personal API key with Query Read, and the report recipients.
+      POSTHOG_APP_HOST: preserve(),
+      POSTHOG_PROJECT_ID: preserve(),
+      POSTHOG_PERSONAL_API_KEY: preserve(),
+      METRICS_REPORT_RECIPIENTS: preserve(),
     },
   });
 
@@ -68,6 +74,10 @@ export default defineRailway((ctx) => {
       NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY: preserve(),
       NEXT_PUBLIC_CLERK_SIGN_IN_URL: "/sign-in",
       NEXT_PUBLIC_CLERK_SIGN_UP_URL: "/sign-up",
+      // PostHog (spec 32), set with `railway variable set`: the project token and the region's
+      // ingestion host. Only the web server sends events, so neither is a NEXT_PUBLIC_ variable.
+      POSTHOG_KEY: preserve(),
+      POSTHOG_HOST: preserve(),
     },
   });
 
@@ -100,6 +110,11 @@ export default defineRailway((ctx) => {
       WEB_URL: "${{api.WEB_URL}}",
       API_PUBLIC_URL: "${{api.API_PUBLIC_URL}}",
       CLERK_SECRET_KEY: "${{api.CLERK_SECRET_KEY}}",
+      // Spec 32: the Tuesday metrics report reads PostHog and emails the recipients.
+      POSTHOG_APP_HOST: "${{api.POSTHOG_APP_HOST}}",
+      POSTHOG_PROJECT_ID: "${{api.POSTHOG_PROJECT_ID}}",
+      POSTHOG_PERSONAL_API_KEY: "${{api.POSTHOG_PERSONAL_API_KEY}}",
+      METRICS_REPORT_RECIPIENTS: "${{api.METRICS_REPORT_RECIPIENTS}}",
     },
   });
 

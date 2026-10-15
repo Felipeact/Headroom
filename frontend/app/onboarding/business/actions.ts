@@ -4,6 +4,7 @@ import * as Sentry from "@sentry/nextjs"
 import { redirect } from "next/navigation"
 import { authHeaders } from "@/lib/api/auth"
 import { api } from "@/lib/api/client"
+import { capture } from "@/lib/analytics"
 import type {
   BusinessErrorKey,
   BusinessField,
@@ -37,20 +38,25 @@ function fieldErrors(errors: FieldError[]): BusinessFieldErrors | null {
 // user already owns one (a repeated submit, or another tab), so it lands on the dashboard.
 export async function createBusiness(input: CreateBusinessInput): Promise<CreateBusinessResult> {
   let status: number
+  let businessId: string | undefined
   let errors: FieldError[] = []
   try {
-    const { error, response } = await api.POST("/v1/businesses", {
+    const { data, error, response } = await api.POST("/v1/businesses", {
       body: { name: input.name, province: input.province, time_zone: input.time_zone },
       headers: await authHeaders(),
     })
     status = response.status
+    businessId = data?.id
     if (status === 422 && error && "errors" in error) errors = error.errors
   } catch (error) {
     Sentry.captureException(error)
     return { formError: true }
   }
 
-  if (status === 201) redirect("/onboarding/bank")
+  if (status === 201) {
+    if (businessId) await capture("business_created", { business_id: businessId })
+    redirect("/onboarding/bank")
+  }
   if (status === 409) redirect("/")
   if (status === 422) {
     const mapped = fieldErrors(errors)

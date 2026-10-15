@@ -4,6 +4,7 @@ import * as Sentry from "@sentry/nextjs"
 import { revalidatePath } from "next/cache"
 import { authHeaders } from "@/lib/api/auth"
 import { api } from "@/lib/api/client"
+import { capture } from "@/lib/analytics"
 import type { components } from "@/lib/api/schema"
 
 export type ExpectedPaymentBody = components["schemas"]["ExpectedPaymentBody"]
@@ -41,6 +42,7 @@ export async function createExpectedPayment(businessId: string, body: ExpectedPa
       headers: await authHeaders(),
     })
     if (response.status !== 201) return failed("POST", path, response, error)
+    await capture("expected_payment_added", { business_id: businessId })
     revalidatePath(PAGE)
     revalidatePath(DASHBOARD)
     return { ok: true }
