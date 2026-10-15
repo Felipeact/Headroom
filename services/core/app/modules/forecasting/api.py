@@ -60,7 +60,7 @@ class RecurringPatternList(BaseModel):
     },
 )
 def list_recurring_patterns(
-    member: OwnerDep, session: SessionDep
+    member: MemberDep, session: SessionDep
 ) -> RecurringPatternList:
     return RecurringPatternList(
         items=[
@@ -183,7 +183,7 @@ def _save(
     responses=PAYMENT_ERRORS,
 )
 def list_expected_payments(
-    member: OwnerDep, session: SessionDep, now: NowDep
+    member: MemberDep, session: SessionDep, now: NowDep
 ) -> ExpectedPaymentList:
     return ExpectedPaymentList(
         items=[
@@ -202,7 +202,7 @@ def list_expected_payments(
     responses=WRITE_ERRORS,
 )
 def create_expected_payment(
-    body: ExpectedPaymentBody, member: OwnerDep, session: SessionDep, now: NowDep
+    body: ExpectedPaymentBody, member: MemberDep, session: SessionDep, now: NowDep
 ) -> ExpectedPayment:
     return _save(session, member, now, body, None)
 
@@ -215,7 +215,7 @@ def create_expected_payment(
 def update_expected_payment(
     payment_id: uuid.UUID,
     body: ExpectedPaymentBody,
-    member: OwnerDep,
+    member: MemberDep,
     session: SessionDep,
     now: NowDep,
 ) -> ExpectedPayment:
@@ -283,7 +283,7 @@ class ForecastItemList(BaseModel):
     response_model=Forecast,
     responses=PAYMENT_ERRORS,
 )
-def get_forecast(member: OwnerDep, session: SessionDep, now: NowDep) -> Forecast:
+def get_forecast(member: MemberDep, session: SessionDep, now: NowDep) -> Forecast:
     view = service.latest_forecast(session, business_id=member.business_id, now=now)
     if view is None:
         raise HTTPException(status.HTTP_404_NOT_FOUND, detail=FORECAST_NOT_READY)
@@ -296,7 +296,7 @@ def get_forecast(member: OwnerDep, session: SessionDep, now: NowDep) -> Forecast
     responses=PAYMENT_ERRORS,
 )
 def list_upcoming(
-    member: OwnerDep,
+    member: MemberDep,
     session: SessionDep,
     now: NowDep,
     days: Annotated[int, Query(ge=1, le=MAX_UPCOMING_DAYS)] = UPCOMING_DAYS,
@@ -317,7 +317,7 @@ def list_upcoming(
     responses=PAYMENT_ERRORS,
 )
 def delete_expected_payment(
-    payment_id: uuid.UUID, member: OwnerDep, session: SessionDep
+    payment_id: uuid.UUID, member: MemberDep, session: SessionDep
 ) -> None:
     try:
         service.delete_expected_payment(

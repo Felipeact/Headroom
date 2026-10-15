@@ -233,6 +233,51 @@ def _name(counterparty: str | None, description: str | None) -> str:
     return (description or "").split(",")[0].strip()
 
 
+class InvitationNotSentError(Exception):
+    """The invitation email could not be handed to the provider."""
+
+
+def send_invitation(
+    address: str, business_name: str, inviter_first_name: str | None, token: str
+) -> None:
+    """Email a bookkeeper invitation link, once, straight through the sender (spec 31).
+
+    There is no `email_deliveries` row and no retry: the address is not stored (AD-020),
+    and the footer has no unsubscribe link because the recipient has no account yet.
+    Raises `InvitationNotSentError` when the provider refuses it.
+    """
+    settings = get_settings()
+    inviter = inviter_first_name or "An owner"
+    rendered = rendering.render(
+        "invitation",
+        {"business_name": business_name, "inviter": inviter, "token": token},
+        first_name=None,
+        footer=rendering.Footer(
+            reason=(
+                f"You're getting this email because {inviter} invited you to"
+                f" {business_name} on Headroom."
+            ),
+            preferences_url=None,
+            unsubscribe_url=None,
+            mailing_address=settings.email_mailing_address,
+        ),
+    )
+    email = senders.OutgoingEmail(
+        to=address,
+        sender=settings.email_from,
+        subject=rendered.subject,
+        html=rendered.html,
+        text=rendered.text,
+        headers={},
+        idempotency_key=str(uuid.uuid4()),
+    )
+    try:
+        senders.get_email_sender().send(email)
+    except senders.SendError as exc:
+        log.warning("invitation.email_failed", error_type=exc.error_type)
+        raise InvitationNotSentError from None
+
+
 def alert_params(
     alert: alerts_service.AlertView, *, business_name: str, change: str
 ) -> dict[str, Any]:
@@ -278,7 +323,7 @@ def alert_params(
 
 
 def email_alert(event: events.Event) -> None:
-    """Email every owner of the business about a new or grown cash gap (spec 29).
+    """Email every owner (and each opted-in bookkeeper) of the business about a new or grown cash gap (spec 29).
 
     The handler of `alert.created` and `alert.updated`. In one transaction it records one
     `alert` delivery per owner, keyed `alert:{alert_id}:{notified_shortfall_cents}`, so
@@ -306,17 +351,22 @@ def email_alert(event: events.Event) -> None:
             business_name=business.name,
             change="created" if event.name == ALERT_CREATED else "updated",
         )
-        reason = (
-            "You're getting this email because you're an owner of"
-            f" {business.name} on Headroom."
-        )
-        for user_id in accounts_service.owner_ids(
+        for recipient in accounts_service.alert_recipients(
             session, business_id=event.business_id
         ):
+            role = (
+                "a bookkeeper for"
+                if recipient.role == accounts_service.Role.BOOKKEEPER
+                else "an owner of"
+            )
+            reason = (
+                f"You're getting this email because you're {role}"
+                f" {business.name} on Headroom."
+            )
             delivery_id = request_email(
                 session,
                 dedup_key=f"alert:{alert.id}:{alert.notified_shortfall_cents}",
-                user_id=user_id,
+                user_id=recipient.user_id,
                 business_id=event.business_id,
                 kind="alert",
                 template="alert",

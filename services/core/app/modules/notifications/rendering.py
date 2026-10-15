@@ -41,8 +41,9 @@ WEEKDAYS = ("Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun")
 @dataclass(frozen=True)
 class Footer:
     reason: str
-    preferences_url: str
-    unsubscribe_url: str
+    # None for a one-time email to someone with no preferences, such as an invitation.
+    preferences_url: str | None
+    unsubscribe_url: str | None
     mailing_address: str
 
 

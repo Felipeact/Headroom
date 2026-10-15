@@ -269,7 +269,7 @@ def test_access_denied(monkeypatch: pytest.MonkeyPatch) -> None:
     monkeypatch.setattr(
         accounts_service,
         "get_membership",
-        lambda *_, **__: SimpleNamespace(role="bookkeeper"),
+        lambda *_, **__: SimpleNamespace(role="viewer"),
     )
     for route in ("forecast", "upcoming"):
         response = client.get(path(a.business_id, route), headers=a.caller.headers)

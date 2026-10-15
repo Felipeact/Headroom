@@ -333,12 +333,12 @@ def test_database_constraints_memberships(
     caller: Caller, owner_a: tuple[Caller, str]
 ) -> None:
     a, business_a = owner_a
-    bookkeeper = {
+    viewer = {
         "business_id": uuid.UUID(business_a),
         "user_id": caller.id,
-        "role": "bookkeeper",
+        "role": "viewer",
     }
-    assert "ck_memberships_role" in _violates([(INSERT_MEMBERSHIP, bookkeeper)])
+    assert "ck_memberships_role" in _violates([(INSERT_MEMBERSHIP, viewer)])
 
     other = _good_business()
     second_owner = {"business_id": other["id"], "user_id": a.id, "role": "owner"}

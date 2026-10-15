@@ -1,0 +1,1 @@
+{{ inviter }} invited you to {{ business_name }} on Headroom

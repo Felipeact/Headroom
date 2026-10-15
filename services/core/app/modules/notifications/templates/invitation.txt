@@ -1,0 +1,8 @@
+{% extends "base.txt" %}
+{% block content %}{{ subject }}
+
+{{ inviter }} invited you to see the cash forecast for {{ business_name }} as a bookkeeper. You can view forecasts and alerts and manage expected payments.
+
+Accept the invitation (it expires in 7 days): {{ web_url }}/invite/{{ token }}
+
+Sign in with this email address to accept it.{% endblock %}

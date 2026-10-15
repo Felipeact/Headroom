@@ -3,6 +3,7 @@ from datetime import datetime
 from typing import Literal, get_args
 
 from sqlalchemy import (
+    Boolean,
     CheckConstraint,
     DateTime,
     ForeignKey,
@@ -38,7 +39,7 @@ TimeZone = Literal[
 TIME_ZONES: tuple[str, ...] = get_args(TimeZone)
 
 NAME_MAX_LENGTH = 100
-ROLES = ("owner",)
+ROLES = ("owner", "bookkeeper")
 
 
 def _one_of(column: str, values: tuple[str, ...]) -> str:
@@ -86,7 +87,8 @@ class Business(Base):
 
 
 class Membership(Base):
-    """A user's role in one business. A user owns at most one business."""
+    """A user's role in one business. A user owns at most one business (a bookkeeper may
+    work for many)."""
 
     __tablename__ = "memberships"
     __table_args__ = (
@@ -104,6 +106,40 @@ class Membership(Base):
     )
     user_id: Mapped[uuid.UUID] = mapped_column(ForeignKey("users.id"), primary_key=True)
     role: Mapped[str] = mapped_column(Text)
+    # A bookkeeper's opt-in to this business's alert emails (spec 31). Owners always get them.
+    receive_alert_emails: Mapped[bool] = mapped_column(
+        Boolean, server_default=text("false")
+    )
     created_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True), server_default=func.now()
+    )
+
+
+class Invitation(Base):
+    """An owner's invitation for a bookkeeper (spec 31). It holds hashes, never the address
+    or the token: the address is hashed so only its owner can accept (AD-020)."""
+
+    __tablename__ = "invitations"
+    __table_args__ = (
+        Index(
+            "uq_invitations_pending_business_id_email_hash",
+            "business_id",
+            "email_hash",
+            unique=True,
+            postgresql_where=text("accepted_at IS NULL"),
+        ),
+    )
+
+    id: Mapped[uuid.UUID] = mapped_column(Uuid, primary_key=True, default=uuid.uuid4)
+    business_id: Mapped[uuid.UUID] = mapped_column(ForeignKey("businesses.id"))
+    invited_by_user_id: Mapped[uuid.UUID] = mapped_column(ForeignKey("users.id"))
+    token_hash: Mapped[str] = mapped_column(Text, unique=True)
+    email_hash: Mapped[str] = mapped_column(Text)
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), server_default=func.now()
+    )
+    expires_at: Mapped[datetime] = mapped_column(DateTime(timezone=True))
+    accepted_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
+    accepted_by_user_id: Mapped[uuid.UUID | None] = mapped_column(
+        ForeignKey("users.id")
     )
