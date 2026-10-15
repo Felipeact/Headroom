@@ -47,7 +47,7 @@ test.describe('members and invite: members section', () => {
     await page.getByLabel("Bookkeeper's email address").fill('not-an-email')
     await page.getByRole('button', { name: 'Send invitation' }).click()
 
-    await expect(page.getByRole('alert')).toHaveText('Enter a valid email address.')
+    await expect(page.getByTestId('shell').getByRole('alert')).toHaveText('Enter a valid email address.')
   })
 
   test('members and invite: phone width, keyboard and axe', async ({ page }) => {
