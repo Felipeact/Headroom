@@ -2,12 +2,17 @@ import type { NextConfig } from "next";
 import { withSentryConfig } from "@sentry/nextjs/config";
 import createNextIntlPlugin from "next-intl/plugin";
 
+import { securityHeaders } from "./lib/security-headers";
+
 const nextConfig: NextConfig = {
   // Settings opens on its only built section (spec 17). Here rather than only in the page: a
   // redirect() in a page under the streaming (app) layout becomes a client-side redirect after
   // load, which interrupts whatever navigation comes next.
   async redirects() {
     return [{ source: "/settings", destination: "/settings/banks", permanent: false }];
+  },
+  async headers() {
+    return [{ source: "/:path*", headers: securityHeaders }];
   },
 };
 
