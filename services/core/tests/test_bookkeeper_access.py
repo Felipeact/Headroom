@@ -8,9 +8,9 @@ import pytest
 from app.main import app
 from tests.bookkeeper_support import client, sql
 from tests.email_support import Mail
+from tests.test_alert_check import install_fake
 from tests.test_alerts_api import (
     _alerts_clock,  # noqa: F401 - autouse fixture: the alerts clock
-    fake,  # noqa: F401 - fixture: the fake forecast reader
     owned,
 )
 from tests.test_businesses import Caller
@@ -92,7 +92,10 @@ def test_every_business_route_is_classified() -> None:
     assert found == OWNER_ONLY | SHARED | BOOKKEEPER_ONLY
 
 
-def test_bookkeeper_can_read(fake: Any, request_clock: Any) -> None:  # noqa: F811
+def test_bookkeeper_can_read(
+    monkeypatch: pytest.MonkeyPatch,
+    request_clock: Any,  # noqa: F811
+) -> None:
     """C17."""
     cash = forecast_business()
     bookkeeper = add_bookkeeper(cash.business_id)
@@ -112,6 +115,8 @@ def test_bookkeeper_can_read(fake: Any, request_clock: Any) -> None:  # noqa: F8
         response = call(bookkeeper, "GET", base + route)
         assert response.status_code == 200, (route, response.text)
 
+    # The routes above read the real forecast; the alert below reads a planted one.
+    fake = install_fake(monkeypatch)
     alert_owner, alert_business = owned(fake, {7: 185000})
     alert_reader = add_bookkeeper(alert_business)
     (alert,) = call(

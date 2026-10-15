@@ -92,9 +92,10 @@ def plant_forecast(
     with get_sessionmaker()() as session:
         session.add(snapshot)
         session.flush()
+        snapshot_id = snapshot.id
         session.add_all(
             ForecastWeek(
-                snapshot_id=snapshot.id,
+                snapshot_id=snapshot_id,
                 number=n,
                 starts_on=first_monday + timedelta(weeks=n - 1),
                 end_balance_cents=end,
@@ -108,11 +109,11 @@ def plant_forecast(
         if pin is not None:
             session.add(
                 ForecastPin(
-                    business_id=business_id, week_start=pin, snapshot_id=snapshot.id
+                    business_id=business_id, week_start=pin, snapshot_id=snapshot_id
                 )
             )
         session.commit()
-    return snapshot.id
+    return snapshot_id
 
 
 def wipe_forecasts() -> None:
@@ -706,6 +707,12 @@ def test_params_hold_no_account(mail: Mail) -> None:
         session.expunge_all()
     payment_account = accounts[0].id
     with get_sessionmaker()() as session:
+        # The sample's own payments were added long before last Monday.
+        session.execute(
+            update(ExpectedPayment)
+            .where(ExpectedPayment.business_id == biz.id)
+            .values(created_at=utc(9, 1, 12))
+        )
         session.add(
             ExpectedPayment(
                 business_id=biz.id,

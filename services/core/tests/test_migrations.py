@@ -203,6 +203,8 @@ def test_businesses_and_memberships_upgrade_downgrade_and_check(
         ("memberships", "user_id", "uuid", "NO"),
         ("memberships", "role", "text", "NO"),
         ("memberships", "created_at", "timestamp with time zone", "NO"),
+        # Spec 31 added the bookkeeper's alert-email opt-in.
+        ("memberships", "receive_alert_emails", "boolean", "NO"),
     }
     assert {tuple(row) for row in keys} == {
         ("businesses", "pk_businesses", "PRIMARY KEY", "id", None),
