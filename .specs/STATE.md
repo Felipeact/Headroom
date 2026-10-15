@@ -136,7 +136,7 @@
 **Feature**: 32-launch-analytics-and-metrics
 **Where**: built; web lint, typecheck, 411 tests and build pass; the spec 32 API tests pass on a local Postgres (pgserver); not yet verified by a fresh Verifier, not committed
 **In progress**: none
-**Next step**: commit, dispatch the Verifier over every check, then C33 (`railway config apply`) and C34 (walk the eight steps on staging, run `posthog_events.py`) on the user's go-ahead
+**Next step**: C33 done 2026-10-15 (variables set on api and web, `railway config apply --yes`, then `config plan --detailed-exit-code` exit 0; it also created jobs.RESEND_API_KEY, a reference to an api variable that does not exist). Remaining: push `development` so staging deploys, walk the eight steps, run `posthog_events.py` (C34), set METRICS_REPORT_RECIPIENTS, then a scoped re-verify round for C33 and C34
 **Blockers**: C33/C34 need the user to set the Railway variables and deploy; the report recipients are still missing
 **Uncommitted**: all of spec 32
 **Branch**: development
