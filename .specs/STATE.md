@@ -122,13 +122,15 @@
 | AD-115 | Email formatting: Jinja filters `money(cents, currency)` (whole dollars, half away from zero, U+2212, CAD only, else raises) and `day(iso, weekday=False)` (English names, locale-free) in `rendering.environment()`; render context carries `web_url`. Mirrors `frontend/lib/format.ts`; spec 30 reuses them | one formatter for every email, no new dependency (spec 29 door 4) | active | 2026-10-13 |
 | AD-116 | Alert emails go to owners only until spec 31, which adds bookkeepers who opt in through the same recipient query | no bookkeeper role exists before spec 31 (user decision 2026-10-13) | active | 2026-10-13 |
 | AD-117 | Spec 29 C22 (AC 21) evidence: `gmail.png` in the feature folder, plus the user's own check of Outlook and Apple Mail, recorded without screenshots | the user has no Outlook or Apple Mail inbox of their own, so they opened the Gmail message in those apps, then chose not to save those two screenshots; they confirmed the email renders correctly in all three clients (user decision 2026-10-14) | active | 2026-10-14 |
+| AD-118 | Weekly digest (spec 30): job `weekly_digest(now)` in `JOBS` after `forecast_accuracy`, before `email_retries`; a business is due when its local time is Monday in the 8 o'clock hour (`zoneinfo`, so 08:30 in St. John's); dedup key `weekly_digest:{business_id}:{local Monday}`; a missed run loses that week; no forecast or no minimum = no digest, logged | the spec says "during the 8 AM hour"; the dedup index makes a second run in the hour harmless (spec 30 doors 1, 2) | active | 2026-10-15 |
+| AD-119 | `weekly_digest` email params: `business_name`, `currency`, `monday`, `cash_on_hand_cents`, `minimum_cents`, `low` {`balance_cents`, `week_starts_on`}, `alerts` [`alert_id`, `minimum_cents`, `lowest_week_starts_on`, `fix_count`], `changes` null or {`cash_change_cents`, `low_change_cents`, `new_payments` [`name`, `amount_cents` unsigned, `date`] at most 3}; "since last week" compares with the snapshot pinned to last local Monday (AD-084), none = no `changes` | retries render stored params hours later; no account data in the table (spec 30 doors 3, 4) | active | 2026-10-15 |
 
 ## Handoff
 
-**Feature**: 29-email-alerts
-**Where**: Done. Verifier round 3 PASS at cd1d68e (26/26), after two fixes: 1dca603 (log capture in C5/C6/C9 tests) and 900bbc7 (non-CAD render fails the delivery, Verifier F1)
+**Feature**: 30-email-weekly-digest
+**Where**: built and linted; the 18 template proofs pass here. The 30 proofs that need Postgres are written but not run (no Postgres on this PC)
 **In progress**: none
-**Next step**: the-judge review of spec 29; then spec 30
-**Blockers**: none
-**Uncommitted**: none from this work
+**Next step**: run `uv run pytest tests/test_weekly_digest.py tests/test_digest_reads.py` on a machine with Postgres; then commit, dispatch the Verifier, send the sample digest to Gmail, Outlook and Apple Mail (C27) and save the screenshots
+**Blockers**: C27 needs the user's Resend key and inboxes
+**Uncommitted**: all of spec 30
 **Branch**: development
