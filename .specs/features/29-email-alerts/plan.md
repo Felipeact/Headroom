@@ -125,6 +125,8 @@ The rendered alert email shows the same content and arrangement as `design/mocku
 | --- | --- | --- | --- |
 | 1 | blocks | You (the user) send the sample alert email through Resend, using a `RESEND_API_KEY`, to a Gmail, an Outlook and an Apple Mail inbox, and save the three screenshots (user decision 2026-10-13) | AC 21 can't be proven, so spec 29 can't be set to Done |
 
+Answered 2026-10-14 (AD-117): `gmail.png` is saved. The user checked Outlook and Apple Mail, confirmed both are okay, and chose not to save screenshots of them.
+
 ## Observable
 
 | Surface | Decision | Landing |

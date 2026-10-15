@@ -3,7 +3,7 @@
 Profile: light
 Plan: `.specs/features/29-email-alerts/plan.md`
 
-26 checks in 3 slices · 4 one-way doors · 1 open, of which 1 blocks (AC 21: your manual send)
+26 checks in 3 slices · 4 one-way doors · 0 open (AC 21 settled by the user's check, AD-117)
 
 Unless noted, `uv run` proofs run from `services/core`. API tests use the real local Postgres from `tests/conftest.py`, plus spec 28's `mail` fixture: a `FakeEmailSender` and a `FakeClerkUsers`, so no test calls Resend or Clerk. "The sample" is Harbor Street seed 0 with its owner registered in the fake Clerk as "Dana" at `dana@example.test`, after `PUT minimum-balance` with `500000`. That request creates the alert the mockup shows: minimum $5,000, low $3,150 in the week of Nov 9, Coastal Supply Co $14,500 on Thu, Nov 12, Payroll $11,200 on Fri, Nov 13, and 3 fixes with Birch & Co's $9,600 first (spec 24 C7, spec 25 C9). "Hand-built alerts" use the `fake` forecasting fixture of `tests/test_alert_check.py`. Test settings include `WEB_URL=https://app.example.test`.
 
@@ -80,6 +80,8 @@ Proof: `uv run pytest tests/test_alert_email_template.py -k "mockup_colours"`
 
 **C22** - The sample alert email sent through Resend shows the wordmark, label, heading, causes, top fix box, button and footer in one column, with nothing clipped or overlapping, in Gmail (web), Outlook and Apple Mail. One screenshot per client exists in the feature folder, and you, the user, confirm what each shows (AC 21)
 Proof: `test -f .specs/features/29-email-alerts/gmail.png && test -f .specs/features/29-email-alerts/outlook.png && test -f .specs/features/29-email-alerts/apple-mail.png` (from the repo root)
+Amended 2026-10-14 (user decision, AD-117): the claim is unchanged. The user checked Gmail, Outlook and Apple Mail and confirmed all three are okay, but saved a screenshot only for Gmail. The proof is now `gmail.png` plus that recorded confirmation.
+Proof: `test -f .specs/features/29-email-alerts/gmail.png` (from the repo root), plus AD-117 in `.specs/STATE.md`
 
 **C23** - `python -m app.modules.notifications.sample_alert --to someone@example.test`, run against the fake sender, sends 1 email to that address. Its subject is the one from C11, and its HTML contains "Coastal Supply Co, $14,500, on Thu, Nov 12". Without `--to`, it exits with status 2 (tooling for AC 21)
 Proof: `uv run pytest tests/test_alert_email_template.py -k "sample_alert_command"`

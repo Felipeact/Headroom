@@ -121,6 +121,7 @@
 | AD-114 | `alert` email params (stored, re-rendered by retries): `alert_id`, `business_name`, `change` (`created`/`updated`), `currency`, `minimum_cents`, `lowest_balance_cents`, `lowest_week_starts_on`, `causes` [`name`, `amount_cents` unsigned, `date`], `top_fix` {`kind`, `name`, `amount_cents` unsigned, `keeps_above`} or null, `fix_count`; no account data | the template must keep reading rows written before it changed (spec 29 door 3) | active | 2026-10-13 |
 | AD-115 | Email formatting: Jinja filters `money(cents, currency)` (whole dollars, half away from zero, U+2212, CAD only, else raises) and `day(iso, weekday=False)` (English names, locale-free) in `rendering.environment()`; render context carries `web_url`. Mirrors `frontend/lib/format.ts`; spec 30 reuses them | one formatter for every email, no new dependency (spec 29 door 4) | active | 2026-10-13 |
 | AD-116 | Alert emails go to owners only until spec 31, which adds bookkeepers who opt in through the same recipient query | no bookkeeper role exists before spec 31 (user decision 2026-10-13) | active | 2026-10-13 |
+| AD-117 | Spec 29 C22 (AC 21) evidence: `gmail.png` in the feature folder, plus the user's own check of Outlook and Apple Mail, recorded without screenshots | the user has only Gmail and chose not to save the other two screenshots; they confirmed the email renders correctly in all three clients (user decision 2026-10-14) | active | 2026-10-14 |
 
 ## Handoff
 
