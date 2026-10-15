@@ -523,6 +523,15 @@ def test_registered_in_jobs() -> None:
     assert "weekly_digest" in names
 
 
+def test_run_summary_keeps_digest_counts_apart(mail: Mail) -> None:
+    """C11: the runner's summary holds both digest keys under `weekly_digest` only."""
+    summary = run_due(utc(10, 26, 20))
+    assert set(summary["weekly_digest"]) == {"digests_requested", "digests_failed"}
+    for name, counts in summary.items():
+        if name != "weekly_digest":
+            assert not {"digests_requested", "digests_failed"} & set(counts), name
+
+
 def test_cash_on_hand_from_snapshot(mail: Mail) -> None:
     """C15."""
     biz = business(mail, opening=4230000)

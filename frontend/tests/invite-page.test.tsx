@@ -82,7 +82,7 @@ describe('invite page', () => {
     await waitFor(() =>
       expect(screen.getByRole('alert').textContent).toBe("We couldn't accept the invitation. Try again."),
     )
-    expect(screen.getByRole('button', { name: 'Accept invitation' })).toBeTruthy()
+    await waitFor(() => expect(screen.getByRole('button', { name: 'Accept invitation' })).toBeTruthy())
   })
 
   test.each([
