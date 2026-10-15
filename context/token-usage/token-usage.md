@@ -99,3 +99,5 @@ Context used per request, measured against a context window of about 250,000 tok
 | Spec 29: proofs on local Postgres, C5/C6/C9 log-capture fix, F1 fix (non-CAD render), verifier rounds 1-2 | ~85,000 (~34%) | High (smart zone) |
 | Spec 29: verifier sub-agent, round 1 (separate context) | ~113,000 (~45%) | Medium (attention degrades) |
 | Spec 29: verifier sub-agent, round 2 (separate context) | ~82,000 (~33%) | High (smart zone) |
+| Spec 29: C22 evidence (AD-117), mark Done, full suite, push | ~25,000 (~10%) | High (smart zone) |
+| Spec 29: verifier sub-agent, round 3 (separate context) | ~91,000 (~36%) | High (smart zone) |
