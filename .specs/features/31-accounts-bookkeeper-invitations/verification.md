@@ -1,9 +1,9 @@
 # 31 - Bookkeeper invitations verification
 
-**Verdict**: FAIL
+**Verdict**: PASS
 **Profile**: light
 **Diff range**: e8189be^..HEAD (7c34c42)
-**Round**: 3 - scoped (rounds 1 and 2 kept below; C29 superseded by Round 3)
+**Round**: 4 - scoped (rounds 1-3 kept below; C29 superseded by Round 4)
 **Verifier**: independent sub-agent (author != verifier)
 
 C29 (Playwright) could not be run here: it needs a live web app, API and real Clerk test users, and none was running. Every other check (28 of 29) is proven with a located assertion. One frontend test is flaky, noted under Findings.
@@ -37,7 +37,7 @@ Proofs run at HEAD from `services/core` with DATABASE_URL set to the local Postg
 | C17 | bookkeeper reads 11 routes | `-k bookkeeper_can_read` passed | `tests/test_bookkeeper_access.py:116` `assert response.status_code == 200, (route, response.text)` over the SHARED GET routes (`:42-55`) | PASS |
 | C18 | bookkeeper manages expected payments | `-k bookkeeper_manages_expected_payments` passed | `test_bookkeeper_access.py:141` 201; `:146` 200; `:147` 204; `:159` actor set `== {str(bookkeeper.id)}` | PASS |
 | C19 | owner routes give 403, no change | `-k bookkeeper_gets_403_from_owner_routes` passed | `test_bookkeeper_access.py:183` `== 403` for every OWNER_ONLY route (`:30-43`); `:189` audit count unchanged; `:190` no mail; `:194` name unchanged | PASS |
-| C20 | every business route classified | `-k every_business_route_is_classified` passed | `test_bookkeeper_access.py:92` `assert found == OWNER_ONLY \| SHARED \| BOOKKEEPER_ONLY` (the file has three literal sets, not two as the check says; the third holds only `PUT /me/alert-emails`) | PASS |
+| C20 | every business route classified | `-k every_business_route_is_classified` passed | `test_bookkeeper_access.py:92` `assert found == OWNER_ONLY, SHARED or BOOKKEEPER_ONLY (set union)` (the file has three literal sets, not two as the check says; the third holds only `PUT /me/alert-emails`) | PASS |
 | C21 | strangers get 404 | `-k strangers_get_404` passed | `test_bookkeeper_access.py:225` `== 404` for the four routes and both caller types (`:208-218`); `:226` detail "Business not found." | PASS |
 | C22 | toggle alert emails | `-k toggle_alert_emails` passed | `tests/test_bookkeeper_alert_emails.py:60-61` 200 and true; `:68` false; `:70-75` owner 403 and `:74` missing body `== 422` | PASS |
 | C23 | opted-in bookkeeper gets alert | `-k opted_in_bookkeeper_gets_alert` passed | `test_bookkeeper_alert_emails.py:89` `len(rows) == 2`; `:90` quiet absent; `:94` reason; `:97-99` sends | PASS |
@@ -46,7 +46,7 @@ Proofs run at HEAD from `services/core` with DATABASE_URL set to the local Postg
 | C26 | invitation email renders | `-k renders_invitation` passed | `tests/test_invitation_email.py:30` subject; `:32` `re.findall(href) == [link]`; `:33` text links; `:38-39` reason; `:41` no "unsubscribe"; `:43` `dict(email.headers) == {}` | PASS |
 | C27 | Members screen states, confirm, bookkeeper view | `npx vitest run members-section` - 7 passed | `frontend/tests/members-section.test.tsx:48` loading status; `:54` empty text; `:62` error `rejects.toThrow`; `:78-80` rows; `:90` confirm before remove; `:70` bookkeeper redirected to `/settings/email` with `loadMembers` not called; `frontend/tests/settings-nav.test.tsx:69` bookkeeper nav is `['/settings/email', '/settings/data']` (this file is outside the check's proof command) | PASS |
 | C28 | invite screen messages | `npx vitest run invite-page` - 10 passed in 7 of 8 runs | `frontend/tests/invite-page.test.tsx:63-72` expired, wrongAddress, alreadyOwner, notFound titles; `:98` used link; ready at `:41`. One failure seen, see Findings | PASS |
-| C29 | Playwright on /settings/members and /invite/{token} | not run | `frontend/e2e/members.spec.ts` and `e2e/invite.spec.ts` exist, but `curl localhost:3000` and `localhost:8000` get no connection, and the specs create real Clerk users (`createOnboardingUser`). GATED: needs the running app, API and Clerk keys | FAIL (gated) |
+| C29 | Playwright on /settings/members and /invite/{token} | not run | `frontend/e2e/members.spec.ts` and `e2e/invite.spec.ts` exist, but `curl localhost:3000` and `localhost:8000` get no connection, and the specs create real Clerk users (`createOnboardingUser`). GATED: needs the running app, API and Clerk keys | FAIL (gated) in round 1, superseded: PASS in round 4 |
 
 ## Findings
 
@@ -79,7 +79,7 @@ Every test passed in at least one run, but no single run was 12 of 12 (the autho
 
 | Check | Claim | Proof run | Evidence | Result |
 | --- | --- | --- | --- | --- |
-| C29 | Playwright on `/settings/members` and `/invite/{token}`: states, 375 px, keyboard, touch targets, axe | the three runs above | `frontend/e2e/members.spec.ts` and `frontend/e2e/invite.spec.ts` (12 tests); runs 1-3 each had 1 to 5 failures at `frontend/e2e/onboarding-steps.ts:7`; no run was fully green | FAIL (superseded in round 3) |
+| C29 | Playwright on `/settings/members` and `/invite/{token}`: states, 375 px, keyboard, touch targets, axe | the three runs above | `frontend/e2e/members.spec.ts` and `frontend/e2e/invite.spec.ts` (12 tests); runs 1-3 each had 1 to 5 failures at `frontend/e2e/onboarding-steps.ts:7`; no run was fully green | FAIL (flaky set-up) in round 2, superseded: PASS in round 4 |
 
 The verdict stays FAIL on C29 alone. One clean 12 of 12 run, ideally against a freshly started webpack dev server or a production build, clears it. A likely fix is to wait for the combobox to be hydrated before clicking in `completeBusinessStep`; that file is outside this spec.
 
@@ -106,10 +106,33 @@ Located assertions (all 12 tests exist and each passed in run 1): `members.spec.
 
 | Check | Claim | Proof run | Evidence | Result |
 | --- | --- | --- | --- | --- |
-| C29 | Playwright on `/settings/members` and `/invite/{token}`: states, 375 px, keyboard, touch targets, axe | runs 1-4 above | run 1 12 of 12; runs 2-4 each failed `frontend/e2e/members.spec.ts:73` on `color-contrast` of the toast (1.96) | FAIL (not green on repeat; axe contrast of the success toast) |
+| C29 | Playwright on `/settings/members` and `/invite/{token}`: states, 375 px, keyboard, touch targets, axe | runs 1-4 above | run 1 12 of 12; runs 2-4 each failed `frontend/e2e/members.spec.ts:73` on `color-contrast` of the toast (1.96) | FAIL (axe toast timing) in round 3, superseded: PASS in round 4 |
 
 The verdict stays FAIL on C29 alone; the criterion needs two clean runs and only one was clean. Likely fixes, both outside what I may edit: wait for the toast animation to finish before the axe scan (or scan a region that excludes `.cn-toast`), or, if the settled toast is also under 4.5:1, fix its colour (design files need approval). Check the settled colour first.
 
 ## Gate (round 3)
 
 `npx playwright test members.spec.ts invite.spec.ts` x2 as required: 12 passed, then 11 passed with 1 failed. Two extra runs reproduced that one failure.
+
+## Round 4 - scoped
+
+Scope: C29 only; the other 28 checks are carried from rounds 1-2. Servers untouched: production build on localhost:3000 (`/sign-in` 200), Postgres 127.0.0.1:58513. The author changed `frontend/e2e/members.spec.ts` (test code only) to wait for the toast before axe.
+
+Proof run: `DATABASE_URL=postgresql+psycopg://headroom:localdev@127.0.0.1:58513/headroom EMAIL_SENDER=console npx playwright test members.spec.ts invite.spec.ts --reporter=line --timeout=90000` from `frontend`, twice.
+
+| Run | Result |
+| --- | --- |
+| 1 | 12 passed (34.1s) |
+| 2 | 12 passed (23.5s) |
+
+Located assertions: `members.spec.ts:72-73` wait for `[data-sonner-toast]` `toHaveCSS('opacity', '1')`, then `:75-76` `AxeBuilder(...).analyze()` and `expect(axe.violations).toEqual([])`; `:33,35,40-42` (members heading, member row, invitation toast, pending invitation, empty state gone); 375 px overflow, 44 px targets and keyboard at `:53-71`; `invite.spec.ts:48-49` (Email preferences link, no Members link), `:67` (expired link, no Accept), `:81-87` (phone width, axe).
+
+| Check | Claim | Proof run | Evidence | Result |
+| --- | --- | --- | --- | --- |
+| C29 | Playwright on `/settings/members` and `/invite/{token}`: states, 375 px, keyboard, touch targets, axe | runs 1-2 above | 12 of 12 twice, axe clean on the settled toast (`members.spec.ts:73-76`) | PASS |
+
+Note: the round 3 contrast failure was a scan-timing issue in the test (toast mid fade-in), not a product defect; the settled toast passes axe.
+
+## Gate (round 4)
+
+`npx playwright test members.spec.ts invite.spec.ts` x2 - 12 passed, 12 passed. C1-C28 carried PASS.

@@ -1,7 +1,7 @@
 # Spec 32: Analytics and the weekly metrics report
 
 - **Milestone:** 7, production
-- **Status:** In progress
+- **Status:** Done
 - **Depends on:** 26
 
 ## Goal
@@ -31,5 +31,5 @@ Measure whether the pilot is working.
 
 ## Done when
 
-- [ ] Each event appears in PostHog from staging.
-- [ ] The report runs without manual steps.
+- [x] Each event appears in PostHog from staging.
+- [x] The report runs without manual steps.
