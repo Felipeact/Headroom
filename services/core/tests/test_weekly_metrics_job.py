@@ -94,7 +94,10 @@ def test_recipients(
 
     monkeypatch.delenv("METRICS_REPORT_RECIPIENTS")
     get_settings.cache_clear()
+    capsys.readouterr()
     assert weekly_metrics(at(10, 27, 12, 5)) == {"metrics_reports": 0}
+    events = [l["event"] for l in log_lines(capsys.readouterr().out)]
+    assert "metrics.report_skipped" in events
 
 
 def test_second_run_repeats_without_state(fake: FakePostHogQuery, mail: Mail) -> None:

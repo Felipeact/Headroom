@@ -97,7 +97,9 @@ describe('capture', () => {
     await expect(capture('alert_dismissed', { business_id: 'b1', alert_id: 'a1' })).resolves.toBeUndefined()
 
     expect(sentry.captureException).toHaveBeenCalledWith(boom)
-    expect(JSON.stringify(sentry.captureException.mock.calls.flat().map(String))).not.toContain('a1')
+    const reported = JSON.stringify(sentry.captureException.mock.calls.flat().map(String))
+    expect(reported).not.toContain('a1')
+    expect(reported).not.toContain('b1')
   })
 
   test('gives up after 2 seconds', async () => {

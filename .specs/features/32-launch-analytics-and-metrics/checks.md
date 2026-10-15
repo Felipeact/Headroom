@@ -28,7 +28,7 @@ Proof: `npx vitest run tests/analytics.test.ts -t "a failed capture is reported 
 **C5** - When `captureImmediate` never settles, `capture` resolves after 2000 ms on fake timers, not before (AC 12)
 Proof: `npx vitest run tests/analytics.test.ts -t "gives up after 2 seconds"`
 
-**C6** - `GET /welcome` signed in sends `sign_up_completed` with no properties and answers `307` to `/`; with `?next=/invite/abc` it answers `307` to `/invite/abc`; `?next=//evil.test`, `?next=https://evil.test` and `?next=` each answer `307` to `/`; it calls `auth.protect()` first. The sign-up page passes `forceRedirectUrl` `/welcome?next=<its own redirect_url>` when that is a path, and `/welcome` otherwise (AC 1, door 2)
+**C6** - `GET /welcome` signed in sends `sign_up_completed` with no properties and answers `307` to `/`; with `?next=/invite/abc` it answers `307` to `/invite/abc`; `?next=//evil.test`, `?next=https://evil.test` and `?next=` each answer `307` to `/`; it calls `auth.protect()` first. The sign-up page passes `forceRedirectUrl` `/welcome?next=<its own redirect_url>` when that is a path, and `/welcome?next=%2F` otherwise (AC 1, door 7)
 Proof: `npx vitest run tests/welcome-route.test.ts`
 
 **C7** - `createBusiness` with `201` (body `{ id: "b1" }`) sends `business_created` with `business_id` `b1` before the redirect to `/onboarding/bank`; `409`, `422` and `500` send nothing (AC 2, 9)
@@ -113,7 +113,7 @@ Proof: `uv run pytest tests/test_metrics_settings.py`
 
 ### S3 - Staging wiring · 3 files · 10 KB · ~3k
 
-**C33** - `.railway/railway.ts` lists `POSTHOG_KEY` and `POSTHOG_HOST` on `web` and the four API settings on `jobs` as `${{api.NAME}}` references (and `preserve()` on `api`), and `railway config plan --detailed-exit-code` exits 0 after `railway config apply`. Gated: `apply` and `railway variable set` change the live staging environment and need the user's go-ahead (AC 23)
+**C33** - `.railway/railway.ts` lists `POSTHOG_KEY` and `POSTHOG_HOST` on `web` and the four API settings on `api` as `preserve()`, and the four API settings on `jobs` as `${{api.NAME}}` references, and `railway config plan --detailed-exit-code` exits 0 after `railway config apply`. Gated: `apply` and `railway variable set` change the live staging environment and need the user's go-ahead (AC 23)
 Proof: `env _=<railway.exe> <railway.exe> config plan --detailed-exit-code` (AD-007)
 
 **C34** - After going through the eight steps in the app against the real PostHog project, `uv run python ../../.specs/features/32-launch-analytics-and-metrics/posthog_events.py` queries PostHog and exits 0 only if all eight event names appear in the last 24 hours and every property key seen is in `business_id`, `alert_id`, `role`. Gated: the walk-through is the user's, on staging, which needs the branch pushed and deployed (AC 24)
