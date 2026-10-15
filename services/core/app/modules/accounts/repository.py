@@ -96,6 +96,11 @@ def update_business(
     )
 
 
+def all_time_zones(session: Session) -> dict[uuid.UUID, str]:
+    rows = session.execute(select(Business.id, Business.time_zone))
+    return {business_id: time_zone for business_id, time_zone in rows}
+
+
 def time_zones(
     session: Session, business_ids: Collection[uuid.UUID]
 ) -> dict[uuid.UUID, str]:

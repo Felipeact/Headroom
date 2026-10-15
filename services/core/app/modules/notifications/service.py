@@ -8,7 +8,9 @@ commits, then calls `deliver` with the id it got back. The hourly `email_retries
 import uuid
 from collections.abc import Mapping
 from dataclasses import dataclass
+from datetime import datetime, time, timedelta
 from typing import Any, Literal
+from zoneinfo import ZoneInfo
 
 import structlog
 from jinja2 import TemplateError
@@ -20,7 +22,8 @@ from app.db import get_sessionmaker
 from app.modules.accounts import service as accounts_service
 from app.modules.alerts import service as alerts_service
 from app.modules.alerts.events import ALERT_CREATED
-from app.modules.notifications import rendering, repository, senders
+from app.modules.forecasting import service as forecasting_service
+from app.modules.notifications import digest, rendering, repository, senders
 from app.modules.notifications.models import EmailDelivery, EmailKind, EmailPreferences
 from app.settings import get_settings
 
@@ -331,3 +334,116 @@ def email_alert(event: events.Event) -> None:
     )
     for delivery_id in pending:
         deliver(delivery_id)
+
+
+# The local hour of Monday in which the weekly digest goes out (spec 30, door 1).
+DIGEST_HOUR = 8
+
+
+def _request_digest(
+    business_id: uuid.UUID, now: datetime, time_zone: str
+) -> list[uuid.UUID] | None:
+    """Record the business's digest deliveries; None when it has nothing to send yet."""
+    zone = ZoneInfo(time_zone)
+    monday = now.astimezone(zone).date()
+    with get_sessionmaker()() as session:
+        forecast = forecasting_service.latest_forecast(
+            session, business_id=business_id, now=now
+        )
+        if forecast is None:
+            log.info(
+                "email.digest_skipped",
+                business_id=str(business_id),
+                reason="no_forecast",
+            )
+            return None
+        minimum = forecasting_service.minimum_balance_amount(
+            session, business_id=business_id
+        )
+        if minimum is None:
+            log.info(
+                "email.digest_skipped",
+                business_id=str(business_id),
+                reason="no_minimum",
+            )
+            return None
+        business = accounts_service.get_business(
+            session, business_id=business_id, role=accounts_service.Role.OWNER
+        )
+        last_monday = monday - timedelta(days=7)
+        params = digest.digest_params(
+            business_name=business.name,
+            monday=monday,
+            minimum_cents=minimum[0],
+            forecast=forecast,
+            open_alerts=alerts_service.list_alerts(
+                session, business_id=business_id, state="open"
+            ),
+            last_week=forecasting_service.pinned_forecast(
+                session, business_id=business_id, week_start=last_monday
+            ),
+            new_payments=forecasting_service.expected_payments_added_since(
+                session,
+                business_id=business_id,
+                since=datetime.combine(last_monday, time.min, tzinfo=zone),
+                now=now,
+            ),
+        )
+        reason = (
+            "You're getting this email because you're an owner of"
+            f" {business.name} on Headroom."
+        )
+        pending: list[uuid.UUID] = []
+        for user_id in accounts_service.owner_ids(session, business_id=business_id):
+            delivery_id = request_email(
+                session,
+                dedup_key=f"weekly_digest:{business_id}:{monday.isoformat()}",
+                user_id=user_id,
+                business_id=business_id,
+                kind="weekly_digest",
+                template="weekly_digest",
+                params=params,
+                reason=reason,
+            )
+            if delivery_id is not None:
+                pending.append(delivery_id)
+        session.commit()
+    log.info(
+        "email.digest_requested",
+        business_id=str(business_id),
+        monday=monday.isoformat(),
+        deliveries=len(pending),
+    )
+    return pending
+
+
+def send_weekly_digests(now: datetime) -> dict[str, int]:
+    """Email the owners of every business whose local time at `now` is Monday, 8 AM hour.
+
+    The weekly digest job (spec 30). Each business runs in its own transaction, keyed
+    `weekly_digest:{business_id}:{local Monday}`, so a second run in the hour sends
+    nothing more; after the commit each new delivery is attempted. A business with no
+    forecast or no minimum balance is skipped. A failing business is logged and the rest
+    go on. Returns `digests_requested` (deliveries recorded) and `digests_failed`.
+    """
+    counts = {"digests_requested": 0, "digests_failed": 0}
+    with get_sessionmaker()() as session:
+        zones = accounts_service.all_business_zones(session)
+    for business_id, time_zone in sorted(zones.items()):
+        local = now.astimezone(ZoneInfo(time_zone))
+        if local.weekday() != 0 or local.hour != DIGEST_HOUR:
+            continue
+        try:
+            pending = _request_digest(business_id, now, time_zone) or []
+        except Exception as exc:  # noqa: BLE001 - one business never stops the rest
+            log.error(
+                "email.digest_failed",
+                business_id=str(business_id),
+                error_type=type(exc).__name__,
+            )
+            counts["digests_failed"] += 1
+            continue
+        for delivery_id in pending:
+            deliver(delivery_id)
+        counts["digests_requested"] += len(pending)
+    return counts

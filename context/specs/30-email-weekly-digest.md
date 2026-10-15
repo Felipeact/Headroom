@@ -1,7 +1,7 @@
 # Spec 30: Weekly digest
 
 - **Milestone:** 6, emails and bookkeepers
-- **Status:** Not started
+- **Status:** In progress
 - **Depends on:** 15, 21, 28
 
 ## Goal

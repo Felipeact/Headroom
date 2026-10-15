@@ -359,12 +359,19 @@ def test_subscriptions_reach_job_events(
 def test_jobs_registered() -> None:
     """Spec 22 ACC-11: the accuracy job runs every hour, after the nightly sync.
 
-    Spec 28 C24: the email retries run last.
+    Spec 28 C24: the email retries run last. Spec 30 C11: the weekly digest runs before
+    them, after the accuracy job.
     """
     from app.jobs.email_retries import email_retries
     from app.jobs.forecast_accuracy import forecast_accuracy
+    from app.jobs.weekly_digest import weekly_digest
 
-    assert jobs.JOBS == (nightly.nightly_bank_sync, forecast_accuracy, email_retries)
+    assert jobs.JOBS == (
+        nightly.nightly_bank_sync,
+        forecast_accuracy,
+        weekly_digest,
+        email_retries,
+    )
 
 
 def test_email_retries_counts_in_run_finished(

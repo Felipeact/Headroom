@@ -260,6 +260,19 @@ def pins_since(
     )
 
 
+def pinned_snapshot(
+    session: Session, *, business_id: uuid.UUID, week_start: date
+) -> ForecastSnapshot | None:
+    """The business's snapshot pinned to the Monday `week_start`, or None."""
+    return session.scalar(
+        select(ForecastSnapshot)
+        .join(ForecastPin, ForecastPin.snapshot_id == ForecastSnapshot.id)
+        .where(ForecastPin.business_id == business_id)
+        .where(ForecastSnapshot.business_id == business_id)
+        .where(ForecastPin.week_start == week_start)
+    )
+
+
 def recorded_horizons(
     session: Session, *, business_id: uuid.UUID, since: date
 ) -> set[tuple[date, int]]:

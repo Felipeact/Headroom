@@ -189,3 +189,11 @@ def business_time_zones(
     For jobs that act at a business's local time, such as the nightly bank sync.
     """
     return repository.time_zones(session, business_ids)
+
+
+def all_business_zones(session: Session) -> dict[uuid.UUID, str]:
+    """The IANA time zone of every business, by ID.
+
+    For a job that acts on all businesses at their local time, such as the weekly digest.
+    """
+    return repository.all_time_zones(session)

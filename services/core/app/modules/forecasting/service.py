@@ -715,6 +715,74 @@ def latest_forecast(
     )
 
 
+@dataclass(frozen=True)
+class PinnedForecastView:
+    opening_balance_cents: int
+    # The lowest end-of-week balance of the 13 weeks, the earlier week on a tie.
+    low_balance_cents: int
+    low_week_starts_on: date
+
+
+def pinned_forecast(
+    session: Session, *, business_id: uuid.UUID, week_start: date
+) -> PinnedForecastView | None:
+    """The forecast pinned to the business-local Monday `week_start` (AD-084), or None.
+
+    Spec 30's baseline for "what changed since last week": what the forecast said then,
+    which later transactions can't reconstruct.
+    """
+    snapshot = repository.pinned_snapshot(
+        session, business_id=business_id, week_start=week_start
+    )
+    if snapshot is None:
+        return None
+    weeks = repository.snapshot_weeks(session, snapshot_id=snapshot.id)
+    if not weeks:
+        return None
+    low = min(weeks, key=lambda w: w.end_balance_cents)
+    return PinnedForecastView(
+        opening_balance_cents=snapshot.opening_balance_cents,
+        low_balance_cents=low.end_balance_cents,
+        low_week_starts_on=low.starts_on,
+    )
+
+
+@dataclass(frozen=True)
+class AddedPaymentView:
+    description: str
+    # Unsigned: whether it is money in or out is the description's business.
+    amount_cents: int
+    currency: str
+    next_date: date
+
+
+def expected_payments_added_since(
+    session: Session, *, business_id: uuid.UUID, since: datetime, now: datetime
+) -> list[AddedPaymentView]:
+    """Expected payments created at or after `since` that still have an occurrence to come.
+
+    A one-off already matched to a transaction has none and is left out. Largest amount
+    first, then description (spec 30).
+    """
+    today = _today(session, business_id, now)
+    matched = _matched_dates(repository.matches(session, business_id=business_id))
+    found = []
+    for payment in repository.expected_payments(session, business_id=business_id):
+        if payment.created_at < since:
+            continue
+        next_date = _next_date(payment, matched[payment.id], today)
+        if next_date is not None:
+            found.append(
+                AddedPaymentView(
+                    description=payment.description,
+                    amount_cents=abs(payment.amount_cents),
+                    currency=payment.currency,
+                    next_date=next_date,
+                )
+            )
+    return sorted(found, key=lambda v: (-v.amount_cents, v.description))
+
+
 def upcoming_items(
     session: Session, *, business_id: uuid.UUID, now: datetime, days: int
 ) -> list[ForecastItemView] | None:
