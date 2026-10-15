@@ -53,7 +53,7 @@ type Answer = number | 'reject'
 const BANKS = messages.Settings.Banks
 const BUSINESS = '6f1c2b0e-0000-4000-8000-000000000001'
 const BUSINESSES = {
-  items: [{ id: BUSINESS, name: 'Harbor Street Plumbing', time_zone: 'America/Toronto' }],
+  items: [{ id: BUSINESS, name: 'Harbor Street Plumbing', time_zone: 'America/Toronto', role: 'owner' }],
 }
 
 function account(name: string, overrides: Partial<Account> = {}): Account {

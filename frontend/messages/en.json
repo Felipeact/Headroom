@@ -229,7 +229,48 @@
       "digestHint": "A summary of my forecast every Monday morning.",
       "saved": "Email preferences saved",
       "saveFailed": "We couldn't save your email preferences. Try again.",
-      "notifications": "Notifications"
+      "notifications": "Notifications",
+      "clientsTitle": "Bookkeeper alerts",
+      "clientsHint": "Choose which of your clients' cash gap alerts you get by email.",
+      "clientAlerts": "Alerts for {business}",
+      "clientAlertsHint": "Email me when {business}'s cash is projected to fall below its minimum.",
+      "clientSaved": "Alert email choice saved",
+      "clientSaveFailed": "We couldn't save that choice. Try again."
+    },
+    "Members": {
+      "title": "Members",
+      "intro": "Invite your bookkeeper. They can see your forecasts and alerts and manage expected payments. They can't change banks, members or settings.",
+      "inviteLabel": "Bookkeeper's email address",
+      "invitePlaceholder": "name@example.com",
+      "inviteButton": "Send invitation",
+      "inviting": "Sending…",
+      "invited": "Invitation sent to {email}",
+      "peopleTitle": "People with access",
+      "roles": {
+        "owner": "Owner",
+        "bookkeeper": "Bookkeeper"
+      },
+      "unnamed": "Bookkeeper",
+      "pendingTitle": "Pending invitations",
+      "pendingRow": "Invitation sent {sent}, expires {expires}",
+      "emptyTitle": "No bookkeepers yet",
+      "emptyBody": "Invite your bookkeeper by email, and they can see your forecast.",
+      "remove": "Remove",
+      "removing": "Removing…",
+      "removeTitle": "Remove {name}?",
+      "removeBody": "They lose access to this business right away. You can invite them again later.",
+      "cancel": "Cancel",
+      "removed": "{name} removed",
+      "notifications": "Notifications",
+      "errors": {
+        "load": "We couldn't load your members. Check your connection and try again.",
+        "invalid": "Enter a valid email address.",
+        "alreadyMember": "That person already has access.",
+        "alreadyInvited": "That address already has a pending invitation.",
+        "notSent": "We couldn't send the invitation email. Try again.",
+        "failed": "We couldn't send the invitation. Try again.",
+        "removeFailed": "We couldn't remove {name}. Try again."
+      }
     }
   },
   "ExpectedPayments": {
@@ -466,5 +507,25 @@
     "invalidTitle": "This unsubscribe link isn't valid",
     "invalidBody": "To change your emails, go to <link>Email preferences</link>.",
     "failed": "We couldn't unsubscribe you. Try again."
+  },
+  "Invite": {
+    "title": "Join {business} on Headroom",
+    "body": "As a bookkeeper you can see the forecast and alerts and manage expected payments. Sign in with the email address this invitation was sent to.",
+    "accept": "Accept invitation",
+    "accepting": "Accepting…",
+    "acceptedTitle": "You now have access to {business}",
+    "acceptedBody": "Open the dashboard to see their forecast.",
+    "goToDashboard": "Go to the dashboard",
+    "expiredTitle": "This invitation has expired",
+    "expiredBody": "Invitations last 7 days. Ask the owner to send a new one.",
+    "wrongTitle": "This invitation is for a different email address",
+    "wrongBody": "Sign in with the email address the invitation was sent to, then open the link again.",
+    "usedTitle": "This invitation was already used",
+    "usedBody": "If you accepted it, go to the dashboard.",
+    "notFoundTitle": "We can't find this invitation",
+    "notFoundBody": "Check the link in your email, or ask the owner to send a new one.",
+    "ownerTitle": "You already own this business",
+    "ownerBody": "This invitation is for a bookkeeper, so there is nothing to accept.",
+    "failed": "We couldn't accept the invitation. Try again."
   }
 }

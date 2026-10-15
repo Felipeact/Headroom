@@ -4,10 +4,11 @@ import { beforeEach, describe, expect, test, vi } from 'vitest'
 import SettingsPage from '@/app/(app)/settings/page'
 import BusinessSettingsPage from '@/app/(app)/settings/business/page'
 import DataSettingsPage from '@/app/(app)/settings/data/page'
-import MembersSettingsPage from '@/app/(app)/settings/members/page'
 import { SettingsNav } from '@/components/settings/settings-nav'
 import messages from '@/messages/en.json'
 
+vi.mock('server-only', () => ({}))
+vi.mock('@/lib/api/businesses', () => ({ loadBusinesses: vi.fn().mockResolvedValue(null) }))
 vi.mock('@clerk/nextjs/server', () => ({ auth: { protect: vi.fn().mockResolvedValue({}) } }))
 vi.mock('next-intl/server', () => ({
   getTranslations: async () => createTranslator({ locale: 'en', messages }),
@@ -60,10 +61,16 @@ describe('settings', () => {
     ])
   })
 
-  // Email preferences stopped being a placeholder in spec 28 (its own tests).
+  // Email preferences stopped being a placeholder in spec 28, and Members in spec 31 (their own tests).
+  test('members section is not shown to a bookkeeper', () => {
+    inIntl(<SettingsNav role="bookkeeper" />)
+
+    const links = within(screen.getByRole('navigation', { name: 'Settings' })).getAllByRole('link')
+    expect(links.map((link) => link.getAttribute('href'))).toEqual(['/settings/email', '/settings/data'])
+  })
+
   test.each([
     ['Business', BusinessSettingsPage],
-    ['Members', MembersSettingsPage],
     ['Your data', DataSettingsPage],
   ])('C6 placeholder sections: %s', async (title, Page) => {
     inIntl(await Page())

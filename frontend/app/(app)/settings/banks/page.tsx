@@ -1,4 +1,5 @@
 import { auth } from "@clerk/nextjs/server"
+import { redirect } from "next/navigation"
 import { BankConnections } from "@/components/settings/bank-connections"
 import { BankSettingsError } from "@/components/settings/bank-settings-error"
 import { createLinkToken, createUpdateLinkToken, loadConnections } from "@/lib/api/bank"
@@ -11,8 +12,11 @@ export default async function BankSettingsPage() {
   await auth.protect()
   const businesses = await loadBusinesses()
   const business = businesses?.[0]
-  const connections = business ? await loadConnections(business.id) : null
-  if (!business || !connections) return <BankSettingsError />
+  const connections = business?.role === "owner" ? await loadConnections(business.id) : null
+  if (!business) return <BankSettingsError />
+  // Banks are the owner's (spec 31): the API refuses a bookkeeper, so don't ask it.
+  if (business.role !== "owner") redirect("/settings/email")
+  if (!connections) return <BankSettingsError />
 
   // Link tokens last four hours and cost nothing: one to connect another bank, and one in
   // update mode for each bank that needs the owner to log in again.

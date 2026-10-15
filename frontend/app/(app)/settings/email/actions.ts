@@ -23,3 +23,22 @@ export async function saveEmailPreferences(preferences: EmailPreferences): Promi
   }
   return { ok: false }
 }
+
+/** A bookkeeper's choice to get one client's alert emails (spec 31). Never throws. */
+export async function setClientAlertEmails(businessId: string, enabled: boolean): Promise<{ ok: boolean }> {
+  try {
+    const { response } = await api.PUT("/v1/businesses/{business_id}/me/alert-emails", {
+      params: { path: { business_id: businessId } },
+      body: { enabled },
+      headers: await authHeaders(),
+    })
+    if (response.ok) {
+      revalidatePath("/settings/email")
+      return { ok: true }
+    }
+    Sentry.captureMessage(`PUT /v1/businesses/{business_id}/me/alert-emails returned ${response.status}`)
+  } catch (error) {
+    Sentry.captureException(error)
+  }
+  return { ok: false }
+}
