@@ -3,10 +3,21 @@ import { defineRailway, github, postgres, preserve, project, service, volume } f
 const REPO = "Felipeact/Headroom";
 const US_EAST = "us-east4-eqdc4a";
 
+// What differs between the two environments (spec 34 door 1); everything else is shared.
+// Production uses Railway's generated domains until spec 34b adds Headroom's own.
+const ENVIRONMENTS = {
+  staging: { branch: "development", sentryEnvironment: "staging" },
+  production: { branch: "main", sentryEnvironment: "production" },
+} as const;
+
 export default defineRailway((ctx) => {
-  // Only staging exists until spec 34 adds production.
-  if (!ctx.isEnvironment("staging")) {
-    throw new Error(`.railway/railway.ts only describes staging, not ${ctx.environment}`);
+  const env = ctx.isEnvironment("production")
+    ? ENVIRONMENTS.production
+    : ctx.isEnvironment("staging")
+      ? ENVIRONMENTS.staging
+      : undefined;
+  if (env === undefined) {
+    throw new Error(`.railway/railway.ts describes staging and production, not ${ctx.environment}`);
   }
 
   const Postgres = postgres("Postgres", { region: US_EAST });
@@ -19,7 +30,7 @@ export default defineRailway((ctx) => {
   });
 
   const api = service("api", {
-    source: github(REPO, { branch: "development", rootDirectory: "/services/core", checkSuites: true }),
+    source: github(REPO, { branch: env.branch, rootDirectory: "/services/core", checkSuites: true }),
     build: { builder: "RAILPACK", watchPatterns: ["/services/core/**"] },
     preDeploy: "alembic upgrade head",
     start: "fastapi run app/main.py",
@@ -31,7 +42,7 @@ export default defineRailway((ctx) => {
         "postgresql+psycopg://${{Postgres.PGUSER}}:${{Postgres.PGPASSWORD}}@${{Postgres.PGHOST}}:${{Postgres.PGPORT}}/${{Postgres.PGDATABASE}}",
       // The DSN is set with `railway variable set`; preserve() keeps it out of this file.
       SENTRY_DSN: preserve(),
-      SENTRY_ENVIRONMENT: "staging",
+      SENTRY_ENVIRONMENT: env.sentryEnvironment,
       // Clerk (spec 10), set with `railway variable set`: the PEM public key, and the web
       // origin allowed in a token's azp claim.
       CLERK_JWT_KEY: preserve(),
@@ -62,7 +73,7 @@ export default defineRailway((ctx) => {
   });
 
   const web = service("web", {
-    source: github(REPO, { branch: "development", rootDirectory: "/frontend", checkSuites: true }),
+    source: github(REPO, { branch: env.branch, rootDirectory: "/frontend", checkSuites: true }),
     build: { builder: "RAILPACK", watchPatterns: ["/frontend/**"] },
     // Public and dependency-free: every page requires login, so "/" answers 307 (spec 10).
     healthcheck: "/healthz",
@@ -74,6 +85,9 @@ export default defineRailway((ctx) => {
       NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY: preserve(),
       NEXT_PUBLIC_CLERK_SIGN_IN_URL: "/sign-in",
       NEXT_PUBLIC_CLERK_SIGN_UP_URL: "/sign-up",
+      // Sentry for the web app (spec 07), with its own client key per environment (spec 34).
+      NEXT_PUBLIC_SENTRY_DSN: preserve(),
+      NEXT_PUBLIC_SENTRY_ENVIRONMENT: env.sentryEnvironment,
       // PostHog (spec 32), set with `railway variable set`: the project token and the region's
       // ingestion host. Only the web server sends events, so neither is a NEXT_PUBLIC_ variable.
       POSTHOG_KEY: preserve(),
@@ -85,7 +99,7 @@ export default defineRailway((ctx) => {
   // No healthcheck (it serves nothing), no pre-deploy (`api` migrates), and no restart:
   // a failed run is retried by the next hourly run, never at once.
   const jobs = service("jobs", {
-    source: github(REPO, { branch: "development", rootDirectory: "/services/core", checkSuites: true }),
+    source: github(REPO, { branch: env.branch, rootDirectory: "/services/core", checkSuites: true }),
     build: { builder: "RAILPACK", watchPatterns: ["/services/core/**"] },
     start: "python -m app.jobs.run_due",
     deploy: { cronSchedule: "0 * * * *", restartPolicyType: "NEVER" },
