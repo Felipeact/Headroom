@@ -3,7 +3,7 @@
 Profile: light
 Plan: `.specs/features/33-launch-security-review/plan.md`
 
-28 checks in 5 slices · 6 one-way doors (4 approved, 2 found while writing the checks) · 3 open, of which 2 block go-live
+29 checks in 5 slices · 6 one-way doors (4 approved, 2 found while writing the checks) · 3 open, of which 2 block go-live
 
 Unless noted, `uv run` proofs run from `services/core` and `npx vitest` proofs from `frontend`. API tests use `TestClient(app)` and the `Caller` helpers of `tests/test_businesses.py` and `tests/tokens.py`, as `tests/test_bookkeeper_access.py` does; the limiter reads its time from one function the tests replace, so no test sleeps. New API test files: `tests/test_api_hardening.py` (S1) and `tests/test_security_rules.py` (S3, S4, S5). New web test: `tests/security-headers.test.ts`. No test calls Plaid, Clerk, Resend or PostHog.
 

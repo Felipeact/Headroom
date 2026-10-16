@@ -8,6 +8,7 @@ import sys
 import time
 import uuid
 from collections.abc import Iterator
+from datetime import UTC, date, datetime, timedelta
 from itertools import count
 from pathlib import Path
 
@@ -382,3 +383,58 @@ def test_incident_plan_has_its_parts() -> None:
         "<what you should do>",
     ):
         assert slot in notice, slot
+
+
+ACCESS_SERVICES = (
+    "Clerk",
+    "Railway",
+    "GitHub",
+    "Resend",
+    "PostHog",
+    "Sentry",
+    "Plaid",
+    "Domain registrar",
+)
+
+
+def test_access_table_complete() -> None:
+    """C27."""
+    text = (SECURITY / "access.md").read_text(encoding="utf8")
+    rows = [
+        [c.strip() for c in line.strip().strip("|").split("|")]
+        for line in text.splitlines()
+        if line.startswith("| ") and line.split("|")[1].strip() in ACCESS_SERVICES
+    ]
+    roles: dict[tuple[str, str], set[str]] = {}
+    for service in ACCESS_SERVICES:
+        assert any(row[0] == service for row in rows), service
+    for row in rows:
+        service, person, role, reason, two_factor, checked = row[:6]
+        assert person and role and reason, row
+        assert two_factor == "yes", row
+        age = datetime.now(UTC).date() - date.fromisoformat(checked)
+        assert age <= timedelta(days=90), row
+        roles.setdefault((service, person), set()).add(role)
+    for (service, person), held in roles.items():
+        assert len(held) == 1, f"{person} holds {sorted(held)} on {service}"
+
+
+def test_rehearsal_recorded() -> None:
+    """C29."""
+    records = sorted(SECURITY.glob("rehearsal-*.md"))
+    assert records
+    record = records[-1]
+    text = record.read_text(encoding="utf8")
+    stamp = record.stem.removeprefix("rehearsal-")
+    date.fromisoformat(stamp)
+    for label in ("Date:", "Scenario:", "Participants:"):
+        assert re.search(rf"^{label} \S", text, flags=re.MULTILINE), label
+    plan = (SECURITY / "incident-response.md").read_text(encoding="utf8")
+    first_hour = plan.split("## First hour", 1)[1].split("\n## ", 1)[0]
+    steps = re.findall(r"^\d+\. ", first_hour, flags=re.MULTILINE)
+    timings = re.findall(r"^Step \d+: \d+ min", text, flags=re.MULTILINE)
+    assert len(timings) == len(steps)
+    assert "## What the plan got wrong" in text
+    wrong = text.split("## What the plan got wrong", 1)[1].split("\n## ", 1)[0]
+    assert wrong.strip(), "write what the plan got wrong, or the word nothing"
+    assert f"Last rehearsed: {stamp}" in plan
