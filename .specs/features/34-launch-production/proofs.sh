@@ -80,7 +80,7 @@ c2() {
 c3() {
   local id current heads
   id="$(latest_success api id)"; [ -n "$id" ] || fail c3 "no SUCCESS production api deployment"
-  railway logs "$id" --service api --environment "$PROD" --deployment --lines 1000 | grep -q 'Context impl PostgresqlImpl' \
+  railway logs "$id" --service api --environment "$PROD" --deployment --lines 1000 | grep -c 'Context impl PostgresqlImpl' >/dev/null \
     || fail c3 "deploy logs of $id do not show alembic running"
   current="$(railway ssh --service api --environment "$PROD" -- alembic current 2>/dev/null | tr -d '\r' | grep -oE '^[0-9a-f]{6,}' | head -1)"
   # The running container holds main's code, so its own `alembic heads` is main's head.
@@ -163,13 +163,17 @@ print('match' if ok else 'mismatch'); sys.exit(0 if ok else 1)" || fail c16 "PLA
 c17() {
   [ -n "${FOUNDER_EMAIL:-}" ] || fail c17 "set FOUNDER_EMAIL"
   local code prod staging
+  # Prints "<count> <first user id or ->"; the id stays in this script, never in the output.
   code="from clerk_backend_api import Clerk
 from app.settings import get_settings
-key = get_settings().clerk_secret_key
-print(Clerk(bearer_auth=key).users.count(request={'email_address': ['$FOUNDER_EMAIL']}).total_count)"
+users = Clerk(bearer_auth=get_settings().clerk_secret_key).users.list(request={'email_address': ['$FOUNDER_EMAIL']})
+print(len(users), users[0].id if users else '-')"
   prod="$(remote "$PROD" "$code")"; staging="$(remote "$STAGING" "$code")"
-  echo "production=$prod staging=$staging"
-  [ "$prod" = 1 ] && [ "$staging" = 0 ] || fail c17 "expected production=1 staging=0"
+  echo "production=${prod%% *} staging=${staging%% *}"
+  [ "${prod%% *}" = 1 ] || fail c17 "expected exactly 1 production user"
+  case "${staging%% *}" in 0|1) ;; *) fail c17 "expected at most 1 staging user" ;; esac
+  [ "${prod#* }" != "${staging#* }" ] || fail c17 "production and staging share a user id"
+  echo "ids differ"
   variables web "$PROD" | json "
 import sys
 ok = d.get('NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY', '').startswith('pk_live_')
@@ -210,7 +214,7 @@ with get_sessionmaker()() as s:
     print(' '.join(sorted({c.last_synced_at is not None and 'synced' or 'never' for c in s.scalars(select(BankConnection))})))")"
   echo "connections: ${statuses:-none}"
   echo "$statuses" | grep -qw synced || fail c21 "no production connection has synced"
-  railway logs --service api --environment "$PROD" --lines 5000 | grep 'POST /v1/webhooks/plaid' | grep -q '" 200' \
+  railway logs --service api --environment "$PROD" --lines 5000 | grep 'POST /v1/webhooks/plaid' | grep -c '" 200' >/dev/null \
     || fail c21 "no 200 answer to a Plaid webhook in the production logs"
   echo "PASS c21"
 }
