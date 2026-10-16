@@ -25,6 +25,8 @@ ALLOWED = frozenset(
         "POSTHOG_APP_HOST",
         "EMAIL_MAILING_ADDRESS",
         "FORECAST_STRATEGY",
+        # A mode (`resend` or `console`), not a credential (plan door 10).
+        "EMAIL_SENDER",
         # Plaid issues one client ID per team for every environment; the secret differs.
         "PLAID_CLIENT_ID",
     }
