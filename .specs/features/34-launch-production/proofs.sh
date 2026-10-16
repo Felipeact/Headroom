@@ -163,13 +163,17 @@ print('match' if ok else 'mismatch'); sys.exit(0 if ok else 1)" || fail c16 "PLA
 c17() {
   [ -n "${FOUNDER_EMAIL:-}" ] || fail c17 "set FOUNDER_EMAIL"
   local code prod staging
+  # Prints "<count> <first user id or ->"; the id stays in this script, never in the output.
   code="from clerk_backend_api import Clerk
 from app.settings import get_settings
-key = get_settings().clerk_secret_key
-print(Clerk(bearer_auth=key).users.count(request={'email_address': ['$FOUNDER_EMAIL']}).total_count)"
+users = Clerk(bearer_auth=get_settings().clerk_secret_key).users.list(request={'email_address': ['$FOUNDER_EMAIL']})
+print(len(users), users[0].id if users else '-')"
   prod="$(remote "$PROD" "$code")"; staging="$(remote "$STAGING" "$code")"
-  echo "production=$prod staging=$staging"
-  [ "$prod" = 1 ] && [ "$staging" = 0 ] || fail c17 "expected production=1 staging=0"
+  echo "production=${prod%% *} staging=${staging%% *}"
+  [ "${prod%% *}" = 1 ] || fail c17 "expected exactly 1 production user"
+  case "${staging%% *}" in 0|1) ;; *) fail c17 "expected at most 1 staging user" ;; esac
+  [ "${prod#* }" != "${staging#* }" ] || fail c17 "production and staging share a user id"
+  echo "ids differ"
   variables web "$PROD" | json "
 import sys
 ok = d.get('NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY', '').startswith('pk_live_')

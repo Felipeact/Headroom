@@ -96,7 +96,7 @@ A merge into `main` puts the release live at its Railway domain. Nothing else de
 
 **Acceptance Criteria**
 
-14. WHEN the founder signs up at `https://headroom.felipeviana.com/sign-up` THEN the Clerk production instance SHALL list the new user, and staging's Clerk instance SHALL NOT
+14. WHEN the founder signs up at `https://headroom.felipeviana.com/sign-up` THEN the Clerk production instance SHALL list the new user under a user ID different from any staging user with the same address (reworded with the user, 2026-10-16)
 15. WHEN production sends an email to the Resend account owner's address THEN it SHALL arrive From `onboarding@resend.dev`, and Resend's log SHALL show it under the production API key
 16. WHERE production `PLAID_SECRET` is a Plaid Production (Trial or paid plan) secret, WHEN the founder connects their own business bank in production THEN the connection SHALL sync (spec 14 behaviour), and Plaid's webhook SHALL reach `https://api.headroom.felipeviana.com/v1/webhooks/plaid` with `200`
 

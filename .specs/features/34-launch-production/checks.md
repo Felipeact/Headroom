@@ -65,7 +65,7 @@ Proof: `bash .specs/features/34-launch-production/proofs.sh c16`
 
 ### S3 - Production's own external services · proofs + evidence · ~5k
 
-**C17** - In production `api` (`railway ssh`), a Clerk Backend API user lookup for the founder's address returns 1 user, and the production `NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY` on `web` starts with `pk_live_`. The same lookup in staging `api` returns 0. The proof prints only counts and `match`/`mismatch` (AC 13, AC 14, door 9)
+**C17** - For the founder's address, a Clerk Backend API lookup in production `api` (`railway ssh`) returns exactly 1 user, staging's lookup returns at most 1, and when both exist their user IDs differ. The production `NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY` on `web` starts with `pk_live_`. The proof prints only counts and `match`/`mismatch` (AC 13, AC 14, door 9; reworded with the user on 2026-10-16: the founder also has a staging account, so "staging returns 0" was the wrong claim)
 Proof: `bash .specs/features/34-launch-production/proofs.sh c17`
 
 **C18** - An email that production sends to the Resend account owner's address arrives From `onboarding@resend.dev`, and Resend's log lists it under the production API key's name. Proved by an evidence row (AC 15, door 3)
