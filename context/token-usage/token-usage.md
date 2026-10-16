@@ -104,3 +104,4 @@ Context used per request, measured against a context window of about 250,000 tok
 | Spec 32: analytics and metrics report (plan, checks, build web + API) | ~170,000 (~68%) | Low (past 60%) |
 | Fix: /welcome redirect to localhost (checks, build, proofs) | ~90,000 (~36%) | High (smart zone) |
 | Fix: /welcome redirect, verifier sub-agent (separate context) | ~68,000 (~27%) | High (smart zone) |
+| Spec 33: signed-in CSP pass (embedded Postgres), 2FA table, incident rehearsal and plan fixes, decision log | ~95,000 (~38%) | High (smart zone) |
