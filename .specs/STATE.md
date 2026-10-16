@@ -149,8 +149,8 @@
 
 ## Handoff
 
-**Feature**: spec 34 (production) In progress. Local half committed at f0af695: alert log levels + Sentry event names (C26-C29 green), two-environment IaC (C9, C10 green), credential check (C12-C15 green), proofs.sh, runbook `context/operations/production.md`, AD-135 to AD-139
-**Where**: `.specs/features/34-launch-production/`, `.railway/railway.ts`, `context/operations/production.md`
-**Next step**: each needs the user's go-ahead: (1) the user creates the production-side credentials (Clerk app `Headroom Production`, Resend key, Sentry client keys, PostHog project, new Fernet key, Plaid Trial secret or a placeholder) and pastes them with `railway variable set` in their own terminal; (2) `railway config apply` to production, then to staging (adds web NEXT_PUBLIC_SENTRY_ENVIRONMENT); (3) push `development` and open the release PR into `main`; (4) backups on, restore drill, evidence rows; (5) proofs c1-c8, c11, c16-c25, c30, c31; then dispatch the Verifier over be412a9..HEAD
-**Blockers**: C21 waits for Plaid's Trial secret; spec 34b (domain) before spec 36; same machine notes as before: `test_recipients` and `test_unavailable_body_leaks_nothing` fail only locally; no Docker: local Postgres via `uv run --no-project --with pgserver` (scratchpad pg.py)
+**Feature**: spec 34 (production) In progress. Production runs `main` on headroom.felipeviana.com / api.headroom.felipeviana.com (PR #3 merged 2026-10-16). Passing: C1-C17, C19, C20, C25-C29 (C12-C15, C26-C29 locally). Sentry test event 7ecba71df13645f18071576312f00fd5 sent 23:09 UTC
+**Where**: `.specs/features/34-launch-production/` (proofs.sh, evidence.md), `context/operations/production.md`
+**Next step**: the user confirms the Sentry alert email and the alert rules (C30, C31 rows in evidence.md) and a test email from production (C18); C32 from CI on main; then the Verifier over be412a9..HEAD
+**Blockers**: backups not in use (Railway Hobby plan), so C22-C24 and Done-when 1 stay open and the spec can't be Done; C21 waits for RBC through Plaid (MFA_NOT_SUPPORTED); spec 34b still owns the Resend sending domain; PostHog shared with staging (AD-141). SSH key `headroom-dev-2026-10-16` registered with Railway; the old `headroom-dev` key has no private half left
 **Branch**: development
