@@ -27,6 +27,9 @@ ALLOWED = frozenset(
         "FORECAST_STRATEGY",
         # A mode (`resend` or `console`), not a credential (plan door 10).
         "EMAIL_SENDER",
+        # Temporary (plan door 11): one PostHog project until production gets its own.
+        "POSTHOG_KEY",
+        "POSTHOG_PROJECT_ID",
         # Plaid issues one client ID per team for every environment; the secret differs.
         "PLAID_CLIENT_ID",
     }
