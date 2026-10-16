@@ -1,0 +1,35 @@
+{% extends "base.html" %}
+{% block content %}
+<div style="margin: 0 0 20px; font-size: 12px; font-weight: 700; letter-spacing: 0.06em; text-transform: uppercase; color: #5A6370;">Weekly metrics · {{ week_start|day(weekday=True) }} to {{ week_end|day(weekday=True) }} (UTC)</div>
+<h1 style="margin: 0 0 20px; font-family: Georgia, serif; font-size: 26px; font-weight: 700; line-height: 1.3; color: #16202B;">{{ subject }}</h1>
+<table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="margin: 0 0 20px;">
+<tr>
+<td style="border-top: 1px solid #E2DDD3; padding: 14px 0;">
+<div style="font-size: 13px; color: #454F5C;">Weekly active businesses</div>
+<div style="font-family: Georgia, serif; font-size: 26px; font-weight: 700; color: #16202B;">{% if weekly_active_businesses is none %}unavailable{% else %}{{ weekly_active_businesses }}{% endif %}</div>
+<div style="font-size: 14px; color: #5A6370;">Businesses where someone opened the dashboard.</div>
+</td>
+</tr>
+<tr>
+<td style="border-top: 1px solid #E2DDD3; padding: 14px 0;">
+<div style="font-size: 13px; color: #454F5C;">Alerts opened</div>
+<div style="font-family: Georgia, serif; font-size: 26px; font-weight: 700; color: #16202B;">{% if alerts_opened is none %}unavailable{% else %}{{ alerts_opened }}{% endif %}</div>
+<div style="font-size: 14px; color: #5A6370;">Different alerts someone opened.</div>
+</td>
+</tr>
+<tr>
+<td style="border-top: 1px solid #E2DDD3; padding: 14px 0;">
+<div style="font-size: 13px; color: #454F5C;">Activation</div>
+<div style="font-family: Georgia, serif; font-size: 26px; font-weight: 700; color: #16202B;">{% if activation_percent is none %}no sign-ups{% else %}{{ activation_percent }}% ({{ activated }} of {{ signups }}){% endif %}</div>
+<div style="font-size: 14px; color: #5A6370;">New owners who connected a bank within 24 hours of signing up.</div>
+</td>
+</tr>
+<tr>
+<td style="border-top: 1px solid #E2DDD3; border-bottom: 1px solid #E2DDD3; padding: 14px 0;">
+<div style="font-size: 13px; color: #454F5C;">4-week forecast error</div>
+<div style="font-family: Georgia, serif; font-size: 26px; font-weight: 700; color: #16202B;">{% if forecast_error_percent is none %}no data yet{% else %}{{ forecast_error_percent }}% across {{ forecast_error_businesses }} business{{ "" if forecast_error_businesses == 1 else "es" }}{% endif %}</div>
+<div style="font-size: 14px; color: #5A6370;">How far the forecast made four weeks earlier was from the actual balance, on average.</div>
+</td>
+</tr>
+</table>
+{% endblock %}

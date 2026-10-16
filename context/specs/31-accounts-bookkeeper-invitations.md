@@ -1,7 +1,7 @@
 # Spec 31: Bookkeeper invitations
 
 - **Milestone:** 6, emails and bookkeepers
-- **Status:** Not started
+- **Status:** Done
 - **Depends on:** 11, 28
 
 ## Goal
@@ -22,5 +22,5 @@ Let owners bring in their bookkeeper, with limited permissions.
 
 ## Done when
 
-- [ ] Bookkeepers get 403 from every owner-only endpoint (tested).
-- [ ] An expired invitation can't be accepted.
+- [x] Bookkeepers get 403 from every owner-only endpoint (tested).
+- [x] An expired invitation can't be accepted.

@@ -1,0 +1,48 @@
+[project]
+name = "core"
+version = "0.1.0"
+description = "Add your description here"
+readme = "README.md"
+requires-python = ">=3.12"
+dependencies = [
+    "alembic>=1.20.0",
+    "clerk-backend-api>=7.0.0",
+    "cryptography>=50.0.2",
+    "fastapi[standard]>=0.142.2",
+    "holidays>=0.106",
+    "httpx>=0.28.1",
+    "jinja2>=3.1.6",
+    "plaid-python>=45.0.0",
+    "psycopg[binary]>=3.3.6",
+    "pydantic-settings>=2.15.0",
+    "pyjwt[crypto]>=2.15.1",
+    "resend>=2.49.1",
+    "sentry-sdk>=2.71.0",
+    "sqlalchemy>=2.1.1",
+    "structlog>=26.1.0",
+]
+
+[dependency-groups]
+dev = [
+    "mypy>=2.4.0",
+    "pytest>=9.1.1",
+    "ruff>=0.16.10",
+]
+
+[tool.ruff.lint]
+extend-select = ["I"]
+
+[tool.mypy]
+strict = true
+plugins = ["pydantic.mypy"]
+
+[[tool.mypy.overrides]]
+# plaid-python ships no type information (no py.typed).
+module = ["plaid", "plaid.*"]
+ignore_missing_imports = true
+
+[tool.pytest.ini_options]
+pythonpath = ["."]
+# Tests that call the real Plaid sandbox run only through their proof script (spec 12).
+markers = ["plaid_sandbox: calls the real Plaid sandbox; needs the keys in .env.local"]
+addopts = "-m 'not plaid_sandbox'"

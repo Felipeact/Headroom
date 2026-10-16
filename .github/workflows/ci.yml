@@ -1,0 +1,75 @@
+# Runs the checks from AGENTS.md ("Before you finish a task") on every pull request.
+# Branch protection on development and main requires the job ids `web` and `api` as check
+# names, so renaming a job means updating the protection too.
+name: CI
+
+on:
+  pull_request:
+    branches: [development, main]
+  push:
+    branches: [development]
+
+permissions:
+  contents: read
+
+jobs:
+  web:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: frontend
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-node@v7
+        with:
+          node-version: 24
+          cache: npm
+          cache-dependency-path: frontend/package-lock.json
+      - run: npm ci
+      # lib/api/schema.d.ts must match contracts/openapi.json (spec 09).
+      - name: Check generated API types are current
+        run: |
+          npm run api:types
+          git diff --exit-code -- lib/api/schema.d.ts
+      - run: npm run lint
+      - run: npm run typecheck
+      - run: npm test
+      - run: npm run build
+
+  api:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: services/core
+    services:
+      postgres:
+        image: postgres:17
+        # Throwaway CI database with the same local-only credentials as docker-compose.yml.
+        env:
+          POSTGRES_USER: headroom
+          POSTGRES_PASSWORD: localdev
+          POSTGRES_DB: headroom
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U headroom"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 10
+    env:
+      DATABASE_URL: postgresql+psycopg://headroom:localdev@localhost:5432/headroom
+    steps:
+      - uses: actions/checkout@v7
+      - uses: astral-sh/setup-uv@c18668ad3cf93ea998bef934396af7bb5c839dc7 # v10.2.0
+        with:
+          working-directory: services/core
+      - run: uv sync --locked
+      - run: uv run ruff format --check .
+      - run: uv run ruff check .
+      - run: uv run mypy app
+      - run: uv run pytest
+      # contracts/openapi.json must match the API's routes (spec 09).
+      - name: Check the OpenAPI contract is current
+        run: |
+          uv run python -m app.export_openapi
+          git diff --exit-code -- ../../contracts/openapi.json

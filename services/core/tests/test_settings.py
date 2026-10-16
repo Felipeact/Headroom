@@ -1,0 +1,274 @@
+from collections.abc import Iterator
+from pathlib import Path
+
+import pytest
+from cryptography.fernet import Fernet
+from pydantic import ValidationError
+
+from app.settings import Settings, get_settings
+
+ENV_URL = "postgresql+psycopg://env-host:5432/env_db"
+FILE_URL = "postgresql+psycopg://file-host:5432/file_db"
+
+
+@pytest.fixture(autouse=True)
+def isolated(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> Iterator[Path]:
+    monkeypatch.chdir(tmp_path)
+    monkeypatch.delenv("DATABASE_URL", raising=False)
+    get_settings.cache_clear()
+    yield tmp_path
+    get_settings.cache_clear()
+
+
+def test_process_env_overrides_env_file(
+    isolated: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    (isolated / ".env.local").write_text(f"DATABASE_URL={FILE_URL}\n")
+    monkeypatch.setenv("DATABASE_URL", ENV_URL)
+
+    assert get_settings().database_url == ENV_URL
+
+
+def test_env_file_used_when_process_env_absent(isolated: Path) -> None:
+    (isolated / ".env.local").write_text(f"DATABASE_URL={FILE_URL}\n")
+
+    assert get_settings().database_url == FILE_URL
+
+
+@pytest.mark.parametrize(
+    "url",
+    [
+        "postgresql://h/d",
+        "postgres://h/d",
+        "postgresql+psycopg2://h/d",
+        "sqlite:///headroom.db",
+    ],
+)
+def test_rejects_non_psycopg_scheme(url: str, monkeypatch: pytest.MonkeyPatch) -> None:
+    monkeypatch.setenv("DATABASE_URL", url)
+
+    with pytest.raises(ValidationError):
+        Settings()
+
+
+def test_missing_database_url_raises() -> None:
+    with pytest.raises(ValidationError):
+        Settings()
+
+
+def test_clerk_jwt_key_required(
+    isolated: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    monkeypatch.setenv("DATABASE_URL", ENV_URL)
+    monkeypatch.delenv("CLERK_JWT_KEY", raising=False)
+
+    with pytest.raises(ValidationError) as excinfo:
+        Settings()
+
+    assert "clerk_jwt_key" in str(excinfo.value)
+
+
+@pytest.mark.parametrize(
+    ("raw", "parsed"),
+    [
+        ("http://a.test, https://b.test", ["http://a.test", "https://b.test"]),
+        (None, []),
+    ],
+    ids=["comma_list", "unset"],
+)
+def test_clerk_authorized_parties_parse(
+    raw: str | None, parsed: list[str], monkeypatch: pytest.MonkeyPatch
+) -> None:
+    monkeypatch.setenv("DATABASE_URL", ENV_URL)
+    if raw is None:
+        monkeypatch.delenv("CLERK_AUTHORIZED_PARTIES", raising=False)
+    else:
+        monkeypatch.setenv("CLERK_AUTHORIZED_PARTIES", raw)
+
+    assert Settings().clerk_authorized_parties == parsed
+
+
+# Spec 12: Plaid and token encryption settings
+
+
+@pytest.fixture
+def plaid_env(monkeypatch: pytest.MonkeyPatch) -> pytest.MonkeyPatch:
+    monkeypatch.setenv("DATABASE_URL", ENV_URL)
+    monkeypatch.setenv("PLAID_CLIENT_ID", "client")
+    monkeypatch.setenv("PLAID_SECRET", "secret")
+    monkeypatch.setenv("PLAID_ENV", "sandbox")
+    monkeypatch.setenv("TOKEN_ENCRYPTION_KEYS", Fernet.generate_key().decode())
+    return monkeypatch
+
+
+@pytest.mark.parametrize(
+    "raw",
+    [None, "", "not-a-key", "VALID,not-a-key"],
+    ids=["unset", "empty", "not_a_key", "one_bad_key"],
+)
+def test_token_encryption_keys_rejected(
+    raw: str | None, plaid_env: pytest.MonkeyPatch
+) -> None:
+    if raw is None:
+        plaid_env.delenv("TOKEN_ENCRYPTION_KEYS")
+    else:
+        valid = Fernet.generate_key().decode()
+        plaid_env.setenv("TOKEN_ENCRYPTION_KEYS", raw.replace("VALID", valid))
+
+    with pytest.raises(ValidationError) as excinfo:
+        Settings()
+
+    assert "token_encryption_keys" in str(excinfo.value)
+
+
+def test_token_encryption_keys_two_keys_in_order(plaid_env: pytest.MonkeyPatch) -> None:
+    new, old = Fernet.generate_key().decode(), Fernet.generate_key().decode()
+    plaid_env.setenv("TOKEN_ENCRYPTION_KEYS", f"{new}, {old}")
+
+    assert Settings().token_encryption_keys == [new, old]
+
+
+@pytest.mark.parametrize("name", ["PLAID_CLIENT_ID", "PLAID_SECRET", "PLAID_ENV"])
+def test_plaid_settings_required(name: str, plaid_env: pytest.MonkeyPatch) -> None:
+    plaid_env.delenv(name)
+
+    with pytest.raises(ValidationError) as excinfo:
+        Settings()
+
+    assert name.lower() in str(excinfo.value)
+
+
+def test_plaid_settings_env_rejects_development(plaid_env: pytest.MonkeyPatch) -> None:
+    plaid_env.setenv("PLAID_ENV", "development")
+
+    with pytest.raises(ValidationError):
+        Settings()
+
+
+@pytest.mark.parametrize("env", ["sandbox", "production"])
+def test_plaid_settings_env_accepted(env: str, plaid_env: pytest.MonkeyPatch) -> None:
+    plaid_env.setenv("PLAID_ENV", env)
+
+    assert Settings().plaid_env == env
+
+
+@pytest.mark.parametrize(
+    "raw",
+    ["AsmZleIiu7PlepCRAlp5jTGkfJLK0qK9vN5dlguQ=", "VALID,not-a-key"],
+    ids=["short_key", "valid_then_bad"],
+)
+def test_token_encryption_keys_error_hides_value(
+    raw: str, plaid_env: pytest.MonkeyPatch
+) -> None:
+    # The error reaches deploy logs (alembic's pre-deploy traceback), so it must never
+    # carry the value: a valid key listed before a bad one would leak with it.
+    value = raw.replace("VALID", Fernet.generate_key().decode())
+    plaid_env.setenv("TOKEN_ENCRYPTION_KEYS", value)
+
+    with pytest.raises(ValidationError) as excinfo:
+        Settings()
+
+    message = str(excinfo.value)
+    assert "token_encryption_keys" in message
+    for part in value.split(","):
+        assert part not in message
+
+
+def test_forecast_strategy_default(plaid_env: pytest.MonkeyPatch) -> None:
+    """Spec 21 C9: unset means `recurring_pattern`."""
+    plaid_env.delenv("FORECAST_STRATEGY", raising=False)
+
+    assert Settings().forecast_strategy == "recurring_pattern"
+
+
+def test_forecast_strategy_rolling_average(plaid_env: pytest.MonkeyPatch) -> None:
+    """Spec 21 C9."""
+    plaid_env.setenv("FORECAST_STRATEGY", "rolling_average")
+
+    assert Settings().forecast_strategy == "rolling_average"
+
+
+def test_forecast_strategy_rejects_unknown(plaid_env: pytest.MonkeyPatch) -> None:
+    """Spec 21 C9: a typo fails validation, naming the field."""
+    plaid_env.setenv("FORECAST_STRATEGY", "average")
+
+    with pytest.raises(ValidationError) as excinfo:
+        Settings()
+
+    assert "forecast_strategy" in str(excinfo.value)
+
+
+# Spec 28: email settings
+
+
+@pytest.mark.parametrize("raw", [None, "smtp"], ids=["unset", "smtp"])
+def test_email_settings_sender_required(
+    raw: str | None, plaid_env: pytest.MonkeyPatch
+) -> None:
+    """Spec 28 C16: no default sender, and only `console` or `resend`."""
+    if raw is None:
+        plaid_env.delenv("EMAIL_SENDER")
+    else:
+        plaid_env.setenv("EMAIL_SENDER", raw)
+
+    with pytest.raises(ValidationError) as excinfo:
+        Settings()
+
+    assert "email_sender" in str(excinfo.value)
+
+
+@pytest.mark.parametrize("key", [None, ""], ids=["unset", "empty"])
+def test_email_settings_resend_needs_key(
+    key: str | None, plaid_env: pytest.MonkeyPatch
+) -> None:
+    """Spec 28 C16: `resend` with no API key fails, naming the field."""
+    plaid_env.setenv("EMAIL_SENDER", "resend")
+    if key is None:
+        plaid_env.delenv("RESEND_API_KEY")
+    else:
+        plaid_env.setenv("RESEND_API_KEY", key)
+
+    with pytest.raises(ValidationError) as excinfo:
+        Settings()
+
+    assert "resend_api_key" in str(excinfo.value)
+
+
+def test_email_settings_resend_with_key(plaid_env: pytest.MonkeyPatch) -> None:
+    plaid_env.setenv("EMAIL_SENDER", "resend")
+    plaid_env.setenv("RESEND_API_KEY", "re_test_key")
+
+    settings = Settings()
+
+    assert settings.email_sender == "resend"
+    assert settings.resend_api_key == "re_test_key"
+
+
+def test_email_settings_error_hides_value(plaid_env: pytest.MonkeyPatch) -> None:
+    """Spec 28 C16: a rejected sender never appears in the error."""
+    plaid_env.setenv("EMAIL_SENDER", "smtp-secret-host")
+
+    with pytest.raises(ValidationError) as excinfo:
+        Settings()
+
+    assert "smtp-secret-host" not in str(excinfo.value)
+
+
+@pytest.mark.parametrize(
+    "name",
+    [
+        "CLERK_SECRET_KEY",
+        "EMAIL_FROM",
+        "EMAIL_MAILING_ADDRESS",
+        "WEB_URL",
+        "API_PUBLIC_URL",
+    ],
+)
+def test_email_settings_required(name: str, plaid_env: pytest.MonkeyPatch) -> None:
+    """Spec 28 C16: each of these has no default."""
+    plaid_env.delenv(name)
+
+    with pytest.raises(ValidationError) as excinfo:
+        Settings()
+
+    assert name.lower() in str(excinfo.value)

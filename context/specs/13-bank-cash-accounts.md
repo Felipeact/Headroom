@@ -1,7 +1,7 @@
 # Spec 13: Choose cash accounts
 
 - **Milestone:** 3, bank data
-- **Status:** Not started
+- **Status:** Done
 - **Depends on:** 12
 
 ## Goal
@@ -21,6 +21,6 @@ Let the owner decide which accounts count as cash, and which one is the primary 
 
 ## Done when
 
-- [ ] The API refuses to count a credit card or a US-dollar account as cash.
-- [ ] Two sandbox banks can be connected to one business.
-- [ ] The screen matches its mockup on a phone.
+- [x] The API refuses to count a credit card or a US-dollar account as cash.
+- [x] Two sandbox banks can be connected to one business.
+- [x] The screen matches its mockup on a phone.

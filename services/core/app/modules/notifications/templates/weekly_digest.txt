@@ -1,0 +1,23 @@
+{% extends "base.txt" %}
+{% block content %}{% set below = low.balance_cents < minimum_cents %}Weekly forecast · Monday, {{ monday|day }}
+{{ subject }}
+
+{% if first_name %}Hi {{ first_name }}, here's{% else %}Here's{% endif %} where {{ business_name }} stands this week.
+
+Cash on hand: {{ cash_on_hand_cents|money(currency) }}
+Projected low: {{ low.balance_cents|money(currency) }} (week of {{ low.week_starts_on|day }})
+{% if alerts %}
+Open alerts ({{ alerts|length }})
+{% for alert in alerts %}- Cash falls below your {{ alert.minimum_cents|money(currency) }} minimum the week of {{ alert.lowest_week_starts_on|day }}. {% if alert.fix_count == 0 %}See details{% elif alert.fix_count == 1 %}See the fix{% else %}See the fixes{% endif %}: {{ web_url }}/alerts/{{ alert.alert_id }}
+{% endfor %}{% elif not below %}
+All clear. Your forecast stays above your {{ minimum_cents|money(currency) }} minimum for the next 13 weeks.
+{% endif %}{% if changes %}
+What changed since last week
+{% if changes.cash_change_cents == 0 and changes.low_change_cents == 0 and not changes.new_payments %}Nothing has changed since last week.
+{% else %}{% if changes.cash_change_cents > 0 %}- Cash on hand is up {{ changes.cash_change_cents|money(currency) }}.
+{% elif changes.cash_change_cents < 0 %}- Cash on hand is down {{ (-changes.cash_change_cents)|money(currency) }}.
+{% endif %}{% for payment in changes.new_payments %}- New expected payment: {{ payment.name }}, {{ payment.amount_cents|money(currency) }}, on {{ payment.date|day(weekday=True) }}.
+{% endfor %}{% if changes.low_change_cents > 0 %}- Your projected low is {{ changes.low_change_cents|money(currency) }} higher than last week.
+{% elif changes.low_change_cents < 0 %}- Your projected low is {{ (-changes.low_change_cents)|money(currency) }} lower than last week.
+{% endif %}{% endif %}{% endif %}
+Open your dashboard: {{ web_url }}/{% endblock %}

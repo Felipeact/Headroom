@@ -1,7 +1,7 @@
 # Spec 27: The alert page
 
 - **Milestone:** 5, alerts and dashboard
-- **Status:** Not started
+- **Status:** Done
 - **Depends on:** 25
 
 ## Goal
@@ -14,5 +14,5 @@ Show one alert in full: what causes the gap, and every way to fix it.
 
 ## Done when
 
-- [ ] The page matches its mockup on a phone, and works on desktop.
-- [ ] Dismissing the alert returns to the dashboard, where the alert no longer appears.
+- [x] The page matches its mockup on a phone, and works on desktop.
+- [x] Dismissing the alert returns to the dashboard, where the alert no longer appears.

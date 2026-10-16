@@ -1,7 +1,7 @@
 # Spec 08: API errors, logging, and monitoring
 
 - **Milestone:** 2, foundations
-- **Status:** Not started
+- **Status:** Done
 - **Depends on:** 03 (can run alongside 06 and 07)
 
 ## Goal
@@ -19,6 +19,6 @@ Make every API failure consistent, logged safely, and visible.
 
 ## Done when
 
-- [ ] A test proves that a secret written to a log line is removed.
-- [ ] An unknown route returns problem details with status 404.
-- [ ] A deliberate test error shows up in Sentry.
+- [x] A test proves that a secret written to a log line is removed.
+- [x] An unknown route returns problem details with status 404.
+- [x] A deliberate test error shows up in Sentry.

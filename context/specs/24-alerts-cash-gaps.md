@@ -1,7 +1,7 @@
 # Spec 24: Cash gap alerts
 
 - **Milestone:** 5, alerts and dashboard
-- **Status:** Not started
+- **Status:** Done
 - **Depends on:** 23
 
 ## Goal
@@ -21,6 +21,7 @@ Find the weeks when cash will drop below the minimum, and explain why.
 
 ## Done when
 
-- [ ] The sample data's gap in the week of Nov 9 produces one alert, naming the supplier payment and payroll.
-- [ ] Processing the same forecast again creates no duplicate, and small changes publish nothing.
-- [ ] A gap that disappears from the forecast becomes resolved.
+- [x] The sample data's gap in the week of Nov 9 produces one alert, naming the supplier payment and payroll. *`tests/test_alerts_sample.py`: $3,150, short by $1,850, Coastal Supply Co and payroll, Birch & Co after.*
+- [x] Processing the same forecast again creates no duplicate, and small changes publish nothing.
+- [x] A gap that disappears from the forecast becomes resolved.
+- [x] *Carried over from spec 22:* on seeds 0–4, the default strategy's 4-week mean error in `uv run python -m app.modules.forecasting.backtest` is within ±10%. This needs Harbor Street's history realigned with its reference future (a spec 18 amendment): today, client payments and supplier bills fall on random days, which puts the floor at 14–18%. See spec 22's Measured accuracy. *Done by feature 23a (2026-10-09): 8.56%, 6.79%, 7.22%, 6.92%, 7.50% on seeds 0–4, gated by `tests/test_forecast_backtest.py::test_ten_percent_bar`.*

@@ -1,7 +1,7 @@
 # Spec 20: Expected payments
 
 - **Milestone:** 4, forecast
-- **Status:** Not started
+- **Status:** Done
 - **Depends on:** 13, 14
 
 ## Goal
@@ -23,6 +23,6 @@ Let owners add payments they know are coming, which the bank data can't predict.
 
 ## Done when
 
-- [ ] Adding, editing, and deleting all work from the web app through to the database.
-- [ ] A matched payment is counted only once.
-- [ ] The page and the dialog match the mockup.
+- [x] Adding, editing, and deleting all work from the web app through to the database.
+- [x] A matched payment is counted only once.
+- [x] The page and the dialog match the mockup.

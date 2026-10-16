@@ -1,0 +1,4 @@
+# Generated files: always LF, whatever core.autocrlf says, so regenerating them on Windows
+# does not show them as modified (spec 09).
+contracts/openapi.json text eol=lf
+frontend/lib/api/schema.d.ts text eol=lf

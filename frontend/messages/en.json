@@ -1,0 +1,531 @@
+{
+  "Metadata": {
+    "title": "Headroom"
+  },
+  "Shell": {
+    "wordmark": "Headroom",
+    "businessLabel": "Business",
+    "skipToContent": "Skip to main content",
+    "mainNav": "Main",
+    "openMenu": "Open menu",
+    "menuTitle": "Menu",
+    "closeMenu": "Close menu",
+    "signOut": "Sign out"
+  },
+  "Nav": {
+    "dashboard": "Dashboard",
+    "expectedPayments": "Expected payments",
+    "alerts": "Alerts",
+    "settings": "Settings"
+  },
+  "Pages": {
+    "comingSoon": "This page is coming soon."
+  },
+  "States": {
+    "loading": "Loading",
+    "errorTitle": "We couldn't load this page",
+    "errorBody": "Check your connection and try again.",
+    "tryAgain": "Try again"
+  },
+  "Onboarding": {
+    "stepOf": "Step {step} of {total}",
+    "Business": {
+      "title": "Tell us about your business",
+      "intro": "Your time zone decides when alerts and your weekly email arrive.",
+      "nameLabel": "Business name",
+      "provinceLabel": "Province or territory",
+      "provincePlaceholder": "Choose a province or territory",
+      "quebecHint": "Headroom isn't available in Quebec yet.",
+      "timeZoneLabel": "Time zone",
+      "timeZonePlaceholder": "Choose a time zone",
+      "timeZoneHint": "Filled in from your device. Change it if it's wrong.",
+      "continue": "Continue",
+      "errors": {
+        "nameRequired": "Enter your business name.",
+        "nameTooLong": "Use 100 characters or fewer for the name.",
+        "provinceRequired": "Choose your province or territory.",
+        "quebec": "Headroom isn't available in Quebec yet. You can't set up a business there for now.",
+        "timeZoneRequired": "Choose your time zone.",
+        "saveFailed": "We couldn't save your business. Try again."
+      }
+    },
+    "provinces": {
+      "AB": "Alberta",
+      "BC": "British Columbia",
+      "MB": "Manitoba",
+      "NB": "New Brunswick",
+      "NL": "Newfoundland and Labrador",
+      "NT": "Northwest Territories",
+      "NS": "Nova Scotia",
+      "NU": "Nunavut",
+      "ON": "Ontario",
+      "PE": "Prince Edward Island",
+      "QC": "Quebec",
+      "SK": "Saskatchewan",
+      "YT": "Yukon"
+    },
+    "timeZones": {
+      "America/St_Johns": "Newfoundland Time (St. John's)",
+      "America/Halifax": "Atlantic Time (Halifax)",
+      "America/Toronto": "Eastern Time (Toronto)",
+      "America/Winnipeg": "Central Time (Winnipeg)",
+      "America/Regina": "Saskatchewan Time (Regina)",
+      "America/Edmonton": "Mountain Time (Edmonton)",
+      "America/Vancouver": "Pacific Time (Vancouver)",
+      "America/Whitehorse": "Yukon Time (Whitehorse)"
+    },
+    "Bank": {
+      "title": "Connect your bank",
+      "intro": "Headroom reads your balances and transactions to build your 13-week forecast.",
+      "readOnlyTitle": "Read-only",
+      "readOnlyBody": "Headroom can see your balances and transactions. It can't move money.",
+      "passwordTitle": "Your password stays with your bank",
+      "passwordBody": "You log in on your bank's own screen. Headroom never sees your password.",
+      "controlTitle": "You're in control",
+      "controlBody": "Disconnect at any time, and Headroom removes that bank's data.",
+      "provider": "Bank connections are provided by Plaid.",
+      "connect": "Connect your bank",
+      "connecting": "Connecting your bank…",
+      "errors": {
+        "alreadyConnected": "This bank is already connected.",
+        "connectFailed": "We couldn't connect your bank. Try again."
+      }
+    },
+    "Accounts": {
+      "title": "Which accounts count as cash?",
+      "introOne": "{bank} is connected. Choose what Headroom counts as cash you can spend.",
+      "introMany": "Your banks are connected. Choose what Headroom counts as cash you can spend.",
+      "details": "••{mask} · {type}",
+      "types": {
+        "checking": "Checking",
+        "savings": "Savings",
+        "credit_card": "Credit",
+        "line_of_credit": "Credit",
+        "other": "Other"
+      },
+      "available": "available",
+      "countsAsCash": "Counts as cash",
+      "countsAsCashLabel": "{name} counts as cash",
+      "spendQuestion": "Is this money you can spend?",
+      "spendGroupLabel": "Count {name} as cash",
+      "spendYes": "Yes, count it",
+      "spendNo": "No, keep it separate",
+      "primary": "Primary account",
+      "primaryGroupLabel": "Primary account",
+      "creditNote": "Credit never counts as cash. Headroom shows what's available, and may suggest it as a fix.",
+      "otherNote": "This type of account can't count as cash.",
+      "currencyNote": "Only Canadian dollar accounts can count as cash for now.",
+      "primaryNote": "Expected payments you add go to your primary account unless you choose another.",
+      "connectAnother": "Connect another bank",
+      "continue": "Continue",
+      "errors": {
+        "saveFailed": "We couldn't save that change. Try again.",
+        "noneIncluded": "Choose at least one account that counts as cash."
+      }
+    },
+    "Minimum": {
+      "title": "Set your minimum balance",
+      "intro": "Headroom warns you when your cash is forecast to drop below this amount.",
+      "label": "Minimum balance",
+      "suggested": "Suggested: {amount}, about two weeks of your typical spending.",
+      "alertsTitle": "How alerts work",
+      "alertsBody": "If your forecast dips below {amount}, you get an email that names the payments causing it and suggests ways to fix it.",
+      "alertsBodyNoAmount": "If your forecast dips below your minimum balance, you get an email that names the payments causing it and suggests ways to fix it.",
+      "settingsNote": "You can change this at any time in Settings.",
+      "continue": "Continue",
+      "errors": {
+        "invalid": "Enter a whole-dollar amount from $0 to {max}.",
+        "saveFailed": "We couldn't save your minimum balance. Try again."
+      }
+    },
+    "Forecast": {
+      "title": "Building your forecast",
+      "intro": "This usually takes a minute or two.",
+      "connected": "Connected {banks}",
+      "reading": "Reading your transactions",
+      "read": "Read {months, plural, one {# month} other {# months}} of transactions",
+      "readNoHistory": "Read your transactions",
+      "finding": "Finding recurring payments",
+      "others": "{count, plural, one {# other} other {# others}}",
+      "soFar": "{names} so far",
+      "building": "Building your 13-week forecast",
+      "footer": "You'll go to your dashboard as soon as it's ready.",
+      "slow": "This is taking longer than usual. You can go to your <link>dashboard</link>; your forecast will appear there when it's ready.",
+      "needsAttention": "Your bank needs you to log in again.",
+      "fixBank": "Go to bank settings"
+    }
+  },
+  "Settings": {
+    "title": "Settings",
+    "navLabel": "Settings",
+    "sections": {
+      "business": "Business",
+      "banks": "Bank connections",
+      "members": "Members",
+      "email": "Email preferences",
+      "data": "Your data"
+    },
+    "Banks": {
+      "title": "Bank connections",
+      "intro": "Choose which accounts count as cash, and which one is your primary account.",
+      "connectAnother": "Connect another bank",
+      "connecting": "Connecting your bank…",
+      "synced": "Synced {when}",
+      "syncing": "Syncing…",
+      "needsAttention": "Needs attention",
+      "columns": {
+        "account": "Account",
+        "balance": "Balance",
+        "countsAsCash": "Counts as cash",
+        "primary": "Primary"
+      },
+      "details": "••{mask} · {type}",
+      "types": {
+        "checking": "Checking",
+        "savings": "Savings",
+        "credit_card": "Credit card",
+        "line_of_credit": "Credit",
+        "other": "Other"
+      },
+      "available": "available",
+      "owed": "owed",
+      "countsAsCashLabel": "{name} counts as cash",
+      "creditNote": "Credit never counts as cash",
+      "otherNote": "This type of account can't count as cash",
+      "currencyNote": "Only Canadian dollar accounts count as cash for now",
+      "notAvailable": "Not available",
+      "primary": "Primary",
+      "makePrimary": "Make primary",
+      "primaryGroupLabel": "Primary account",
+      "loginBanner": "{bank} asked you to log in again. Until you do, your forecast is missing this bank's latest data.",
+      "syncFailingBanner": "We couldn't sync {bank} for 3 nights. Until it works again, your forecast is missing this bank's latest data.",
+      "reconnect": "Reconnect",
+      "reconnecting": "Reconnecting…",
+      "disconnect": "Disconnect",
+      "disconnecting": "Disconnecting…",
+      "disconnectTitle": "Disconnect {bank}?",
+      "disconnectBody": "Headroom stops syncing this bank and removes its accounts and transactions. This can't be undone.",
+      "cancel": "Cancel",
+      "disconnected": "{bank} disconnected",
+      "notifications": "Notifications",
+      "readOnlyNote": "Headroom has read-only access. Disconnecting a bank stops syncing and removes its data.",
+      "emptyTitle": "No bank connected yet",
+      "emptyBody": "Connect your bank to see your 13-week forecast.",
+      "connect": "Connect your bank",
+      "errors": {
+        "load": "We couldn't load your bank connections. Check your connection and try again.",
+        "saveFailed": "We couldn't save that change. Try again.",
+        "reconnectFailed": "We couldn't reconnect {bank}. Try again.",
+        "disconnectFailed": "We couldn't disconnect {bank}. Try again.",
+        "alreadyConnected": "This bank is already connected.",
+        "connectFailed": "We couldn't connect your bank. Try again."
+      }
+    },
+    "Email": {
+      "title": "Email preferences",
+      "alerts": "Cash gap alerts",
+      "alertsHint": "Email me when cash is projected to fall below my minimum.",
+      "digest": "Weekly digest",
+      "digestHint": "A summary of my forecast every Monday morning.",
+      "saved": "Email preferences saved",
+      "saveFailed": "We couldn't save your email preferences. Try again.",
+      "notifications": "Notifications",
+      "clientsTitle": "Bookkeeper alerts",
+      "clientsHint": "Choose which of your clients' cash gap alerts you get by email.",
+      "clientAlerts": "Alerts for {business}",
+      "clientAlertsHint": "Email me when {business}'s cash is projected to fall below its minimum.",
+      "clientSaved": "Alert email choice saved",
+      "clientSaveFailed": "We couldn't save that choice. Try again."
+    },
+    "Members": {
+      "title": "Members",
+      "intro": "Invite your bookkeeper. They can see your forecasts and alerts and manage expected payments. They can't change banks, members or settings.",
+      "inviteLabel": "Bookkeeper's email address",
+      "invitePlaceholder": "name@example.com",
+      "inviteButton": "Send invitation",
+      "inviting": "Sending…",
+      "invited": "Invitation sent to {email}",
+      "peopleTitle": "People with access",
+      "roles": {
+        "owner": "Owner",
+        "bookkeeper": "Bookkeeper"
+      },
+      "unnamed": "Bookkeeper",
+      "pendingTitle": "Pending invitations",
+      "pendingRow": "Invitation sent {sent}, expires {expires}",
+      "emptyTitle": "No bookkeepers yet",
+      "emptyBody": "Invite your bookkeeper by email, and they can see your forecast.",
+      "remove": "Remove",
+      "removing": "Removing…",
+      "removeTitle": "Remove {name}?",
+      "removeBody": "They lose access to this business right away. You can invite them again later.",
+      "cancel": "Cancel",
+      "removed": "{name} removed",
+      "notifications": "Notifications",
+      "errors": {
+        "load": "We couldn't load your members. Check your connection and try again.",
+        "invalid": "Enter a valid email address.",
+        "alreadyMember": "That person already has access.",
+        "alreadyInvited": "That address already has a pending invitation.",
+        "notSent": "We couldn't send the invitation email. Try again.",
+        "failed": "We couldn't send the invitation. Try again.",
+        "removeFailed": "We couldn't remove {name}. Try again."
+      }
+    }
+  },
+  "ExpectedPayments": {
+    "title": "Expected payments",
+    "intro": "Payments you know are coming that Headroom can't predict from your bank data.",
+    "add": "Add expected payment",
+    "tableLabel": "Expected payments",
+    "columns": {
+      "date": "Date",
+      "description": "Description",
+      "account": "Account",
+      "repeats": "Repeats",
+      "amount": "Amount",
+      "actions": "Actions"
+    },
+    "repeats": {
+      "once": "Doesn't repeat",
+      "weekly": "Every week",
+      "biweekly": "Every 2 weeks",
+      "monthly": "Every month",
+      "quarterly": "Every 3 months"
+    },
+    "overdue": "Overdue",
+    "accountRemoved": "Account removed",
+    "edit": "Edit {description}",
+    "delete": "Delete {description}",
+    "emptyTitle": "No expected payments yet",
+    "emptyBody": "Add a payment you know is coming, such as a large invoice, so your forecast includes it.",
+    "loadFailed": "We couldn't load your expected payments.",
+    "notifications": "Notifications",
+    "dialog": {
+      "addTitle": "Add expected payment",
+      "editTitle": "Edit expected payment",
+      "description": "Headroom counts it in your forecast until a matching payment shows up in your bank.",
+      "direction": "Direction",
+      "moneyOut": "Money out",
+      "moneyIn": "Money in",
+      "amount": "Amount",
+      "date": "Date",
+      "descriptionLabel": "Description",
+      "account": "Account",
+      "repeats": "Repeats",
+      "cancel": "Cancel",
+      "add": "Add payment",
+      "adding": "Adding…",
+      "save": "Save changes",
+      "saving": "Saving…",
+      "saveFailed": "We couldn't save this payment. Check the details and try again.",
+      "errors": {
+        "amountRequired": "Enter an amount.",
+        "amountInvalid": "Enter an amount in dollars, such as 2,300.50.",
+        "amountZero": "Enter an amount greater than $0.",
+        "amountTooLarge": "Enter an amount up to $99,999,999.99.",
+        "dateRequired": "Choose a date.",
+        "descriptionRequired": "Enter a description."
+      }
+    },
+    "deleteDialog": {
+      "title": "Delete {description}?",
+      "body": "Headroom stops counting this payment in your forecast. This can't be undone.",
+      "cancel": "Cancel",
+      "confirm": "Delete payment",
+      "deleting": "Deleting…",
+      "failed": "We couldn't delete this payment. Try again."
+    },
+    "toasts": {
+      "added": "Expected payment added",
+      "updated": "Expected payment updated",
+      "deleted": "Expected payment deleted"
+    }
+  },
+  "Dashboard": {
+    "title": "Cash flow",
+    "dateLine": "{asOf} · Forecast through {through}",
+    "throughLine": "Forecast through {through}",
+    "status": "Updated {when} · {count, plural, one {# bank synced} other {# banks synced}}",
+    "statusWaiting": "Waiting for your bank's first sync",
+    "syncedToday": "today at {time}",
+    "syncedTodayShort": "{time}",
+    "syncedYesterday": "yesterday at {time}",
+    "syncedOn": "{day} at {time}",
+    "addPayment": "Add expected payment",
+    "cards": {
+      "label": "Summary",
+      "cashOnHand": "Cash on hand",
+      "cashAccounts": "{names} · {count, plural, one {# account} other {# accounts}}",
+      "projectedLow": "Projected low",
+      "lowBelow": "Week of {week} · {short} below your minimum",
+      "lowBelowShort": "Week of {week}, below your minimum",
+      "lowWeek": "Week of {week}",
+      "availableCredit": "Available credit",
+      "creditNote": "{names} · not counted as cash",
+      "creditNoteShort": "{names}, not counted as cash",
+      "nextCardPayment": "Next card payment",
+      "cardDue": "{card} · due {date}"
+    },
+    "alert": {
+      "label": "Cash gap",
+      "title": "Cash falls below your {minimum} minimum the week of {week}",
+      "bodyOne": "{first} leaves that week, taking cash down to {low}.",
+      "bodyTwo": "{first} and {second} leave in the same week, taking cash down to {low}.",
+      "bodyMore": "{first}, {second} and {more, plural, one {# more payment} other {# more payments}} leave in the same week, taking cash down to {low}.",
+      "cause": "{name} ({amount})",
+      "topFix": "Top fix:",
+      "fixPayEarly": "ask {name} to pay their {amount} invoice a week early.",
+      "fixMovePayment": "move the {amount} payment to {name} a week later.",
+      "fixDrawCredit": "draw {amount} from your {name}.",
+      "fixFinancing": "arrange {amount} of short-term financing for the length of the gap.",
+      "keepsAbove": "That keeps you above your minimum.",
+      "seeFixes": "{count, plural, =0 {See details} one {See the fix} other {See all # fixes}}",
+      "dismiss": "Dismiss",
+      "dismissing": "Dismissing…",
+      "dismissed": "Alert dismissed",
+      "dismissFailed": "We couldn't dismiss this alert. Try again."
+    },
+    "chart": {
+      "title": "13-week forecast",
+      "subtitle": "Projected balance at the end of each week",
+      "today": "Today",
+      "minimumLabel": "Your {minimum} minimum",
+      "minimumLabelShort": "Min {minimum}",
+      "lowLabel": "Low {low}",
+      "legendBalance": "Projected balance",
+      "legendRange": "Likely range",
+      "legendMinimum": "Your {minimum} minimum",
+      "legendMinimumShort": "Your minimum",
+      "summary": "Your cash is projected to go from {opening} today to {last} by the week of {lastWeek}.",
+      "summaryLowBelow": "The lowest point is {low} in the week of {week}, {short} below your {minimum} minimum.",
+      "summaryLowAbove": "The lowest point is {low} in the week of {week}, above your {minimum} minimum.",
+      "summaryLow": "The lowest point is {low} in the week of {week}."
+    },
+    "accounts": {
+      "title": "Accounts",
+      "manage": "Manage",
+      "cash": "Counted as cash",
+      "credit": "Credit · not counted as cash",
+      "primary": "Primary",
+      "institution": "{institution} ••{mask}",
+      "cashOnHand": "Cash on hand",
+      "paymentDue": "Payment due {date}",
+      "paymentDueShort": "Due {date}",
+      "available": "Available"
+    },
+    "upcoming": {
+      "title": "Next 14 days",
+      "empty": "Nothing is due in the next 14 days.",
+      "columns": {
+        "date": "Date",
+        "description": "Description",
+        "account": "Account",
+        "type": "Type",
+        "amount": "Amount"
+      },
+      "cardPayment": "{card} payment",
+      "dateAccount": "{date} · {account}",
+      "types": {
+        "weekly": "Recurring, every week",
+        "biweekly": "Recurring, every 2 weeks",
+        "semimonthly": "Recurring, twice a month",
+        "monthly": "Recurring, monthly",
+        "quarterly": "Recurring, every 3 months",
+        "expected": "Expected",
+        "card": "Card payment"
+      }
+    },
+    "empty": {
+      "title": "No bank connected yet",
+      "body": "Connect your bank to see your 13-week forecast.",
+      "action": "Connect your bank"
+    },
+    "building": {
+      "title": "Your forecast is on its way",
+      "body": "We're reading your bank data. This usually takes a minute or two.",
+      "action": "See progress"
+    },
+    "error": {
+      "title": "We couldn't load your dashboard.",
+      "body": "Check your connection and try again.",
+      "retry": "Try again"
+    },
+    "stale": {
+      "body": "Some bank data is more than 2 days old, so this forecast may be off.",
+      "action": "Go to bank settings"
+    },
+    "notifications": "Notifications"
+  },
+  "AlertPage": {
+    "back": "Dashboard",
+    "projectedLow": "Projected low",
+    "weekOf": "Week of {week}",
+    "shortBy": "Short by",
+    "belowMinimum": "Below your minimum",
+    "causesTitle": "What's causing it",
+    "arrivesAfter": "Arrives after the gap",
+    "rowMeta": "{date} · {type}",
+    "types": {
+      "expected": "Expected payment",
+      "card": "Card payment",
+      "recurring": "Recurring",
+      "weekly": "Every week",
+      "biweekly": "Every 2 weeks",
+      "semimonthly": "Twice a month",
+      "monthly": "Every month",
+      "quarterly": "Every 3 months"
+    },
+    "fixesTitle": "Ways to fix it",
+    "newLowest": "New lowest balance",
+    "fix": {
+      "payEarlyTitle": "Ask {name} to pay a week early",
+      "payEarlyBody": "Their {amount} invoice is due {due}. Ask them to pay by {date}. A small early-payment discount can help.",
+      "moveTitle": "Move the {name} payment by a week",
+      "moveBody": "Ask {name} to move the {amount} payment to {date}.",
+      "drawTitle": "Draw {amount} on your line of credit",
+      "drawBodyWhen": "You have {available} available. Repay it when {name} pays.",
+      "drawBodyOn": "You have {available} available. Repay it on {date}.",
+      "financingTitle": "Arrange {amount} of short-term financing",
+      "financingBody": "Borrow it on {date} and repay it on {repay}, after the gap."
+    },
+    "dismiss": "Dismiss alert",
+    "dismissNote": "This alert closes on its own when the gap leaves your forecast.",
+    "dismissedNote": "You dismissed this alert on {date}. It comes back if the gap gets worse.",
+    "resolvedNote": "This gap is no longer in your forecast.",
+    "notFoundTitle": "We couldn't find this alert",
+    "notFoundBody": "It may belong to another business, or the link may be wrong.",
+    "notFoundAction": "Go to the dashboard"
+  },
+  "Unsubscribe": {
+    "title": "Unsubscribe from Headroom emails?",
+    "body": "You'll stop getting cash gap alerts and the weekly digest.",
+    "button": "Unsubscribe",
+    "pending": "Unsubscribing…",
+    "doneTitle": "You're unsubscribed",
+    "doneBody": "You won't get any more emails from Headroom. To turn them back on, go to <link>Email preferences</link>.",
+    "invalidTitle": "This unsubscribe link isn't valid",
+    "invalidBody": "To change your emails, go to <link>Email preferences</link>.",
+    "failed": "We couldn't unsubscribe you. Try again."
+  },
+  "Invite": {
+    "title": "Join {business} on Headroom",
+    "body": "As a bookkeeper you can see the forecast and alerts and manage expected payments. Sign in with the email address this invitation was sent to.",
+    "accept": "Accept invitation",
+    "accepting": "Accepting…",
+    "acceptedTitle": "You now have access to {business}",
+    "acceptedBody": "Open the dashboard to see their forecast.",
+    "goToDashboard": "Go to the dashboard",
+    "expiredTitle": "This invitation has expired",
+    "expiredBody": "Invitations last 7 days. Ask the owner to send a new one.",
+    "wrongTitle": "This invitation is for a different email address",
+    "wrongBody": "Sign in with the email address the invitation was sent to, then open the link again.",
+    "usedTitle": "This invitation was already used",
+    "usedBody": "If you accepted it, go to the dashboard.",
+    "notFoundTitle": "We can't find this invitation",
+    "notFoundBody": "Check the link in your email, or ask the owner to send a new one.",
+    "ownerTitle": "You already own this business",
+    "ownerBody": "This invitation is for a bookkeeper, so there is nothing to accept.",
+    "failed": "We couldn't accept the invitation. Try again."
+  }
+}

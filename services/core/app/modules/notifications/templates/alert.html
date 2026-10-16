@@ -1,0 +1,27 @@
+{% extends "base.html" %}
+{% import "_alert_copy.jinja" as copy with context %}
+{% block content %}
+<div style="margin: 0 0 20px; font-size: 12px; font-weight: 700; letter-spacing: 0.06em; text-transform: uppercase; color: #7A4300;">{{ copy.label() }}</div>
+<h1 style="margin: 0 0 20px; font-family: Georgia, serif; font-size: 26px; font-weight: 700; line-height: 1.3; color: #16202B;">{{ subject }}</h1>
+<p style="margin: 0 0 20px; font-size: 16px; line-height: 1.55;">{% if first_name %}Hi {{ first_name }}, the{% else %}The{% endif %} forecast for {{ business_name }} shows cash dropping to <strong>{{ lowest_balance_cents|money(currency) }}</strong> in the week of {{ lowest_week_starts_on|day }}.</p>
+{% if causes %}
+<div style="margin: 0 0 6px; font-size: 15px; font-weight: 700;">What's causing it</div>
+<ul style="margin: 0 0 20px; padding-left: 20px; font-size: 15px; line-height: 1.7;">
+{% for cause in causes %}
+<li>{{ cause.name }}, {{ cause.amount_cents|money(currency) }}, on {{ cause.date|day(weekday=True) }}</li>
+{% endfor %}
+</ul>
+{% endif %}
+{% if top_fix %}
+<table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="margin: 0 0 20px;">
+<tr>
+<td style="background: #FFF4E2; border: 1px solid #F0D3A4; border-radius: 10px; padding: 16px; font-size: 15px; line-height: 1.5; color: #3D2E1C;"><strong>Top fix:</strong> {% set amount = top_fix.amount_cents|money(currency) %}{% if top_fix.kind == "pay_early" %}ask {{ top_fix.name }} to pay their {{ amount }} invoice a week early.{% elif top_fix.kind == "move_payment" %}move the {{ amount }} payment to {{ top_fix.name }} a week later.{% elif top_fix.kind == "draw_credit" %}draw {{ amount }} from your {{ top_fix.name }}.{% else %}arrange {{ amount }} of short-term financing for the length of the gap.{% endif %}{% if top_fix.keeps_above %} That keeps you above your minimum.{% endif %}</td>
+</tr>
+</table>
+{% endif %}
+<table role="presentation" cellpadding="0" cellspacing="0" border="0">
+<tr>
+<td bgcolor="#1D4E89" style="background: #1D4E89; border-radius: 10px;"><a href="{{ web_url }}/alerts/{{ alert_id }}" style="display: inline-block; padding: 14px 22px; border-radius: 10px; color: #FFFFFF; font-family: -apple-system, 'Segoe UI', Helvetica, sans-serif; font-size: 16px; font-weight: 700; text-decoration: none;">{{ copy.button() }}</a></td>
+</tr>
+</table>
+{% endblock %}

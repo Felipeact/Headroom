@@ -1,7 +1,7 @@
 # Spec 14: Transaction sync
 
 - **Milestone:** 3, bank data
-- **Status:** Not started
+- **Status:** Done
 - **Depends on:** 12 (can run alongside 13)
 
 ## Goal
@@ -25,7 +25,7 @@ Bring in every connected account's transactions and balances, with no duplicates
 
 ## Done when
 
-- [ ] Running the same sync twice changes nothing the second time.
-- [ ] A pending transaction that posts appears once, and a transaction Plaid removes is removed.
-- [ ] Money out is negative and money in is positive for all sandbox data.
-- [ ] A webhook with an invalid signature is rejected.
+- [x] Running the same sync twice changes nothing the second time.
+- [x] A pending transaction that posts appears once, and a transaction Plaid removes is removed.
+- [x] Money out is negative and money in is positive for all sandbox data.
+- [x] A webhook with an invalid signature is rejected.

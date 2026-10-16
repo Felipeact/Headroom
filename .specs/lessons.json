@@ -1,0 +1,693 @@
+{
+  "schema": 1,
+  "promote_threshold": 2,
+  "window_days": 45,
+  "quarantine_threshold": 2,
+  "next_id": 39,
+  "lessons": [
+    {
+      "id": "L-001",
+      "key": "spec_precision_gap::github computes a pull request s mergestatestatus lazily and can answer unknown right after a push a proof reading it must retry until it settles",
+      "text": "GitHub computes a pull request's mergeStateStatus lazily and can answer UNKNOWN right after a push; a proof reading it must retry until it settles.",
+      "signal": "spec_precision_gap",
+      "scope": "ci",
+      "status": "candidate",
+      "features": [
+        "04-setup-tests-and-ci"
+      ],
+      "recurrence": 1,
+      "harmful": 0,
+      "evidence": [
+        ".specs/features/04-setup-tests-and-ci/proofs.sh:169 (ci)"
+      ],
+      "created": "2026-10-02T02:53:30Z",
+      "last_seen": "2026-10-02T02:53:30Z"
+    },
+    {
+      "id": "L-002",
+      "key": "spec_precision_gap::when a criterion names several file kinds ts and tsx the proof must exercise each kind not just one",
+      "text": "When a criterion names several file kinds (.ts and .tsx), the proof must exercise each kind, not just one.",
+      "signal": "spec_precision_gap",
+      "scope": "frontend",
+      "status": "candidate",
+      "features": [
+        "04-setup-tests-and-ci"
+      ],
+      "recurrence": 1,
+      "harmful": 0,
+      "evidence": [
+        "AC 2 (frontend)"
+      ],
+      "created": "2026-10-02T02:53:31Z",
+      "last_seen": "2026-10-02T02:53:31Z"
+    },
+    {
+      "id": "L-003",
+      "key": "spec_precision_gap::prove a table exists by querying the schema not by a command that exits 0 when the table is absent",
+      "text": "Prove a table exists by querying the schema, not by a command that exits 0 when the table is absent",
+      "signal": "spec_precision_gap",
+      "scope": "migrations",
+      "status": "candidate",
+      "features": [
+        "05-setup-railway-staging"
+      ],
+      "recurrence": 1,
+      "harmful": 0,
+      "evidence": [
+        "C3 - proofs.sh:81 (migrations)"
+      ],
+      "created": "2026-10-02T03:37:24Z",
+      "last_seen": "2026-10-02T03:37:24Z"
+    },
+    {
+      "id": "L-004",
+      "key": "spec_deviation::get user confirmation before a check asserts a command or name different from the literal the binding spec gives",
+      "text": "Get user confirmation before a check asserts a command or name different from the literal the binding spec gives",
+      "signal": "spec_deviation",
+      "scope": "deploy",
+      "status": "candidate",
+      "features": [
+        "05-setup-railway-staging"
+      ],
+      "recurrence": 1,
+      "harmful": 0,
+      "evidence": [
+        "C20 - proofs.sh:251-252; plan.md:128 (deploy)"
+      ],
+      "created": "2026-10-02T03:37:24Z",
+      "last_seen": "2026-10-02T03:37:24Z"
+    },
+    {
+      "id": "L-005",
+      "key": "ac_gap::when a screen renders the same control in two places desktop nav and a phone menu dialog assert the per control metric in both placements and read sizes only after the dialog s open animation settles",
+      "text": "When a screen renders the same control in two places (desktop nav and a phone menu Dialog), assert the per-control metric in both placements, and read sizes only after the Dialog's open animation settles.",
+      "signal": "ac_gap",
+      "scope": "frontend/e2e",
+      "status": "candidate",
+      "features": [
+        "07-web-app-shell"
+      ],
+      "recurrence": 1,
+      "harmful": 0,
+      "evidence": [
+        "checks.md C5 / e2e/shell.spec.ts (frontend/e2e)"
+      ],
+      "created": "2026-10-02T16:06:57Z",
+      "last_seen": "2026-10-02T16:06:57Z"
+    },
+    {
+      "id": "L-006",
+      "key": "spec_precision_gap::a no secret in source check must name the file set its proof scans git tracked or would track because the ignored env local is where the secret is meant to live",
+      "text": "A 'no secret in source' check must name the file set its proof scans (git-tracked or would-track), because the ignored .env.local is where the secret is meant to live.",
+      "signal": "spec_precision_gap",
+      "scope": "frontend/tests",
+      "status": "candidate",
+      "features": [
+        "07-web-app-shell"
+      ],
+      "recurrence": 1,
+      "harmful": 0,
+      "evidence": [
+        "checks.md C41 (frontend/tests)"
+      ],
+      "created": "2026-10-02T16:06:57Z",
+      "last_seen": "2026-10-02T16:06:57Z"
+    },
+    {
+      "id": "L-007",
+      "key": "gate_fail::pin generated files to lf in gitattributes because git for windows defaults core autocrlf true and a regenerated output is clean check then fails on identical bytes",
+      "text": "Pin generated files to LF in .gitattributes, because Git for Windows defaults core.autocrlf=true and a 'regenerated output is clean' check then fails on identical bytes.",
+      "signal": "gate_fail",
+      "scope": "git",
+      "status": "candidate",
+      "features": [
+        "09-api-typed-client"
+      ],
+      "recurrence": 1,
+      "harmful": 0,
+      "evidence": [
+        "C5 - proofs.sh:28-29 (git)"
+      ],
+      "created": "2026-10-02T20:51:47Z",
+      "last_seen": "2026-10-02T20:51:47Z"
+    },
+    {
+      "id": "L-008",
+      "key": "gate_fail::write tr d r as an escape never a literal control character editors and scripted edits turn a raw cr into an lf",
+      "text": "Write tr -d '\\r' as an escape, never a literal control character: editors and scripted edits turn a raw CR into an LF.",
+      "signal": "gate_fail",
+      "scope": "proofs",
+      "status": "candidate",
+      "features": [
+        "09-api-typed-client"
+      ],
+      "recurrence": 1,
+      "harmful": 0,
+      "evidence": [
+        "C16-C18 - proofs.sh:90-101 (proofs)"
+      ],
+      "created": "2026-10-02T20:51:47Z",
+      "last_seen": "2026-10-02T20:51:47Z"
+    },
+    {
+      "id": "L-009",
+      "key": "spec_precision_gap::a proof that a build fails must grep the expected error in the output not only check the exit code",
+      "text": "A proof that a build fails must grep the expected error in the output, not only check the exit code.",
+      "signal": "spec_precision_gap",
+      "scope": "proofs",
+      "status": "candidate",
+      "features": [
+        "09-api-typed-client"
+      ],
+      "recurrence": 1,
+      "harmful": 0,
+      "evidence": [
+        "C9 - proofs.sh:50 (proofs)"
+      ],
+      "created": "2026-10-02T20:51:47Z",
+      "last_seen": "2026-10-02T20:51:47Z"
+    },
+    {
+      "id": "L-010",
+      "key": "spec_precision_gap::a no focus trap assertion must check where focus ends up body or back to the first element not just that focus took more than one value",
+      "text": "A no-focus-trap assertion must check where focus ends up (body or back to the first element), not just that focus took more than one value.",
+      "signal": "spec_precision_gap",
+      "scope": "frontend/e2e",
+      "status": "candidate",
+      "features": [
+        "09-api-typed-client"
+      ],
+      "recurrence": 1,
+      "harmful": 0,
+      "evidence": [
+        "C15 - e2e/api-check.spec.ts:40 (frontend/e2e)"
+      ],
+      "created": "2026-10-02T20:51:47Z",
+      "last_seen": "2026-10-02T20:51:47Z"
+    },
+    {
+      "id": "L-011",
+      "key": "spec_precision_gap::a test that checks an export by reading its output file must delete or alter that file first or an already committed current output lets a wrong path pass",
+      "text": "A test that checks an export by reading its output file must delete or alter that file first, or an already-committed current output lets a wrong path pass.",
+      "signal": "spec_precision_gap",
+      "scope": "tests",
+      "status": "candidate",
+      "features": [
+        "09-api-typed-client"
+      ],
+      "recurrence": 1,
+      "harmful": 0,
+      "evidence": [
+        "C1 - tests/test_export_openapi.py:42 (tests)"
+      ],
+      "created": "2026-10-02T21:02:46Z",
+      "last_seen": "2026-10-02T21:02:46Z"
+    },
+    {
+      "id": "L-012",
+      "key": "gate_fail::a server render that forwards a short lived session token must refresh it when it is near expiry because a slow render can outlive the token before the api call",
+      "text": "A server render that forwards a short-lived session token must refresh it when it is near expiry, because a slow render can outlive the token before the API call.",
+      "signal": "gate_fail",
+      "scope": "frontend/auth",
+      "status": "candidate",
+      "features": [
+        "10-accounts-login"
+      ],
+      "recurrence": 1,
+      "harmful": 0,
+      "evidence": [
+        "C28 - frontend/lib/api/auth.ts (frontend/auth)"
+      ],
+      "created": "2026-10-02T22:49:29Z",
+      "last_seen": "2026-10-02T22:49:29Z"
+    },
+    {
+      "id": "L-013",
+      "key": "spec_precision_gap::a check that says for each case in c2 c7 needs a table built from those checks cases counted against them or a case gets dropped",
+      "text": "A check that says 'for each case in C2-C7' needs a table built from those checks' cases, counted against them, or a case gets dropped.",
+      "signal": "spec_precision_gap",
+      "scope": "tests",
+      "status": "candidate",
+      "features": [
+        "10-accounts-login"
+      ],
+      "recurrence": 1,
+      "harmful": 0,
+      "evidence": [
+        "C29 - services/core/tests/test_auth.py:217 (tests)"
+      ],
+      "created": "2026-10-02T22:49:29Z",
+      "last_seen": "2026-10-02T22:49:29Z"
+    },
+    {
+      "id": "L-014",
+      "key": "gate_fail::run axe only after animations settle when the steps before it can trigger a fade in such as a field error after blur",
+      "text": "Run axe only after animations settle when the steps before it can trigger a fade-in, such as a field error after blur.",
+      "signal": "gate_fail",
+      "scope": "frontend/e2e",
+      "status": "candidate",
+      "features": [
+        "10-accounts-login"
+      ],
+      "recurrence": 1,
+      "harmful": 0,
+      "evidence": [
+        "C26 - frontend/e2e/auth.spec.ts:115 (frontend/e2e)"
+      ],
+      "created": "2026-10-02T22:49:29Z",
+      "last_seen": "2026-10-02T22:49:29Z"
+    },
+    {
+      "id": "L-015",
+      "key": "spec_deviation::check the installed library for deprecations and css variable support before fixing an integration s literal shape in a landing row docs pages can lag the package",
+      "text": "Check the installed library for deprecations and CSS-variable support before fixing an integration's literal shape in a Landing row; docs pages can lag the package.",
+      "signal": "spec_deviation",
+      "scope": "frontend",
+      "status": "candidate",
+      "features": [
+        "10-accounts-login"
+      ],
+      "recurrence": 1,
+      "harmful": 0,
+      "evidence": [
+        "plan.md doors 7, 8 (frontend)"
+      ],
+      "created": "2026-10-02T22:49:29Z",
+      "last_seen": "2026-10-02T22:49:29Z"
+    },
+    {
+      "id": "L-016",
+      "key": "gate_fail::prove a screen s copy and order by rendering the real page or route component never a tree the test assembles from parts",
+      "text": "Prove a screen's copy and order by rendering the real page or route component, never a tree the test assembles from parts.",
+      "signal": "gate_fail",
+      "scope": "frontend/tests",
+      "status": "candidate",
+      "features": [
+        "11-accounts-businesses-and-access"
+      ],
+      "recurrence": 1,
+      "harmful": 0,
+      "evidence": [
+        "C26 frontend/tests/business-form.test.tsx (frontend/tests)"
+      ],
+      "created": "2026-10-04T17:44:56Z",
+      "last_seen": "2026-10-04T17:44:56Z"
+    },
+    {
+      "id": "L-017",
+      "key": "spec_precision_gap::when a mid build settlement changes what an approved check claims raise the check wording with the user at that moment instead of recording it only in handoff",
+      "text": "When a mid-build settlement changes what an approved check claims, raise the check wording with the user at that moment instead of recording it only in Handoff.",
+      "signal": "spec_precision_gap",
+      "scope": "checks",
+      "status": "candidate",
+      "features": [
+        "11-accounts-businesses-and-access"
+      ],
+      "recurrence": 1,
+      "harmful": 0,
+      "evidence": [
+        "C39 checks.md (checks)"
+      ],
+      "created": "2026-10-04T17:44:56Z",
+      "last_seen": "2026-10-04T17:44:56Z"
+    },
+    {
+      "id": "L-018",
+      "key": "spec_precision_gap::a check that says with x s values must assert every field of the response shape not a sample",
+      "text": "A check that says 'with X's values' must assert every field of the response shape, not a sample.",
+      "signal": "spec_precision_gap",
+      "scope": "services/core/tests",
+      "status": "candidate",
+      "features": [
+        "11-accounts-businesses-and-access"
+      ],
+      "recurrence": 1,
+      "harmful": 0,
+      "evidence": [
+        "C14 services/core/tests/test_businesses.py (services/core/tests)"
+      ],
+      "created": "2026-10-04T17:44:56Z",
+      "last_seen": "2026-10-04T17:44:56Z"
+    },
+    {
+      "id": "L-019",
+      "key": "spec_precision_gap::when a check lists literal inputs copy each literal into the test byte for byte a near miss invalid json for a json string tests a different case",
+      "text": "When a check lists literal inputs, copy each literal into the test byte for byte; a near-miss (invalid JSON for a JSON string) tests a different case.",
+      "signal": "spec_precision_gap",
+      "scope": "api/tests",
+      "status": "candidate",
+      "features": [
+        "14-bank-transaction-sync"
+      ],
+      "recurrence": 1,
+      "harmful": 0,
+      "evidence": [
+        "C33 - services/core/tests/test_plaid_webhook.py:216 (api/tests)"
+      ],
+      "created": "2026-10-05T19:49:03Z",
+      "last_seen": "2026-10-05T19:49:03Z"
+    },
+    {
+      "id": "L-020",
+      "key": "gate_fail::an optional setting a developer may keep in env local must be pinned in tests conftest py and an unset test must also disable the env file or the local value leaks in",
+      "text": "An optional setting a developer may keep in .env.local must be pinned in tests/conftest.py, and an 'unset' test must also disable the env file, or the local value leaks in.",
+      "signal": "gate_fail",
+      "scope": "api/tests",
+      "status": "candidate",
+      "features": [
+        "14-bank-transaction-sync"
+      ],
+      "recurrence": 1,
+      "harmful": 0,
+      "evidence": [
+        "C38 - services/core/tests/conftest.py:29 (api/tests)"
+      ],
+      "created": "2026-10-05T19:49:03Z",
+      "last_seen": "2026-10-05T19:49:03Z"
+    },
+    {
+      "id": "L-021",
+      "key": "spec_precision_gap::pin every database defaulted timestamp a time based rule reads in tests a server now default makes simulated clock tests depend on the real date",
+      "text": "Pin every database-defaulted timestamp a time-based rule reads in tests; a server now() default makes simulated-clock tests depend on the real date",
+      "signal": "spec_precision_gap",
+      "scope": "tests, jobs",
+      "status": "candidate",
+      "features": [
+        "15-bank-nightly-sync-job"
+      ],
+      "recurrence": 1,
+      "harmful": 0,
+      "evidence": [
+        "verification.md round 2 finding 1; fixed in 004dc46 (tests/test_nightly_sync.py:52,148) (tests, jobs)"
+      ],
+      "created": "2026-10-06T02:18:12Z",
+      "last_seen": "2026-10-06T02:18:12Z"
+    },
+    {
+      "id": "L-022",
+      "key": "spec_precision_gap::to prove a write commits in the same transaction as another compare against a row only that transaction writes not rows a later transaction would also rewrite",
+      "text": "To prove a write commits in the same transaction as another, compare against a row only that transaction writes, not rows a later transaction would also rewrite",
+      "signal": "spec_precision_gap",
+      "scope": "repo-layer",
+      "status": "candidate",
+      "features": [
+        "16-bank-transaction-labels"
+      ],
+      "recurrence": 1,
+      "harmful": 0,
+      "evidence": [
+        "C21 - services/core/tests/test_transaction_labels.py:583 (repo-layer)"
+      ],
+      "created": "2026-10-06T02:52:38Z",
+      "last_seen": "2026-10-06T02:52:38Z"
+    },
+    {
+      "id": "L-023",
+      "key": "spec_precision_gap::when proving rows were deleted count them by a key that survives the delete business id or saved ids never by joining through the parent rows that were deleted too",
+      "text": "When proving rows were deleted, count them by a key that survives the delete (business_id or saved IDs), never by joining through the parent rows that were deleted too.",
+      "signal": "spec_precision_gap",
+      "scope": "tests/bank_sync",
+      "status": "candidate",
+      "features": [
+        "17-bank-connection-settings"
+      ],
+      "recurrence": 1,
+      "harmful": 0,
+      "evidence": [
+        "services/core/tests/test_bank_connection_settings.py:173 (tests/bank_sync)"
+      ],
+      "created": "2026-10-06T16:43:23Z",
+      "last_seen": "2026-10-06T16:43:23Z"
+    },
+    {
+      "id": "L-024",
+      "key": "spec_deviation::before writing screen checks read the binding mockup s exact copy and controls a check that paraphrases them badge vs radio type labels forces a mid build amendment",
+      "text": "Before writing screen checks, read the binding mockup's exact copy and controls; a check that paraphrases them (badge vs radio, type labels) forces a mid-build amendment.",
+      "signal": "spec_deviation",
+      "scope": "web/checks",
+      "status": "candidate",
+      "features": [
+        "17-bank-connection-settings"
+      ],
+      "recurrence": 1,
+      "harmful": 0,
+      "evidence": [
+        "checks.md:C9,C16 (web/checks)"
+      ],
+      "created": "2026-10-06T16:43:23Z",
+      "last_seen": "2026-10-06T16:43:23Z"
+    },
+    {
+      "id": "L-025",
+      "key": "ac_gap::never set tabindex 1 on a radix radiogroup root no radio gets a tab stop give each group only its radios and prove reachability with an e2e tab walk",
+      "text": "Never set tabIndex=-1 on a Radix RadioGroup root: no radio gets a tab stop; give each group only its radios and prove reachability with an e2e Tab walk.",
+      "signal": "ac_gap",
+      "scope": "web/a11y",
+      "status": "candidate",
+      "features": [
+        "17-bank-connection-settings"
+      ],
+      "recurrence": 1,
+      "harmful": 0,
+      "evidence": [
+        "frontend/components/settings/account-row.tsx (web/a11y)"
+      ],
+      "created": "2026-10-06T16:43:23Z",
+      "last_seen": "2026-10-06T16:43:23Z"
+    },
+    {
+      "id": "L-026",
+      "key": "spec_precision_gap::to prove two generated lists differ in a value compare paired elements list inequality also passes when only the length changes",
+      "text": "To prove two generated lists differ in a value, compare paired elements; list inequality also passes when only the length changes.",
+      "signal": "spec_precision_gap",
+      "scope": "tests",
+      "status": "candidate",
+      "features": [
+        "18-forecast-sample-data"
+      ],
+      "recurrence": 1,
+      "harmful": 0,
+      "evidence": [
+        "C2 - tests/test_fixture_harbor_street.py:66 (tests)"
+      ],
+      "created": "2026-10-06T17:57:22Z",
+      "last_seen": "2026-10-06T17:57:22Z"
+    },
+    {
+      "id": "L-027",
+      "key": "ac_gap::when a criterion names production wiring subscriptions register the proof must go through that wiring not a handler the test subscribes itself",
+      "text": "When a criterion names production wiring (subscriptions.register), the proof must go through that wiring, not a handler the test subscribes itself.",
+      "signal": "ac_gap",
+      "scope": "events",
+      "status": "candidate",
+      "features": [
+        "18-forecast-sample-data"
+      ],
+      "recurrence": 1,
+      "harmful": 0,
+      "evidence": [
+        "C23 - tests/test_fixture_load.py:114 (events)"
+      ],
+      "created": "2026-10-06T17:57:22Z",
+      "last_seen": "2026-10-06T17:57:22Z"
+    },
+    {
+      "id": "L-028",
+      "key": "spec_deviation::identifiers a fixture writes into globally unique columns must include the tenant or load id or a second load of the same fixture fails",
+      "text": "Identifiers a fixture writes into globally unique columns must include the tenant or load ID, or a second load of the same fixture fails.",
+      "signal": "spec_deviation",
+      "scope": "fixtures",
+      "status": "candidate",
+      "features": [
+        "18-forecast-sample-data"
+      ],
+      "recurrence": 1,
+      "harmful": 0,
+      "evidence": [
+        "door 3 - plan.md Landing (fixtures)"
+      ],
+      "created": "2026-10-06T17:57:22Z",
+      "last_seen": "2026-10-06T17:57:22Z"
+    },
+    {
+      "id": "L-029",
+      "key": "surviving_mutant::a rounding rule test needs a tie that the wrong rule rounds differently one tie both half even and half up agree on proves nothing",
+      "text": "A rounding-rule test needs a tie that the wrong rule rounds differently; one tie both half-even and half-up agree on proves nothing.",
+      "signal": "surviving_mutant",
+      "scope": "tests",
+      "status": "candidate",
+      "features": [
+        "19-forecast-recurring-payments"
+      ],
+      "recurrence": 1,
+      "harmful": 0,
+      "evidence": [
+        "C9 test_recurring_detection.py:292 (tests)"
+      ],
+      "created": "2026-10-06T22:43:27Z",
+      "last_seen": "2026-10-06T22:43:27Z"
+    },
+    {
+      "id": "L-030",
+      "key": "surviving_mutant::a lock test must hold the first transaction open after its write and before its commit a delay earlier lets it commit first and the race never happens",
+      "text": "A lock test must hold the first transaction open after its write and before its commit; a delay earlier lets it commit first and the race never happens.",
+      "signal": "surviving_mutant",
+      "scope": "concurrency",
+      "status": "candidate",
+      "features": [
+        "19-forecast-recurring-payments"
+      ],
+      "recurrence": 1,
+      "harmful": 0,
+      "evidence": [
+        "C21 test_recurring_refresh.py concurrent_refreshes (concurrency)"
+      ],
+      "created": "2026-10-06T22:43:27Z",
+      "last_seen": "2026-10-06T22:43:27Z"
+    },
+    {
+      "id": "L-031",
+      "key": "spec_deviation::before approving a numeric detection rule run it against every seed of the sample data and the check s own examples a fixed 15 16 split and a 75 share on 3 hits both failed on contact",
+      "text": "Before approving a numeric detection rule, run it against every seed of the sample data and the check's own examples; a fixed 15/16 split and a 75% share on 3 hits both failed on contact.",
+      "signal": "spec_deviation",
+      "scope": "forecasting",
+      "status": "candidate",
+      "features": [
+        "19-forecast-recurring-payments"
+      ],
+      "recurrence": 1,
+      "harmful": 0,
+      "evidence": [
+        "plan AC 4 (two amendments) (forecasting)"
+      ],
+      "created": "2026-10-06T22:43:28Z",
+      "last_seen": "2026-10-06T22:43:28Z"
+    },
+    {
+      "id": "L-032",
+      "key": "spec_precision_gap::when a check quotes a displayed money value write it as lib format ts renders it whole dollars not as the amount entered",
+      "text": "When a check quotes a displayed money value, write it as lib/format.ts renders it (whole dollars), not as the amount entered.",
+      "signal": "spec_precision_gap",
+      "scope": "frontend/e2e",
+      "status": "candidate",
+      "features": [
+        "20-forecast-expected-payments"
+      ],
+      "recurrence": 1,
+      "harmful": 0,
+      "evidence": [
+        "checks.md:341 (C45) (frontend/e2e)"
+      ],
+      "created": "2026-10-07T04:33:46Z",
+      "last_seen": "2026-10-07T04:33:46Z"
+    },
+    {
+      "id": "L-033",
+      "key": "ac_gap::in a keyboard only e2e step type values into the focused input locator fill bypasses the keyboard and does not prove the claim",
+      "text": "In a keyboard-only e2e step, type values into the focused input; locator.fill() bypasses the keyboard and does not prove the claim.",
+      "signal": "ac_gap",
+      "scope": "frontend/e2e",
+      "status": "candidate",
+      "features": [
+        "20-forecast-expected-payments"
+      ],
+      "recurrence": 1,
+      "harmful": 0,
+      "evidence": [
+        "frontend/e2e/expected-payments.spec.ts:157 (C46) (frontend/e2e)"
+      ],
+      "created": "2026-10-07T04:33:47Z",
+      "last_seen": "2026-10-07T04:33:47Z"
+    },
+    {
+      "id": "L-034",
+      "key": "gate_fail::forward tab from the last control before a visible sonner toast bounces back reach earlier controls with shift tab since body focus does not reset the tab start",
+      "text": "Forward Tab from the last control before a visible Sonner toast bounces back; reach earlier controls with Shift+Tab, since body.focus() does not reset the tab start.",
+      "signal": "gate_fail",
+      "scope": "frontend/e2e",
+      "status": "candidate",
+      "features": [
+        "20-forecast-expected-payments"
+      ],
+      "recurrence": 1,
+      "harmful": 0,
+      "evidence": [
+        "frontend/e2e/expected-payments.spec.ts:202 (C46) (frontend/e2e)"
+      ],
+      "created": "2026-10-07T04:33:48Z",
+      "last_seen": "2026-10-07T04:33:48Z"
+    },
+    {
+      "id": "L-035",
+      "key": "spec_precision_gap::when a check lists a group s members state their order from the mockup or the test pins whatever order the api returns",
+      "text": "When a check lists a group's members, state their order from the mockup, or the test pins whatever order the API returns.",
+      "signal": "spec_precision_gap",
+      "scope": "frontend/tests",
+      "status": "candidate",
+      "features": [
+        "26-web-dashboard"
+      ],
+      "recurrence": 1,
+      "harmful": 0,
+      "evidence": [
+        "C22 frontend/tests/dashboard-page.test.tsx:245 (frontend/tests)"
+      ],
+      "created": "2026-10-10T03:28:40Z",
+      "last_seen": "2026-10-10T03:28:40Z"
+    },
+    {
+      "id": "L-036",
+      "key": "spec_precision_gap::copy that differs by breakpoint through css classes needs a playwright assertion at each width jsdom can only prove which class a node carries",
+      "text": "Copy that differs by breakpoint through CSS classes needs a Playwright assertion at each width; jsdom can only prove which class a node carries.",
+      "signal": "spec_precision_gap",
+      "scope": "frontend/e2e",
+      "status": "candidate",
+      "features": [
+        "26-web-dashboard"
+      ],
+      "recurrence": 1,
+      "harmful": 0,
+      "evidence": [
+        "C13/C14/C17/C22/C23 frontend/tests/dashboard-page.test.tsx:77 (frontend/e2e)"
+      ],
+      "created": "2026-10-10T03:28:40Z",
+      "last_seen": "2026-10-10T03:28:40Z"
+    },
+    {
+      "id": "L-037",
+      "key": "gate_fail::before e2e proofs check that ports 3000 and 8100 are free or serve current code and that the local database is at alembic head playwright reuses whatever answers",
+      "text": "Before e2e proofs, check that ports 3000 and 8100 are free or serve current code, and that the local database is at alembic head; Playwright reuses whatever answers.",
+      "signal": "gate_fail",
+      "scope": "frontend/e2e",
+      "status": "candidate",
+      "features": [
+        "26-web-dashboard"
+      ],
+      "recurrence": 1,
+      "harmful": 0,
+      "evidence": [
+        "verification.md round 1 (C25-C37 not runnable) (frontend/e2e)"
+      ],
+      "created": "2026-10-10T03:28:40Z",
+      "last_seen": "2026-10-10T03:28:40Z"
+    },
+    {
+      "id": "L-038",
+      "key": "ac_gap::a value the service composes from settings links tokens addresses needs a proof on the delivered output not only on a template fed hand built inputs",
+      "text": "A value the service composes from settings (links, tokens, addresses) needs a proof on the delivered output, not only on a template fed hand-built inputs.",
+      "signal": "ac_gap",
+      "scope": "services/core/notifications",
+      "status": "candidate",
+      "features": [
+        "28-email-foundation"
+      ],
+      "recurrence": 1,
+      "harmful": 0,
+      "evidence": [
+        "C11/C12 round 1, tests/test_email_template.py:11 (services/core/notifications)"
+      ],
+      "created": "2026-10-10T23:00:39Z",
+      "last_seen": "2026-10-10T23:00:39Z"
+    }
+  ]
+}

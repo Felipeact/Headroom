@@ -1,7 +1,7 @@
 # Spec 04: Tests and CI
 
 - **Milestone:** 1, set-up
-- **Status:** Not started
+- **Status:** Done
 - **Depends on:** 01, 03 (can run alongside 05)
 
 ## Goal
@@ -22,5 +22,5 @@ Run every check automatically on each pull request.
 
 ## Done when
 
-- [ ] A pull request shows both jobs passing.
-- [ ] A deliberate type error makes CI fail.
+- [x] A pull request shows both jobs passing.
+- [x] A deliberate type error makes CI fail.

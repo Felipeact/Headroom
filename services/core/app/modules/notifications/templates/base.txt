@@ -1,0 +1,11 @@
+Headroom
+
+{% block content %}{% endblock %}
+
+--
+{{ reason }}
+
+{% if unsubscribe_url %}Email preferences: {{ preferences_url }}
+Unsubscribe: {{ unsubscribe_url }}
+{% endif %}
+Headroom · {{ mailing_address }}

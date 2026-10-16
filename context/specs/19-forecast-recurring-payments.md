@@ -1,7 +1,7 @@
 # Spec 19: Recurring payments
 
 - **Milestone:** 4, forecast
-- **Status:** Not started
+- **Status:** Done
 - **Depends on:** 16, 18
 
 ## Goal
@@ -21,6 +21,6 @@ Find the payments that repeat, such as payroll, rent, and regular suppliers, and
 
 ## Done when
 
-- [ ] On the sample data, payroll and rent are found, with the correct schedules and next dates.
-- [ ] A payment seen only twice isn't treated as recurring.
-- [ ] Transfers between the two sample accounts aren't detected as recurring.
+- [x] On the sample data, payroll and rent are found, with the correct schedules and next dates.
+- [x] A payment seen only twice isn't treated as recurring.
+- [x] Transfers between the two sample accounts aren't detected as recurring.

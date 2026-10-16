@@ -1,7 +1,7 @@
 # Spec 09: Typed API client
 
 - **Milestone:** 2, foundations
-- **Status:** Not started
+- **Status:** Done
 - **Depends on:** 01, 02
 
 ## Goal
@@ -19,5 +19,5 @@ Let the web app call the API with types generated from the API itself, so nobody
 
 ## Done when
 
-- [ ] A test page shows the result of `GET /healthz/live` through the typed client.
-- [ ] Changing an endpoint without regenerating the files makes CI fail.
+- [x] A test page shows the result of `GET /healthz/live` through the typed client.
+- [x] Changing an endpoint without regenerating the files makes CI fail.

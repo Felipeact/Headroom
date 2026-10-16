@@ -1,6 +1,6 @@
 # Headroom roadmap
 
-*Last updated: October 1, 2026. Update this file whenever a milestone or gate is passed.*
+*Last updated: October 10, 2026. Update this file whenever a milestone or gate is passed.*
 
 **The plan:** generate the project with official tools, then build Headroom one short spec at a time until it's ready for its first clients. Scale up only after they confirm the product is worth paying for.
 
@@ -10,19 +10,22 @@ This file says **when** things happen. The specs in [`specs/`](specs/) say **wha
 
 - **Specs 01–05 set the project up** with official generators and commands, so almost nothing is written by hand.
 - **Every later spec is short:** one piece of the product, finished and reviewed in a day or two.
-- **A spec starts when its dependencies are done.** Specs whose dependencies are all done can be built at the same time, each in its own worktree.
+- **A spec starts when its dependencies are done.** Specs are built one at a time on the `development` branch.
 
 ## Before spec 01
 
 You set up the repository yourself. The specs assume it already has:
 
-- a `main` branch and a `development` branch, both protected so changes arrive through pull requests
+- a `main` branch for production, protected so changes arrive only through pull requests from `development`
+- a `development` branch, where the work happens
 - a root `.gitignore` that excludes `.env*` files, except `.env.example`
-- these documents committed: `AGENTS.md`, `DESIGN.md`, `Roadmap.md`, `project-overview.md`, `docker-compose.yml`, `specs/`, and `design/`
+- these documents committed: `AGENTS.md`, `context/DESIGN.md`, `context/Roadmap.md`, `context/project-overview.md`, `context/specs/`, `docker-compose.yml`, and `design/`
 
 ## v1: first clients (about 3–4 months)
 
-### Milestone 1: Set-up (about 1 week)
+### Milestone 1: Set-up (about 1 week): done October 1, 2026
+
+Specs 01–05 are done. Staging runs on Railway, and its service settings live in `.railway/railway.ts`.
 
 | Spec | What it does | Depends on |
 |---|---|---|
@@ -32,7 +35,7 @@ You set up the repository yourself. The specs assume it already has:
 | [04](specs/04-setup-tests-and-ci.md) | Tests and CI | 01, 03 |
 | [05](specs/05-setup-railway-staging.md) | Staging on Railway | 01, 03 |
 
-### Milestone 2: Foundations (1–2 weeks)
+### Milestone 2: Foundations (1–2 weeks): done October 4, 2026
 
 | Spec | What it does | Depends on |
 |---|---|---|
@@ -43,7 +46,7 @@ You set up the repository yourself. The specs assume it already has:
 | [10](specs/10-accounts-login.md) | Login with Clerk | 07, 08, 09 |
 | [11](specs/11-accounts-businesses-and-access.md) | Businesses and access (onboarding step 2) | 10 |
 
-### Milestone 3: Bank data (2–3 weeks)
+### Milestone 3: Bank data (2–3 weeks): done October 6, 2026
 
 | Spec | What it does | Depends on |
 |---|---|---|
@@ -54,7 +57,7 @@ You set up the repository yourself. The specs assume it already has:
 | [16](specs/16-bank-transaction-labels.md) | Transaction labels | 14 |
 | [17](specs/17-bank-connection-settings.md) | Bank connection settings | 13, 14 |
 
-### Milestone 4: Forecast (2–3 weeks)
+### Milestone 4: Forecast (2–3 weeks): done October 9, 2026
 
 | Spec | What it does | Depends on |
 |---|---|---|
@@ -65,7 +68,7 @@ You set up the repository yourself. The specs assume it already has:
 | [22](specs/22-forecast-accuracy.md) | Forecast accuracy | 21 |
 | [23](specs/23-forecast-minimum-balance-and-first-forecast.md) | Minimum balance and the first forecast (onboarding steps 4 and 5) | 21 |
 
-### Milestone 5: Alerts and dashboard (about 2 weeks)
+### Milestone 5: Alerts and dashboard (about 2 weeks): done October 10, 2026
 
 | Spec | What it does | Depends on |
 |---|---|---|
@@ -134,7 +137,7 @@ Build from [`specs/later/`](specs/later/README.md), in its priority order, start
 | Validation | No separate validation phase; the paid pilot is the real test | Start building right away |
 | Set-up | Official generators: create-next-app, shadcn/ui, uv, and Alembic | Generated code is accurate; boilerplate written from memory often isn't |
 | Spec size | Short specs, one piece each, built in dependency order | Small changes are easier to get right and to review |
-| Workflow | A `development` branch, with one git worktree per spec | Specs whose dependencies are done can be built at the same time |
+| Workflow | Work on the `development` branch; `main` is production only | One branch keeps the work simple; `main` changes only for a release |
 | Tech stack | Next.js, FastAPI, and PostgreSQL | Python's data libraries for the forecast, and Next.js for the web app |
 | Hosting | Railway, in its US East region | Simple and cheap while the idea is being proven. Railway has no Canadian region |
 | Data location | Stored in the United States, and disclosed in the privacy policy | Canadian privacy law allows this when customers are told and the data is protected; the lawyer confirms it |

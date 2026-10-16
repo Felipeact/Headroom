@@ -1,10 +1,7 @@
-# Local PostgreSQL for development, shared by every worktree.
+# Local PostgreSQL for development.
 # The apps themselves run natively. See AGENTS.md > Setup.
 #
 #   docker compose up -d postgres
-#
-# The fixed project name means every worktree uses this same container.
-# Each worktree creates its own database inside it (see AGENTS.md).
 name: headroom-dev
 
 services:

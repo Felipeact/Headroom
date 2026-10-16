@@ -1,7 +1,7 @@
 # Spec 23: Minimum balance and the first forecast
 
 - **Milestone:** 4, forecast
-- **Status:** Not started
+- **Status:** Done
 - **Depends on:** 21
 
 ## Goal
@@ -20,5 +20,5 @@ Finish onboarding: the owner sets a minimum balance, then waits for their first 
 
 ## Done when
 
-- [ ] A Playwright test goes from sign-up to the "building your forecast" screen, using the Plaid sandbox.
-- [ ] Both screens match their mockups.
+- [x] A Playwright test goes from sign-up to the "building your forecast" screen, using the Plaid sandbox.
+- [x] Both screens match their mockups.

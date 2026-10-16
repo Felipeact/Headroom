@@ -1,7 +1,7 @@
 # Spec 03: Local database and migrations
 
 - **Milestone:** 1, set-up
-- **Status:** Not started
+- **Status:** Done
 - **Depends on:** 02
 
 ## Goal
@@ -20,6 +20,6 @@ Connect the API to PostgreSQL, reading settings from environment variables, with
 
 ## Done when
 
-- [ ] `uv run alembic upgrade head` runs cleanly on an empty database.
-- [ ] `/healthz/ready` returns 200 when Postgres is running and 503 when it's stopped (tested).
-- [ ] No database URL or password appears in the code.
+- [x] `uv run alembic upgrade head` runs cleanly on an empty database.
+- [x] `/healthz/ready` returns 200 when Postgres is running and 503 when it's stopped (tested).
+- [x] No database URL or password appears in the code.

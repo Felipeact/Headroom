@@ -1,7 +1,7 @@
 # Spec 30: Weekly digest
 
 - **Milestone:** 6, emails and bookkeepers
-- **Status:** Not started
+- **Status:** Done
 - **Depends on:** 15, 21, 28
 
 ## Goal
@@ -15,5 +15,5 @@ Send a weekly summary, so most weeks owners don't need to log in at all.
 
 ## Done when
 
-- [ ] With a simulated clock, digests arrive on time in Pacific, Eastern, and Newfoundland time.
-- [ ] The email matches its mockup.
+- [x] With a simulated clock, digests arrive on time in Pacific, Eastern, and Newfoundland time.
+- [x] The email matches its mockup.

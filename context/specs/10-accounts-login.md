@@ -1,7 +1,7 @@
 # Spec 10: Login with Clerk
 
 - **Milestone:** 2, foundations
-- **Status:** Not started
+- **Status:** Done
 - **Depends on:** 07, 08, 09
 
 ## Goal
@@ -24,6 +24,6 @@ Let people sign up and sign in, and let the API know who is calling.
 
 ## Done when
 
-- [ ] Signing in shows the app shell with the user's name, and signing out returns to sign-in.
-- [ ] The API returns 401 for a missing, expired, or tampered token, tested with tokens signed by a local test key.
-- [ ] No password or token is stored or logged.
+- [x] Signing in shows the app shell with the user's name, and signing out returns to sign-in.
+- [x] The API returns 401 for a missing, expired, or tampered token, tested with tokens signed by a local test key.
+- [x] No password or token is stored or logged.

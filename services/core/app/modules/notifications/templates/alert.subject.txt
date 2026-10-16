@@ -1,0 +1,1 @@
+Cash falls below your {{ minimum_cents|money(currency) }} minimum the week of {{ lowest_week_starts_on|day }}

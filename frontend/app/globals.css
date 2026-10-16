@@ -1,0 +1,141 @@
+@import "tailwindcss";
+@import "tw-animate-css";
+@import "shadcn/tailwind.css";
+
+/* DESIGN.md has no dark theme. This keeps the `dark:` classes in generated components inert,
+   because Tailwind's default `dark` variant would follow the OS setting. */
+@custom-variant dark (&:is(.dark *));
+
+@theme {
+  --shadow-selected: 0 1px 2px rgba(22, 32, 43, 0.14);
+}
+
+@theme inline {
+  --color-bg: var(--bg);
+  --color-surface: var(--surface);
+  --color-surface-muted: var(--surface-muted);
+  --color-surface-active: var(--surface-active);
+  --color-border: var(--border);
+  --color-border-input: var(--border-input);
+  --color-ink: var(--ink);
+  --color-ink-2: var(--ink-2);
+  --color-ink-3: var(--ink-3);
+  --color-accent: var(--accent);
+  --color-accent-hover: var(--accent-hover);
+  --color-positive: var(--positive);
+  --color-positive-bg: var(--positive-bg);
+  --color-warning-bg: var(--warning-bg);
+  --color-warning-border: var(--warning-border);
+  --color-warning-text: var(--warning-text);
+  --color-warning-strong: var(--warning-strong);
+  --color-warning-line: var(--warning-line);
+  --color-danger-bg: var(--danger-bg);
+  --color-danger-border: var(--danger-border);
+  --color-danger-text: var(--danger-text);
+  --color-danger-strong: var(--danger-strong);
+  --color-line-soft: var(--line-soft);
+  --color-line-strong: var(--line-strong);
+
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --color-card: var(--card);
+  --color-card-foreground: var(--card-foreground);
+  --color-popover: var(--popover);
+  --color-popover-foreground: var(--popover-foreground);
+  --color-primary: var(--primary);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-secondary: var(--secondary);
+  --color-secondary-foreground: var(--secondary-foreground);
+  --color-muted: var(--muted);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-accent-foreground: var(--accent-foreground);
+  --color-destructive: var(--destructive);
+  --color-input: var(--input);
+  --color-ring: var(--ring);
+
+  --font-sans: var(--font-plex-sans);
+  --font-heading: var(--font-fraunces);
+
+  --radius-sm: calc(var(--radius) * 0.6);
+  --radius-md: calc(var(--radius) * 0.8);
+  --radius-lg: var(--radius);
+  --radius-xl: calc(var(--radius) * 1.4);
+  --radius-2xl: calc(var(--radius) * 1.8);
+  --radius-3xl: calc(var(--radius) * 2.2);
+  --radius-4xl: calc(var(--radius) * 2.6);
+}
+
+:root {
+  --bg: #F5F3EE;
+  --surface: #FFFFFF;
+  --surface-muted: #F1EEE7;
+  --surface-active: #E9E5DC;
+  --border: #E2DDD3;
+  --border-input: #D6D0C4;
+  --ink: #16202B;
+  --ink-2: #454F5C;
+  --ink-3: #5A6370;
+  --accent: #1D4E89;
+  --accent-hover: #133A68;
+  --positive: #1E6B45;
+  --positive-bg: #EAF4EE;
+  --warning-bg: #FFF4E2;
+  --warning-border: #F0D3A4;
+  --warning-text: #7A4300;
+  --warning-strong: #4F2C00;
+  --warning-line: #B26B00;
+  --danger-bg: #FCEDEB;
+  --danger-border: #EFC7C2;
+  --danger-text: #8E1B1B;
+  --danger-strong: #5E1111;
+  --line-soft: #ECE8E0;
+  --line-strong: #C9C2B5;
+
+  /* shadcn's semantic names, aliased to the DESIGN.md tokens. */
+  --background: var(--bg);
+  --foreground: var(--ink);
+  --card: var(--surface);
+  --card-foreground: var(--ink);
+  --popover: var(--surface);
+  --popover-foreground: var(--ink);
+  --primary: var(--accent);
+  --primary-foreground: var(--surface);
+  --secondary: var(--surface);
+  --secondary-foreground: var(--ink);
+  --muted: var(--surface-muted);
+  --muted-foreground: var(--ink-3);
+  --accent-foreground: var(--surface);
+  --destructive: var(--danger-text);
+  --input: var(--border-input);
+  --ring: var(--accent);
+  --radius: 0.625rem;
+}
+
+@layer base {
+  * {
+    @apply border-border;
+  }
+  body {
+    @apply bg-background text-foreground tabular-nums;
+  }
+  html {
+    @apply font-sans;
+  }
+}
+
+/* Unlayered, so these win over any utility a generated component carries. */
+:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  ::before,
+  ::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}
