@@ -102,3 +102,5 @@ Context used per request, measured against a context window of about 250,000 tok
 | Spec 29: C22 evidence (AD-117), mark Done, full suite, push | ~25,000 (~10%) | High (smart zone) |
 | Spec 29: verifier sub-agent, round 3 (separate context) | ~91,000 (~36%) | High (smart zone) |
 | Spec 32: analytics and metrics report (plan, checks, build web + API) | ~170,000 (~68%) | Low (past 60%) |
+| Fix: /welcome redirect to localhost (checks, build, proofs) | ~90,000 (~36%) | High (smart zone) |
+| Fix: /welcome redirect, verifier sub-agent (separate context) | ~68,000 (~27%) | High (smart zone) |
