@@ -29,3 +29,6 @@ empty or every row says "allow in the policy".
 | `/sign-in` | Clerk images from `img.clerk.com` and `data:` images | Allow `img-src` for both before enforcing |
 | `/sign-in` | Sentry events to `*.ingest.us.sentry.io` | Allow `connect-src` for the Sentry ingest host before enforcing |
 | `/sign-in` | Next.js and Clerk inline scripts and inline styles | Needs a per-request nonce (`script-src` with `'nonce-...'`) before enforcing; do not add `'unsafe-inline'` |
+| every signed-in screen | The same Clerk, Sentry, `blob:` worker, inline script and inline style violations as `/sign-in`, and no other kind | Covered by the decisions above |
+| `/settings/banks` | Plaid Link script from `cdn.plaid.com` blocked by `default-src 'self'` | Allow `script-src https://cdn.plaid.com` before enforcing |
+| `/settings/banks` | Plaid Link iframe from `cdn.plaid.com` blocked by `default-src 'self'` | Allow `frame-src https://cdn.plaid.com` before enforcing; `frame-ancestors 'none'` stays |
