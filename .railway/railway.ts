@@ -4,11 +4,19 @@ const REPO = "Felipeact/Headroom";
 const US_EAST = "us-east4-eqdc4a";
 
 // What differs between the two environments (spec 34 door 1); everything else is shared.
-// Production uses Railway's generated domains until spec 34b adds Headroom's own.
+// Custom domains exist only in production (spec 34 door 8); staging keeps Railway's own.
 const ENVIRONMENTS = {
-  staging: { branch: "development", sentryEnvironment: "staging" },
-  production: { branch: "main", sentryEnvironment: "production" },
+  staging: { branch: "development", sentryEnvironment: "staging", webDomains: [], apiDomains: [] },
+  production: {
+    branch: "main",
+    sentryEnvironment: "production",
+    webDomains: ["headroom.felipeviana.com"],
+    apiDomains: ["api.headroom.felipeviana.com"],
+  },
 } as const;
+
+// Omits `domains` when there are none, so staging's generated domains are never touched.
+const domains = (list: readonly string[]) => (list.length > 0 ? { domains: [...list] } : {});
 
 export default defineRailway((ctx) => {
   const env = ctx.isEnvironment("production")
@@ -36,6 +44,7 @@ export default defineRailway((ctx) => {
     start: "fastapi run app/main.py",
     healthcheck: "/healthz/ready",
     replicas: { [US_EAST]: 1 },
+    ...domains(env.apiDomains),
     env: {
       // Railway resolves the references; the psycopg scheme is required by app/settings.py.
       DATABASE_URL:
@@ -78,6 +87,7 @@ export default defineRailway((ctx) => {
     // Public and dependency-free: every page requires login, so "/" answers 307 (spec 10).
     healthcheck: "/healthz",
     replicas: { [US_EAST]: 1 },
+    ...domains(env.webDomains),
     env: {
       // Set with `railway variable set` (spec 10): the Clerk keys and the API's address.
       API_URL: preserve(),

@@ -57,6 +57,17 @@ async function c10() {
     if (literal(resources.jobs, "SENTRY_ENVIRONMENT") !== "${{api.SENTRY_ENVIRONMENT}}") {
       fail(`${environment} jobs SENTRY_ENVIRONMENT is not api's`);
     }
+    const custom = (r) => Object.keys(r?.networking?.customDomains ?? {}).sort();
+    const wantWeb = environment === "production" ? ["headroom.felipeviana.com"] : [];
+    const wantApi = environment === "production" ? ["api.headroom.felipeviana.com"] : [];
+    if (!isDeepStrictEqual(custom(resources.web), wantWeb)) fail(`${environment} web domains ${custom(resources.web)}`);
+    if (!isDeepStrictEqual(custom(resources.api), wantApi)) fail(`${environment} api domains ${custom(resources.api)}`);
+    if (custom(resources.jobs).length || custom(resources.Postgres).length) fail(`${environment} jobs or Postgres has a domain`);
+    for (const r of [resources.web, resources.api]) {
+      for (const [host, target] of Object.entries(r?.networking?.customDomains ?? {})) {
+        if (target?.port !== 8080) fail(`${host} targets port ${target?.port}, not 8080`);
+      }
+    }
     const usage = Object.keys(resources["postgres-volume"]?.config?.alerts?.usage ?? {}).sort();
     if (!isDeepStrictEqual(usage, ["100", "80", "95"])) fail(`${environment} volume alerts ${usage}`);
   }

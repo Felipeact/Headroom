@@ -3,7 +3,7 @@
 Profile: light
 Plan: `.specs/features/34-launch-production/plan.md`
 
-32 checks in 5 slices · 7 one-way doors (2 and 3 are interim until spec 34b) · 1 open, blocks go-live (C21)
+32 checks in 5 slices · 9 one-way doors (2 superseded by 8; 3's Clerk half by 9, its email half interim until a Resend domain) · 1 open, blocks go-live (C21)
 
 Railway proofs are named functions in `.specs/features/34-launch-production/proofs.sh`, run from the repository root as `bash .specs/features/34-launch-production/proofs.sh cN`. Each prints `PASS cN` or exits non-zero. Like spec 05's, they read Railway only through `@railway/cli` 5.63.1 (`domain list`, `deployment list`, `logs`, `ssh`, `environment config`, `service list`, `tcp-proxy list`, `variable list`, `config plan`) with an explicit `--environment`. Domains are read from `railway domain list`, never hard-coded. Variable values are never printed.
 
@@ -13,10 +13,10 @@ Railway has no CLI for backup schedules or notification settings, and Sentry ale
 
 ### S1 - Production deploys from `main` · `.railway/` + proofs · ~12k
 
-**C1** - `curl` on `https://<api production domain>/healthz/ready` returns `200` with body exactly `{"status":"ok"}` (AC 1)
+**C1** - `curl` on `https://api.headroom.felipeviana.com/healthz/ready` returns `200` with body exactly `{"status":"ok"}` (AC 1)
 Proof: `bash .specs/features/34-launch-production/proofs.sh c1`
 
-**C2** - `curl` on `https://<web production domain>/healthz` returns `200` with body `{"status":"ok"}`, and `/` returns `307` with a `location` containing `/sign-in` (AC 2)
+**C2** - `curl` on `https://headroom.felipeviana.com/healthz` returns `200` with body `{"status":"ok"}`, and `/` returns `307` with a `location` containing `/sign-in` (AC 2)
 Proof: `bash .specs/features/34-launch-production/proofs.sh c2`
 
 **C3** - The logs of the latest `SUCCESS` production `api` deployment contain Alembic's `Context impl PostgresqlImpl` line, and in the running production `api` (`railway ssh`), `alembic current` prints the same revision as `alembic heads` at `origin/main` (AC 3)
@@ -31,7 +31,7 @@ Proof: `bash .specs/features/34-launch-production/proofs.sh c5`
 **C6** - `railway service list --environment production --json` lists `Postgres`, `api`, `web`, and `jobs` with only `us-east` regions. `Postgres` has zero domains and zero TCP proxies (AC 6)
 Proof: `bash .specs/features/34-launch-production/proofs.sh c6`
 
-**C7** - `GET https://<api production domain>/docs` and `/openapi.json` each return `404` (AC 7)
+**C7** - `GET https://api.headroom.felipeviana.com/docs` and `/openapi.json` each return `404` (AC 7)
 Proof: `bash .specs/features/34-launch-production/proofs.sh c7`
 
 **C8** - `railway config plan --detailed-exit-code` exits 0 against `production` and against `staging`, with `.railway/railway.ts` at `HEAD` (AC 8, door 1)
@@ -40,7 +40,7 @@ Proof: `bash .specs/features/34-launch-production/proofs.sh c8`
 **C9** - Evaluating `.railway/railway.ts` with a Railway context for environment `preview` throws an error naming `preview`. Evaluating it for `staging` and for `production` does not throw (AC 9, door 1)
 Proof: `bash .specs/features/34-launch-production/proofs.sh c9`
 
-**C10** - The compiled IaC for `production` gives `api`, `web`, and `jobs` branch `main` and `SENTRY_ENVIRONMENT` `production`. For `staging` it gives branch `development` and `staging`. Both carry the same service names, start commands, `preDeploy`, health checks, and volume usage alerts at 80, 95, and 100 (door 1, AC 25 volume half)
+**C10** - The compiled IaC for `production` gives `api`, `web`, and `jobs` branch `main` and `SENTRY_ENVIRONMENT` `production`, `web` the one custom domain `headroom.felipeviana.com` and `api` the one custom domain `api.headroom.felipeviana.com`, both targeting port 8080 (where both apps listen on Railway). For `staging` it gives branch `development`, `staging`, and no custom domain on any service. Both carry the same service names, start commands, `preDeploy`, health checks, and volume usage alerts at 80, 95, and 100 (doors 1, 8; AC 25 volume half)
 Proof: `bash .specs/features/34-launch-production/proofs.sh c10`
 
 ### S2 - Staging and production share no credentials · new script + test · ~8k
@@ -65,7 +65,7 @@ Proof: `bash .specs/features/34-launch-production/proofs.sh c16`
 
 ### S3 - Production's own external services · proofs + evidence · ~5k
 
-**C17** - In production `api` (`railway ssh`), a Clerk Backend API user lookup for the founder's address returns 1 user. The same lookup in staging `api` returns 0. The proof prints only the counts (AC 14, AC 13 Clerk half, door 3)
+**C17** - In production `api` (`railway ssh`), a Clerk Backend API user lookup for the founder's address returns 1 user, and the production `NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY` on `web` starts with `pk_live_`. The same lookup in staging `api` returns 0. The proof prints only counts and `match`/`mismatch` (AC 13, AC 14, door 9)
 Proof: `bash .specs/features/34-launch-production/proofs.sh c17`
 
 **C18** - An email that production sends to the Resend account owner's address arrives From `onboarding@resend.dev`, and Resend's log lists it under the production API key's name. Proved by an evidence row (AC 15, door 3)
@@ -74,7 +74,7 @@ Proof: `bash .specs/features/34-launch-production/proofs.sh c18`
 **C19** - Production `api` `EMAIL_SENDER` is `resend` and `EMAIL_FROM` contains `onboarding@resend.dev`. The proof prints `match` or `mismatch` (door 3)
 Proof: `bash .specs/features/34-launch-production/proofs.sh c19`
 
-**C20** - Production `WEB_URL`, `API_PUBLIC_URL`, `PLAID_WEBHOOK_URL`, and `CLERK_AUTHORIZED_PARTIES` are built from the production Railway domains exactly as door 2 states (`PLAID_WEBHOOK_URL` = `API_PUBLIC_URL` + `/v1/webhooks/plaid`) (door 2)
+**C20** - Production `api` has `WEB_URL` = `https://headroom.felipeviana.com`, `API_PUBLIC_URL` = `https://api.headroom.felipeviana.com`, `PLAID_WEBHOOK_URL` = `https://api.headroom.felipeviana.com/v1/webhooks/plaid`, and `CLERK_AUTHORIZED_PARTIES` = `https://headroom.felipeviana.com`. Both hostnames answer over HTTPS with a valid certificate (door 8)
 Proof: `bash .specs/features/34-launch-production/proofs.sh c20`
 
 **C21** - Open, blocks go-live: once production `PLAID_SECRET` is a Plaid Production secret, the founder's own bank connected in production reaches status `synced`. Production logs show `POST /v1/webhooks/plaid` answered `200` (AC 16)
@@ -121,7 +121,7 @@ Proof: `bash .specs/features/34-launch-production/proofs.sh c32`
 
 | Set (size) | Member -> proof | Unproven |
 | --- | --- | --- |
-| Landing doors (7) | door 1 two-env IaC C4 · C8 · C9 · C10 · door 2 interim URLs C20 · door 3 interim identity and email C17 · C18 · C19 · door 4 alert = Sentry event C29 · C31 · door 5 credential check C11 · C12 · C13 · C14 · C15 · door 6 restore drill C23 · C24 · C25 · door 7 Sentry message C29 | - |
+| Landing doors (9; 2 superseded by 8, 3's Clerk half by 9) | door 1 two-env IaC C4 · C8 · C9 · C10 · door 3 email half C18 · C19 · door 4 alert = Sentry event C29 · C31 · door 5 credential check C11 · C12 · C13 · C14 · C15 · door 6 restore drill C23 · C24 · C25 · door 7 Sentry message C29 · door 8 production URLs C10 · C20 · door 9 production sign-in C17 | - |
 | Surface routes (0) | none: the plan's `Surface` adds no route | - |
 | production services (4) | `Postgres` C6 · C23 · `api` C1 · C3 · C6 · `web` C2 · C6 · `jobs` C4 · C6 | - |
 | production URLs probed (4) | api `/healthz/ready` C1 · api `/docs` + `/openapi.json` C7 · web `/healthz` C2 · web `/` C2 | - |

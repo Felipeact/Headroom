@@ -14,7 +14,7 @@ This reuses the staging setup as-is: the one `.railway/railway.ts` (AD-005, AD-0
 
 1. A release PR merges `development` into `main` on GitHub. The `web` and `api` checks pass (`checkSuites`), and Railway environment `production` (door 1) builds `api`, `web`, and `jobs` from `main`.
 2. `api` pre-deploy runs `alembic upgrade head` against production `Postgres` (exists in Railway's default `production` env, empty since spec 05), over its private host (AD-006). Then `fastapi run`, and `/healthz/ready` gates the switch.
-3. `web` and `api` answer on Railway-generated `*.up.railway.app` domains (door 2). There's no custom domain yet, so Clerk is a separate Clerk application's instance and email uses Resend's test sender, each with its own keys (door 3). The custom domain, Clerk production instance, and Resend sending domain come with spec 34b.
+3. `web` answers on `headroom.felipeviana.com` and `api` on `api.headroom.felipeviana.com`, as Railway custom domains (door 8). Sign-in is the user's Clerk production instance on `headroom.felipeviana.com` (door 9). Email still uses Resend's test sender with its own key until a sending domain is verified.
 4. `jobs` runs hourly with production's secrets. `bank_sync.sync_failed`, Plaid webhook failures, and `email.failed` are logged at `error` (door 4). `app.monitoring` (exists) sends them to Sentry, where a production-only alert rule emails the team.
 5. Railway backs up the production `Postgres` volume on a daily, weekly, and monthly schedule. A restore swaps in a new volume in the same environment (door 6).
 6. Proof, outside the app: `check_no_shared_credentials.py` (door 5) reads `railway variable list --json` for both environments and compares the values without printing any of them.
@@ -23,6 +23,7 @@ This reuses the staging setup as-is: the one `.railway/railway.ts` (AD-005, AD-0
 
 | Front | What changes |
 | --- | --- |
+| DNS | `felipeviana.com`'s zone gets the records Railway lists for the two custom domains, plus Clerk's records under `headroom.felipeviana.com` (`clerk.`, `accounts.`, and the email ones). The user adds them at the registrar |
 | hosting | Railway's default `production` environment (left empty by spec 05, AD-005) gets `Postgres`, `api`, `web`, `jobs`, and the volume, with backups on. It deploys only from `main` |
 | repository | `.railway/railway.ts` stops throwing for `production`. The branch, `SENTRY_ENVIRONMENT`, and custom domains are chosen per environment. Staging's live settings must stay exactly as they are (`railway config plan --detailed-exit-code` exits 0 for `staging` before and after) |
 | branch flow | the first deploy needs a release PR from `development` into `main`. AGENTS.md allows that only when the user asks. Every later merge into `main` deploys production with no manual step |
@@ -52,8 +53,10 @@ None. Nothing new is consumed outside. The production domains serve the routes t
 | 5. "No shared credentials" check | `.specs/features/34-launch-production/check_no_shared_credentials.py` reads `railway variable list --service <s> --environment <e> --json` for `api`, `web`, and `jobs` in both environments. Every variable whose value is equal in both, after resolving references, fails unless its name is in a fixed allowlist of non-secret settings (`NEXT_PUBLIC_CLERK_SIGN_IN_URL`, `NEXT_PUBLIC_CLERK_SIGN_UP_URL`, `POSTHOG_HOST`, `POSTHOG_APP_HOST`, `EMAIL_MAILING_ADDRESS`, `FORECAST_STRATEGY`, `PLAID_CLIENT_ID`, `RAILWAY_*`). It prints names only, never values, and exits 1 on any match | a denylist of secret names: a new secret added later would pass silently. Comparing by eye in the dashboard: not repeatable |
 | 6. Restore rehearsal | in `production`, before any client signs up: create business `Restore drill A`, take a manual backup, create `Restore drill B`, restore that backup (Railway mounts a new volume and keeps the old one unmounted), redeploy, then check that `/healthz/ready` returns `200`, A is visible, and B is not. Time is measured from clicking Restore to the first `200` and written into `context/operations/production.md`. Both drill businesses are deleted afterwards | a `pg_dump` restored into a fresh local database: production `Postgres` has no public proxy (AD-006), and opening one to take a dump is the exposure that rule prevents. Railway can't restore across environments ("Backups can only be restored into the same project + environment"), so staging can't be the target |
 | 7. Sentry message for a structlog line (found while building: the log record's `msg` is structlog's event dict, so every line reached Sentry with the whole dict as its message, and grouping per event name (door 4) failed) | `app.monitoring._before_send` reads `hint["log_record"]`. When `record.msg` is a dict, it sets `logentry` to `{"message": <event>, "formatted": <event>, "params": []}` and moves the other non-underscore fields into `extra`, before `app.log.redact` | the `structlog-sentry` package: a new dependency for one field. Logging the event name as the stdlib message: every call site would need changing |
+| 8. Production URLs (supersedes door 2, user decision 2026-10-16) | `web`: `domains: ["headroom.felipeviana.com"]`, `api`: `domains: ["api.headroom.felipeviana.com"]`, production only, in `.railway/railway.ts`. `WEB_URL=https://headroom.felipeviana.com`, `API_PUBLIC_URL=https://api.headroom.felipeviana.com`, `PLAID_WEBHOOK_URL=https://api.headroom.felipeviana.com/v1/webhooks/plaid`, `CLERK_AUTHORIZED_PARTIES=https://headroom.felipeviana.com` | Railway's generated domains (door 2): the user's Clerk production instance only signs people in on `headroom.felipeviana.com` and its subdomains. `app.<domain>` on a separate Headroom domain: none exists yet; moving later breaks every sent link, so this is the address clients keep until a deliberate move |
+| 9. Production sign-in (supersedes door 3's Clerk half, user decision 2026-10-16) | the user's Clerk production instance for `headroom.felipeviana.com` (`pk_live_`/`sk_live_` keys, `CLERK_JWT_KEY` = that instance's PEM public key), on `api` and `web` in production only. Door 3's email half stands: Resend's test sender with its own key | a separate development-instance app (door 3): the user chose the live instance. Development instances show a banner, cap users, and their sessions don't carry over to the live instance later |
 
-- Doors 1, 4, 5, and 7 reach past this feature: every later alert and every later credential. Each gets a row in `.specs/STATE.md` `## Decisions`. Doors 2 and 3 are interim, and spec 34b supersedes them.
+- Doors 1, 4, 5, 7, 8, and 9 reach past this feature: every later alert, credential, sent link, and sign-in. Each gets a row in `.specs/STATE.md` `## Decisions`. Doors 8 and 9 supersede door 2 and door 3's Clerk half. Door 3's email half (the test sender) stays interim until a Resend domain is verified.
 - Alert thresholds, backup schedules, and Railway notification settings are dashboard settings you can reverse in a minute. They are criteria, not doors.
 
 ## Criteria
@@ -64,13 +67,13 @@ A merge into `main` puts the release live at its Railway domain. Nothing else de
 
 **Acceptance Criteria**
 
-1. WHEN a deployment of `api` in `production` succeeds THEN `GET https://<api production domain>/healthz/ready` SHALL respond `200` with body exactly `{"status": "ok"}`
-2. WHEN a deployment of `web` in `production` succeeds THEN `GET https://<web production domain>/healthz` SHALL respond `200` with body `{"status":"ok"}`, and `GET https://<web production domain>/` SHALL respond `307` to the sign-in page
+1. WHEN a deployment of `api` in `production` succeeds THEN `GET https://api.headroom.felipeviana.com/healthz/ready` SHALL respond `200` with body exactly `{"status": "ok"}`
+2. WHEN a deployment of `web` in `production` succeeds THEN `GET https://headroom.felipeviana.com/healthz` SHALL respond `200` with body `{"status":"ok"}`, and `GET https://headroom.felipeviana.com/` SHALL respond `307` to the sign-in page
 3. WHEN `api` deploys in `production` THEN its deploy log SHALL show `alembic upgrade head` finishing before the new deployment starts
 4. WHEN a commit reaches `development` THEN Railway SHALL NOT start any deployment in `production` for it
 5. WHEN a commit reaches `main` and its `web` and `api` checks succeed THEN Railway SHALL start `production` deployments for that SHA with no manual action
 6. The `production` services `Postgres`, `api`, `web`, and `jobs` SHALL run in `us-east4-eqdc4a`, and `Postgres` SHALL have no public domain or TCP proxy
-7. WHEN `GET https://<api production domain>/docs` or `/openapi.json` is requested THEN the API SHALL respond `404` (`API_DOCS_ENABLED` unset, AD-133)
+7. WHEN `GET https://api.headroom.felipeviana.com/docs` or `/openapi.json` is requested THEN the API SHALL respond `404` (`API_DOCS_ENABLED` unset, AD-133)
 8. WHEN `railway config plan --detailed-exit-code` runs against `production` and against `staging` THEN each SHALL exit 0
 9. IF `.railway/railway.ts` is evaluated for an environment other than `staging` or `production` THEN it SHALL throw, and `railway config plan` SHALL fail
 
@@ -83,7 +86,7 @@ A merge into `main` puts the release live at its Railway domain. Nothing else de
 10. WHEN `check_no_shared_credentials.py` runs against the live project THEN it SHALL exit 0
 11. IF any variable outside the door 5 allowlist has the same value in `staging` and `production` on `api`, `web`, or `jobs` THEN the script SHALL exit 1 and print `<service> <NAME>` for each match
 12. The script's output SHALL contain no variable value, in pass or fail (checked against fixtures with known values)
-13. The production `api` SHALL carry `PLAID_ENV` = `production`, and its `CLERK_JWT_KEY` SHALL be the public key of the `Headroom Production` Clerk application (door 3), not staging's
+13. The production `api` SHALL carry `PLAID_ENV` = `production`, and `api` and `web` SHALL carry the Clerk production instance's keys for `headroom.felipeviana.com` (`pk_live_` prefix), never staging's
 
 **Independent test:** run the script and get exit 0. Run it on a fixture where `RESEND_API_KEY` matches and get exit 1, with `api RESEND_API_KEY` printed and the value absent.
 
@@ -91,18 +94,18 @@ A merge into `main` puts the release live at its Railway domain. Nothing else de
 
 **Acceptance Criteria**
 
-14. WHEN the founder signs up at `https://<web production domain>/sign-up` THEN the `Headroom Production` Clerk application SHALL list the new user, and staging's Clerk instance SHALL NOT
+14. WHEN the founder signs up at `https://headroom.felipeviana.com/sign-up` THEN the Clerk production instance SHALL list the new user, and staging's Clerk instance SHALL NOT
 15. WHEN production sends an email to the Resend account owner's address THEN it SHALL arrive From `onboarding@resend.dev`, and Resend's log SHALL show it under the production API key
-16. WHERE production `PLAID_SECRET` is a Plaid Production (Trial or paid plan) secret, WHEN the founder connects their own business bank in production THEN the connection SHALL sync (spec 14 behaviour), and Plaid's webhook SHALL reach `https://<api production domain>/v1/webhooks/plaid` with `200`
+16. WHERE production `PLAID_SECRET` is a Plaid Production (Trial or paid plan) secret, WHEN the founder connects their own business bank in production THEN the connection SHALL sync (spec 14 behaviour), and Plaid's webhook SHALL reach `https://api.headroom.felipeviana.com/v1/webhooks/plaid` with `200`
 
-**Independent test:** sign up on the production Railway domain. Clerk's `Headroom Production` dashboard lists the user, and the invitation test email arrives from `onboarding@resend.dev`.
+**Independent test:** sign up at `https://headroom.felipeviana.com`. Clerk's production instance lists the user, and the invitation test email arrives from `onboarding@resend.dev`.
 
 ### S4: Backups exist and one restore is proven (P1)
 
 **Acceptance Criteria**
 
 17. The production `Postgres` volume SHALL have the Daily, Weekly, and Monthly backup schedules on
-18. WHEN the door 6 drill restores the backup taken between `Restore drill A` and `Restore drill B` THEN `https://<api production domain>/healthz/ready` SHALL respond `200`, `Restore drill A` SHALL be listed for its owner, and `Restore drill B` SHALL NOT
+18. WHEN the door 6 drill restores the backup taken between `Restore drill A` and `Restore drill B` THEN `https://api.headroom.felipeviana.com/healthz/ready` SHALL respond `200`, `Restore drill A` SHALL be listed for its owner, and `Restore drill B` SHALL NOT
 19. WHEN the drill finishes THEN `context/operations/production.md` SHALL record the date, the backup's timestamp, and the measured minutes from Restore to the first `200`, plus the restore steps in order
 
 **Independent test:** follow the runbook. The owner sees A and not B.
@@ -125,7 +128,7 @@ A merge into `main` puts the release live at its Railway domain. Nothing else de
 | Excluded | Why |
 | --- | --- |
 | Applying to Plaid for production access | the user's application in the Plaid Dashboard. This spec only installs the keys |
-| Custom domain, Clerk production instance, Resend sending domain | need a domain the business owns. Proposed spec 34b, done before spec 36 invites any client (doors 2, 3) |
+| Resend sending domain | spec 34b. Production keeps Resend's test sender, which only delivers to the Resend account owner, so no client email goes out until then (door 3, email half) |
 | Backups for `staging` | staging holds only synthetic data (spec 05) |
 | Legal pages, support address, marketing site on the root domain | spec 35 |
 | Onboarding pilot clients, billing | spec 36, Stripe Payment Links by hand |
@@ -148,6 +151,7 @@ A merge into `main` puts the release live at its Railway domain. Nothing else de
 
 | No domain yet | the custom domain, the Clerk production instance, and the Resend sending domain move to a new spec 34b, done before spec 36. Spec 34 runs on doors 2 and 3 | user has no domain (2026-10-16), and approved the plan with this split | y |
 | Plaid Production secret | the user applies for Plaid's free Trial plan (US/Canada, 10 Production Items, no OAuth registration for Canadian banks). Until a secret is issued, production `api` gets a random placeholder `PLAID_SECRET` so it starts, and AC 16 waits for the secret | user approved the plan with this default (2026-10-16) | y |
+| Clerk and domain in production | production runs on `headroom.felipeviana.com` with the user's live Clerk instance (doors 8, 9). This supersedes the rows "No domain yet" (its domain and Clerk parts) and the earlier "no Clerk variable for now" | user chose option 1, 2026-10-16 | y |
 | Restore route | the door 6 drill, in production, before any client | user approved the plan (2026-10-16) | y |
 
 **Open questions:**

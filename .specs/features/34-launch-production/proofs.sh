@@ -25,8 +25,9 @@ railway_iac() {
 # json CODE [ARGS...]: run CODE with the parsed stdin bound to d; ARGS land in sys.argv[1:].
 json() { python3 -c "import json,sys; d=json.load(sys.stdin); $1" "${@:2}" | tr -d '\r'; }
 
-domain_of() { # service [env]
-  railway domain list --service "$1" --environment "${2:-$PROD}" --json | json "print(d['domains'][0]['domain'])"
+# Production's hostnames are fixed by door 8.
+domain_of() { # service
+  case "$1" in web) echo headroom.felipeviana.com ;; api) echo api.headroom.felipeviana.com ;; *) return 1 ;; esac
 }
 
 deployments() { railway deployment list --service "$1" --environment "${2:-$PROD}" --limit 100 --json; }
@@ -169,6 +170,10 @@ print(Clerk(bearer_auth=key).users.count(request={'email_address': ['$FOUNDER_EM
   prod="$(remote "$PROD" "$code")"; staging="$(remote "$STAGING" "$code")"
   echo "production=$prod staging=$staging"
   [ "$prod" = 1 ] && [ "$staging" = 0 ] || fail c17 "expected production=1 staging=0"
+  variables web "$PROD" | json "
+import sys
+ok = d.get('NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY', '').startswith('pk_live_')
+print('match' if ok else 'mismatch'); sys.exit(0 if ok else 1)" || fail c17 "production web is not on a pk_live_ key"
   echo "PASS c17"
 }
 
@@ -183,14 +188,16 @@ print('match' if ok else 'mismatch'); sys.exit(0 if ok else 1)" || fail c19 "EMA
 }
 
 c20() {
-  local api web
-  api="https://$(domain_of api)"; web="https://$(domain_of web)"
   variables api "$PROD" | json "
 import sys
-api, web = sys.argv[1], sys.argv[2]
+web, api = 'https://headroom.felipeviana.com', 'https://api.headroom.felipeviana.com'
 want = {'WEB_URL': web, 'API_PUBLIC_URL': api, 'PLAID_WEBHOOK_URL': api + '/v1/webhooks/plaid', 'CLERK_AUTHORIZED_PARTIES': web}
 bad = [k for k, v in want.items() if d.get(k) != v]
-print('mismatch: ' + ' '.join(bad) if bad else 'match'); sys.exit(1 if bad else 0)" "$api" "$web" || fail c20 "production URLs"
+print('mismatch: ' + ' '.join(bad) if bad else 'match'); sys.exit(1 if bad else 0)" || fail c20 "production URLs"
+  local host
+  for host in headroom.felipeviana.com api.headroom.felipeviana.com; do
+    curl -sS --max-time 30 -o /dev/null "https://$host/" || fail c20 "https://$host has no valid certificate or does not answer"
+  done
   echo "PASS c20"
 }
 
