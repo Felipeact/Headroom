@@ -12,7 +12,7 @@ vi.mock('@clerk/nextjs/server', () => ({ auth: { protect } }))
 vi.mock('@/lib/analytics', () => ({ capture: vi.fn() }))
 vi.mock('@clerk/nextjs', () => ({ SignUp: () => null }))
 
-const get = (query = '') => GET(new NextRequest(`https://app.example.test/welcome${query}`))
+const get = (query = '', origin = 'https://app.example.test') => GET(new NextRequest(`${origin}/welcome${query}`))
 
 beforeEach(() => {
   order.length = 0
@@ -28,19 +28,21 @@ describe('GET /welcome', () => {
     expect(order).toEqual(['protect', 'capture'])
     expect(capture).toHaveBeenCalledWith('sign_up_completed', {})
     expect(response.status).toBe(307)
-    expect(response.headers.get('location')).toBe('https://app.example.test/')
+    expect(response.headers.get('location')).toBe('/')
   })
 
-  test('goes on to a same-site next path', async () => {
-    const response = await get('?next=/invite/abc')
+  // Under `next start` request.url carries the address the server listens on, not the public
+  // host, so the redirect must be a path the browser resolves against the host it used.
+  test('goes on to a same-site next path and never names the host the server listens on', async () => {
+    const response = await get('?next=/invite/abc', 'http://localhost:8080')
     expect(response.status).toBe(307)
-    expect(response.headers.get('location')).toBe('https://app.example.test/invite/abc')
+    expect(response.headers.get('location')).toBe('/invite/abc')
   })
 
   test.each(['//evil.test', 'https://evil.test', ''])('refuses next=%s', async (next) => {
     const response = await get(`?next=${encodeURIComponent(next)}`)
     expect(response.status).toBe(307)
-    expect(response.headers.get('location')).toBe('https://app.example.test/')
+    expect(response.headers.get('location')).toBe('/')
   })
 })
 
