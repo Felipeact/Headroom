@@ -176,21 +176,27 @@ def run_app(env: dict[str, str]) -> list[str]:
     return paths
 
 
-def test_docs_off_unless_enabled() -> None:
+def test_docs_off_unless_enabled(tmp_path: Path) -> None:
     """C20."""
     docs = {"/docs", "/redoc", "/openapi.json"}
     assert docs.isdisjoint(run_app({}))
     assert docs.isdisjoint(run_app({"API_DOCS_ENABLED": "false"}))
     assert docs <= set(run_app({"API_DOCS_ENABLED": "true"}))
+    # Truly unset: no variable, and a cwd with no .env.local for the docs switch to read.
+    env = {k: v for k, v in os.environ.items() if k != "API_DOCS_ENABLED"}
+    contract = REPO / "contracts" / "openapi.json"
+    before = contract.stat().st_mtime_ns
     exported = subprocess.run(
-        ["uv", "run", "python", "-m", "app.export_openapi"],
-        cwd=CORE,
-        env={**os.environ, "API_DOCS_ENABLED": "false"},
+        [sys.executable, "-m", "app.export_openapi"],
+        cwd=tmp_path,
+        env={**env, "PYTHONPATH": str(CORE)},
         capture_output=True,
         text=True,
         check=False,
     )
     assert exported.returncode == 0, exported.stderr
+    assert contract.stat().st_mtime_ns > before
+    assert "/v1/me" in json.loads(contract.read_text(encoding="utf8"))["paths"]
 
 
 def test_public_list_is_exactly_four() -> None:

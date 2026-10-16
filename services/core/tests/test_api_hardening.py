@@ -250,3 +250,37 @@ def test_jobs_do_not_load_http_middleware() -> None:
         check=False,
     )
     assert result.returncode == 0, result.stderr
+
+
+def test_verified_user_not_blocked_by_ip() -> None:
+    """C30."""
+    ip = "203.0.113.80"
+    failing = {"Authorization": "Bearer not-a-token", "X-Forwarded-For": ip}
+    for i in range(60):
+        assert client.get("/v1/me", headers=failing).status_code == 401, i
+    assert client.get("/v1/me", headers=failing).status_code == 429
+    assert client.get("/v1/me", headers=new_headers(ip)).status_code == 200
+
+
+def test_unsubscribe_limit_per_token() -> None:
+    """C31."""
+    ip = {"X-Forwarded-For": "192.0.2.50"}
+    for i in range(31):
+        response = client.post(f"/v1/unsubscribe/unknown-token-{i}", headers=ip)
+        assert response.status_code == 404, i
+    one = "/v1/unsubscribe/the-same-token"
+    for i in range(30):
+        assert client.post(one, headers=ip).status_code == 404, i
+    assert client.post(one, headers=ip).status_code == 429
+    assert client.post("/v1/unsubscribe/another-token", headers=ip).status_code == 404
+
+
+def test_real_ip_names_the_client() -> None:
+    """C32."""
+    for i in range(30):
+        headers = {"X-Real-IP": "192.0.2.60", "X-Forwarded-For": f"198.51.100.{i}"}
+        assert client.post(UNSUBSCRIBE, headers=headers).status_code == 404, i
+    same = {"X-Real-IP": "192.0.2.60", "X-Forwarded-For": "198.51.100.200"}
+    assert client.post(UNSUBSCRIBE, headers=same).status_code == 429
+    other = {"X-Real-IP": "192.0.2.61", "X-Forwarded-For": "198.51.100.200"}
+    assert client.post(UNSUBSCRIBE, headers=other).status_code == 404

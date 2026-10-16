@@ -3,7 +3,7 @@
 Profile: light
 Plan: `.specs/features/33-launch-security-review/plan.md`
 
-29 checks in 5 slices · 6 one-way doors (4 approved, 2 found while writing the checks) · 3 open, of which 2 block go-live
+32 checks in 6 slices · 8 one-way doors (4 approved, 2 found while writing the checks, 2 found in review) · 3 open, of which 2 block go-live
 
 Unless noted, `uv run` proofs run from `services/core` and `npx vitest` proofs from `frontend`. API tests use `TestClient(app)` and the `Caller` helpers of `tests/test_businesses.py` and `tests/tokens.py`, as `tests/test_bookkeeper_access.py` does; the limiter reads its time from one function the tests replace, so no test sleeps. New API test files: `tests/test_api_hardening.py` (S1) and `tests/test_security_rules.py` (S3, S4, S5). New web test: `tests/security-headers.test.ts`. No test calls Plaid, Clerk, Resend or PostHog.
 
@@ -111,6 +111,17 @@ Proof: `uv run pytest tests/test_security_rules.py -k "incident_plan_has_its_par
 **C29** - A rehearsal record `context/security/rehearsal-<YYYY-MM-DD>.md` exists with the date, the scenario, the participants, a time for each First hour step, and a section "What the plan got wrong" (at least one line, or the words `nothing`); `incident-response.md` carries a `Last rehearsed:` date equal to the record's. Gated: the rehearsal is the user's, with the agent facilitating and recording (open question 2) (AC 22)
 Proof: `uv run pytest tests/test_security_rules.py -k "rehearsal_recorded"`
 
+### S6 - Review fixes (the-judge F1-F3, 2026-10-16, added after approval at the user's request) · `app/auth.py`, `app/ratelimit.py`, `tests/test_api_hardening.py` · 3 files · 18 KB · ~5k
+
+**C30** - After 60 requests failing authentication from IP `203.0.113.80` (the 61st answers `429`, C5), a request from the same IP with a valid token answers `200` (door 5, review F1)
+Proof: `uv run pytest tests/test_api_hardening.py -k "verified_user_not_blocked_by_ip"`
+
+**C31** - `POST /v1/unsubscribe/{token}` is limited per client IP and token: from one IP, 31 requests each with a different token all answer `404`; after one token's 31st request answers `429`, a different token from the same IP answers `404` (door 7, review F2)
+Proof: `uv run pytest tests/test_api_hardening.py -k "unsubscribe_limit_per_token"`
+
+**C32** - `X-Real-IP` names the client when present: 30 unsubscribe requests with `X-Real-IP: 192.0.2.60` and a different right-most `X-Forwarded-For` entry on each answer `404` and the 31st answers `429`; the same request with `X-Real-IP: 192.0.2.61` answers `404` (door 8, review F3)
+Proof: `uv run pytest tests/test_api_hardening.py -k "real_ip_names_the_client"`
+
 ## Coverage
 
 | Set (size) | Member -> proof | Unproven |
@@ -118,7 +129,7 @@ Proof: `uv run pytest tests/test_security_rules.py -k "rehearsal_recorded"`
 | API refusal statuses (2) | `403` browser origin C1 · `429` over the limit C4, C5, C6 | - |
 | web page statuses (2) | `200` C14 · `307` C14 (`/` while signed out) | - |
 | origin-refused route kinds (4) | `/v1` read C1 · `/v1` write C1 · webhook C1 · unsubscribe C1 | - |
-| rate-limit keys (4) | user C4 · IP rejected-auth C5 · IP public routes C6 · probes exempt C10 | - |
+| rate-limit keys (5) | user C4 · IP rejected-auth C5, C30 · IP public routes C6 · IP and token unsubscribe C31 · probes exempt C10 | - |
 | `/v1` answers carrying the headers (5) | `200` C9 · `401` C9 · `404` C9 · `403` C9 · `429` C9 | - |
 | web security headers (6) | HSTS C12 · nosniff C12 · Referrer-Policy C12 · Permissions-Policy C12 · X-Frame-Options C12 · CSP report-only C12, C13 | - |
 | business routes denied to a stranger (28) | `PATCH /` C16 · `POST /invitations` C16 · `DELETE /members/{user_id}` C16 · `POST /bank/link-token` C16 · `POST /bank/connections` C16 · `GET /bank/connections` C16 · `GET /bank/transactions` C16 · `PATCH /bank/accounts/{account_id}` C16 · `POST /bank/connections/{connection_id}/link-token` C16 · `POST /bank/connections/{connection_id}/repair` C16 · `DELETE /bank/connections/{connection_id}` C16 · `PUT /minimum-balance` C16 · `POST /alerts/{alert_id}/dismiss` C16 · `GET /` C16 · `GET /members` C16 · `GET /recurring-patterns` C16 · `GET /expected-payments` C16 · `POST /expected-payments` C16 · `PUT /expected-payments/{payment_id}` C16 · `DELETE /expected-payments/{payment_id}` C16 · `GET /forecast` C16 · `GET /upcoming` C16 · `GET /minimum-balance` C16 · `GET /forecast/status` C16 · `GET /alerts` C16 · `GET /alerts/{alert_id}` C16 · `GET /dashboard` C16 · `PUT /me/alert-emails` C16 | - |
@@ -128,7 +139,7 @@ Proof: `uv run pytest tests/test_security_rules.py -k "rehearsal_recorded"`
 | Plaid webhook rejections (8) | no header C25 · non-JWT C25 · HS256 C25 · unsigned C25 · wrong key C25 · stale `iat` C25 · body hash C25 · expired key C25 | - |
 | AGENTS.md security rules (8) | R1 never return or log secrets C24, `tests/test_log.py` · R2 encrypt tokens `tests/test_bank_connect.py::test_token_encrypted` · R3 webhook signature C25 · R4 Clerk token C19 · R5 permissions C16, C18 · R6 cross-business C16 · R7 synthetic data, a written check row C22 · R8 secrets only in environment C26; all joined by C22, C23 | - |
 | security documents (3) | `access.md` C27 · `incident-response.md` C28 · rehearsal record C29 | - |
-| one-way doors (6) | 1 origin rule C1-C3 · 2 limiter C4-C8 · 3 web headers C12-C15 · 4 route inventory C17, C21 · 5 `/v1` IP limit counts rejected only C5 · 6 docs off by default C20 | - |
+| one-way doors (8) | 1 origin rule C1-C3 · 2 limiter C4-C8 · 3 web headers C12-C15 · 4 route inventory C17, C21 · 5 `/v1` IP limit counts rejected only C5, C30 · 6 docs off by default C20 · 7 unsubscribe per IP and token C31 · 8 client IP from `X-Real-IP` C32 | - |
 | startup config (2 assemblies) | `api` app C1, C4, C9 · `jobs` process does not load the middleware C11 | - |
 
 - Claims naming a status code or a route: C1, C4, C5, C6, C9, C16, C19, C21 - each proof crosses the HTTP boundary through `TestClient`; C14 crosses it for the web with `curl -I`

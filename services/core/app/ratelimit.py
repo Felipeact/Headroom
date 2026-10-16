@@ -65,7 +65,11 @@ def _count(scope: str, key: str) -> None:
 
 
 def client_ip(headers: Mapping[str, str], fallback: str) -> str:
-    """The right-most `X-Forwarded-For` entry, which Railway's proxy appends."""
+    """`X-Real-IP`, the header Railway documents for the client address (door 8); else the
+    right-most `X-Forwarded-For` entry; else the socket peer."""
+    real = headers.get("x-real-ip", "").strip()
+    if real:
+        return real
     forwarded = headers.get("x-forwarded-for", "")
     last = forwarded.rsplit(",", 1)[-1].strip()
     return last or fallback
@@ -122,7 +126,14 @@ class PublicRouteLimit:
         }
         client = scope.get("client")
         ip = client_ip(headers, client[0] if client else "unknown")
-        wait = _blocked("public", ip, PUBLIC_LIMIT)
+        # Unsubscribe is keyed by IP and token: the footer page posts through the web
+        # server, so its IP is every user's (door 7).
+        key = (
+            f"{ip} {scope['path']}"
+            if scope["path"].startswith("/v1/unsubscribe/")
+            else ip
+        )
+        wait = _blocked("public", key, PUBLIC_LIMIT)
         if wait is not None:
             error = rejected(_public_template(scope["path"]), "ip", wait)
             response = problem_response(
@@ -130,5 +141,5 @@ class PublicRouteLimit:
             )
             await response(scope, receive, send)
             return
-        _count("public", ip)
+        _count("public", key)
         await self.app(scope, receive, send)

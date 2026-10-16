@@ -43,7 +43,11 @@ def _route(request: Request) -> str:
 def _rejected(reason: Reason, request: Request) -> HTTPException:
     # One response for every cause; only the log says which. Never log the token.
     log.info("auth.rejected", reason=reason)
-    ratelimit.count_rejected_authentication(_ip(request))
+    # The IP block applies only to failing requests: every user arrives from the web
+    # server's IP, so a verified token is limited per user alone (door 5).
+    ip = _ip(request)
+    ratelimit.check_ip_not_blocked(ip, _route(request))
+    ratelimit.count_rejected_authentication(ip)
     return HTTPException(
         status.HTTP_401_UNAUTHORIZED,
         detail=AUTHENTICATION_REQUIRED,
@@ -58,9 +62,8 @@ def verified_clerk_user_id(
     """Verify the Clerk session token in `Authorization: Bearer` and return its `sub`.
 
     Also the one place `/v1` is rate limited (spec 33): a client IP that keeps failing
-    authentication is refused, and a verified user gets 300 requests a minute.
+    authentication gets `429` instead of `401`, and a verified user gets 300 requests a minute.
     """
-    ratelimit.check_ip_not_blocked(_ip(request), _route(request))
     if credentials is None:
         raise _rejected("missing", request)
     settings = get_settings()
