@@ -9,13 +9,13 @@ role held, reason, two-factor on (`yes` or `no`), date checked (ISO).
 
 | Service | Person | Role | Reason | 2FA | Checked |
 | --- | --- | --- | --- | --- | --- |
-| Clerk | Felipe Viana | Owner | runs the product; the only person with access | no | 2026-10-15 |
-| Railway | Felipe Viana | Owner | runs the product; the only person with access | no | 2026-10-15 |
-| GitHub | Felipe Viana | Owner | runs the product; the only person with access | yes | 2026-10-15 |
-| Resend | Felipe Viana | Owner | runs the product; the only person with access | no | 2026-10-15 |
-| PostHog | Felipe Viana | Owner | runs the product; the only person with access | no | 2026-10-15 |
-| Sentry | Felipe Viana | Owner | runs the product; the only person with access | no | 2026-10-15 |
-| Plaid | Felipe Viana | Owner | runs the product; the only person with access | no | 2026-10-15 |
-| Domain registrar | Felipe Viana | Owner | runs the product; the only person with access | no | 2026-10-15 |
+| Clerk | Felipe Viana | Owner | runs the product; the only person with access | yes | 2026-10-16 |
+| Railway | Felipe Viana | Owner | runs the product; the only person with access | yes | 2026-10-16 |
+| GitHub | Felipe Viana | Owner | runs the product; the only person with access | yes | 2026-10-16 |
+| Resend | Felipe Viana | Owner | runs the product; the only person with access | yes | 2026-10-16 |
+| PostHog | Felipe Viana | Owner | runs the product; the only person with access | yes | 2026-10-16 |
+| Sentry | Felipe Viana | Owner | runs the product; the only person with access | yes | 2026-10-16 |
+| Plaid | Felipe Viana | Owner | runs the product; the only person with access | yes | 2026-10-16 |
+| Domain registrar | Felipe Viana | Owner | runs the product; the only person with access | yes | 2026-10-16 |
 
-Only Felipe Viana has production access. Seven accounts have no two-factor authentication yet; turn it on in each service, then change that row's 2FA to `yes` and its date.
+Only Felipe Viana has production access. Two-factor authentication is on in all eight services (reported by Felipe Viana on 2026-10-16).
