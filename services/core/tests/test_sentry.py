@@ -8,6 +8,7 @@ from typing import Any
 
 import pytest
 import sentry_sdk
+import structlog
 from fastapi import APIRouter, HTTPException
 from fastapi.testclient import TestClient
 from sentry_sdk.envelope import Envelope
@@ -15,6 +16,7 @@ from sentry_sdk.transport import Transport
 from sentry_sdk.types import Event
 
 import app.monitoring
+from app.log import configure_logging
 from app.main import app as api
 from app.settings import get_settings
 
@@ -176,3 +178,26 @@ def test_sentry_check_without_dsn_exits_1() -> None:
     assert result.returncode == 1
     assert "SENTRY_DSN is not set" in result.stderr
     assert result.stdout == ""
+
+
+def test_error_log_is_one_event(
+    lifespan_client: TestClient, sentry_events: list[Event]
+) -> None:
+    # Spec 34 door 4: an `error` log line is the team's alert; a warning is not.
+    configure_logging()
+    log = structlog.get_logger("tests.alerting")
+
+    log.warning("bank_sync.sync_skipped", business_id="b-1")
+    log.error(
+        "bank_sync.sync_failed",
+        business_id="b-1",
+        connection_id="c-1",
+        access_token=SANDBOX_TOKEN,
+    )
+    sentry_sdk.flush()
+
+    assert len(sentry_events) == 1
+    event = sentry_events[0]
+    message = event.get("logentry", {}).get("message") or event.get("message")
+    assert message == "bank_sync.sync_failed"
+    assert SANDBOX_TOKEN not in json.dumps(event, default=str)

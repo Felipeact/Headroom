@@ -431,7 +431,7 @@ def plaid_webhook(
             status.HTTP_401_UNAUTHORIZED, detail=INVALID_SIGNATURE
         ) from None
     except PlaidError as exc:
-        log.warning(
+        log.error(
             "plaid.request_failed",
             error_type=exc.error_type,
             error_code=exc.error_code,

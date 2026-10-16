@@ -881,7 +881,7 @@ def sync_in_background(
                 connection_id=str(connection_id),
             )
         except PlaidError as exc:
-            log.warning(
+            log.error(
                 "bank_sync.sync_failed",
                 business_id=str(business_id),
                 connection_id=str(connection_id),
@@ -953,7 +953,7 @@ def _log_failure(
         }
     else:
         details = {"error_type": type(exc).__name__}
-    log.warning(
+    log.error(
         "bank_sync.sync_failed",
         business_id=str(business_id),
         connection_id=str(connection_id),

@@ -10,6 +10,14 @@ from app.settings import Settings
 
 
 def _before_send(event: Event, hint: Hint) -> Event:
+    # A structlog line arrives with its whole event dict as the message; Sentry groups by
+    # message, so the event name becomes the message and the fields go to `extra`.
+    record = hint.get("log_record")
+    if record is not None and isinstance(record.msg, dict):
+        fields = {k: v for k, v in record.msg.items() if not k.startswith("_")}
+        name = str(fields.pop("event", record.name))
+        event["logentry"] = {"message": name, "formatted": name, "params": []}
+        event["extra"] = {**event.get("extra", {}), **fields}
     return cast(Event, redact(event))
 
 
