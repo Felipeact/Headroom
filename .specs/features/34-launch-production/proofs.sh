@@ -80,7 +80,7 @@ c2() {
 c3() {
   local id current heads
   id="$(latest_success api id)"; [ -n "$id" ] || fail c3 "no SUCCESS production api deployment"
-  railway logs "$id" --service api --environment "$PROD" --deployment --lines 1000 | grep -q 'Context impl PostgresqlImpl' \
+  railway logs "$id" --service api --environment "$PROD" --deployment --lines 1000 | grep -c 'Context impl PostgresqlImpl' >/dev/null \
     || fail c3 "deploy logs of $id do not show alembic running"
   current="$(railway ssh --service api --environment "$PROD" -- alembic current 2>/dev/null | tr -d '\r' | grep -oE '^[0-9a-f]{6,}' | head -1)"
   # The running container holds main's code, so its own `alembic heads` is main's head.
@@ -210,7 +210,7 @@ with get_sessionmaker()() as s:
     print(' '.join(sorted({c.last_synced_at is not None and 'synced' or 'never' for c in s.scalars(select(BankConnection))})))")"
   echo "connections: ${statuses:-none}"
   echo "$statuses" | grep -qw synced || fail c21 "no production connection has synced"
-  railway logs --service api --environment "$PROD" --lines 5000 | grep 'POST /v1/webhooks/plaid' | grep -q '" 200' \
+  railway logs --service api --environment "$PROD" --lines 5000 | grep 'POST /v1/webhooks/plaid' | grep -c '" 200' >/dev/null \
     || fail c21 "no 200 answer to a Plaid webhook in the production logs"
   echo "PASS c21"
 }
