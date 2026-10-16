@@ -147,8 +147,8 @@
 
 ## Handoff
 
-**Feature**: spec 33 (security review) Done 2026-10-16; 32 checks, Verifier round 3 PASS at 82f90a2; the-judge F1-F4 fixed (doors 7, 8; C30-C32)
-**Where**: `.specs/features/33-launch-security-review/`, `context/security/`
-**Next step**: owed on staging once `development` is pushed and deployed (needs the user's go-ahead): C14 header run, C15 CSP pass, and one request to confirm Railway sets `X-Real-IP` and overwrites a client-sent value (door 8). Follow-ups with no spec: operator command to revoke one business's Plaid items; name the lawyer in incident-response.md
-**Blockers**: `test_recipients` fails only because this machine's `.env.local` sets METRICS_REPORT_RECIPIENTS; `test_unavailable_body_leaks_nothing` fails only on the passwordless embedded Postgres; `.env.example` still carries the user's uncommitted `EMAIL_SENDER=resend`; no Docker: local Postgres via `uv run --no-project --with pgserver`
+**Feature**: spec 34 (production) In progress. Local half committed at f0af695: alert log levels + Sentry event names (C26-C29 green), two-environment IaC (C9, C10 green), credential check (C12-C15 green), proofs.sh, runbook `context/operations/production.md`, AD-135 to AD-139
+**Where**: `.specs/features/34-launch-production/`, `.railway/railway.ts`, `context/operations/production.md`
+**Next step**: each needs the user's go-ahead: (1) the user creates the production-side credentials (Clerk app `Headroom Production`, Resend key, Sentry client keys, PostHog project, new Fernet key, Plaid Trial secret or a placeholder) and pastes them with `railway variable set` in their own terminal; (2) `railway config apply` to production, then to staging (adds web NEXT_PUBLIC_SENTRY_ENVIRONMENT); (3) push `development` and open the release PR into `main`; (4) backups on, restore drill, evidence rows; (5) proofs c1-c8, c11, c16-c25, c30, c31; then dispatch the Verifier over be412a9..HEAD
+**Blockers**: C21 waits for Plaid's Trial secret; spec 34b (domain) before spec 36; same machine notes as before: `test_recipients` and `test_unavailable_body_leaks_nothing` fail only locally; no Docker: local Postgres via `uv run --no-project --with pgserver` (scratchpad pg.py)
 **Branch**: development
