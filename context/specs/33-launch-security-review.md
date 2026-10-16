@@ -1,7 +1,7 @@
 # Spec 33: Security review
 
 - **Milestone:** 7, production
-- **Status:** In progress
+- **Status:** Done
 - **Depends on:** 17, 20, 27, 29, 30, 31, 32
 
 ## Goal
@@ -21,5 +21,5 @@ Check that the product is safe to hold real businesses' bank data.
 
 ## Done when
 
-- [ ] Every security rule has a passing test or a written check.
-- [ ] The data-exposure plan has been rehearsed once.
+- [x] Every security rule has a passing test or a written check.
+- [x] The data-exposure plan has been rehearsed once.

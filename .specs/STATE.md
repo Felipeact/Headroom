@@ -142,8 +142,8 @@
 
 ## Handoff
 
-**Feature**: spec 33 (security review) In progress; checks C1-C29 green locally (C27 per AD-134; C29 rehearsal 2026-10-16, commit 2f016d1); C14's staging run waits on a push
+**Feature**: spec 33 (security review) Done 2026-10-16; 32 checks, Verifier round 3 PASS at 82f90a2; the-judge F1-F4 fixed (doors 7, 8; C30-C32)
 **Where**: `.specs/features/33-launch-security-review/`, `context/security/`
-**Next step**: Verifier over 0e577b5^..HEAD with every check, then `/the-judge`, then mark spec 33 Done
-**Blockers**: `test_recipients` fails only because this machine's `.env.local` sets METRICS_REPORT_RECIPIENTS; `.env.example` still carries the user's uncommitted `EMAIL_SENDER=resend`; no Docker: local Postgres via `uv run --no-project --with pgserver`, and a local web build on a port other than 3000 needs that origin in `CLERK_AUTHORIZED_PARTIES`
+**Next step**: owed on staging once `development` is pushed and deployed (needs the user's go-ahead): C14 header run, C15 CSP pass, and one request to confirm Railway sets `X-Real-IP` and overwrites a client-sent value (door 8). Follow-ups with no spec: operator command to revoke one business's Plaid items; name the lawyer in incident-response.md
+**Blockers**: `test_recipients` fails only because this machine's `.env.local` sets METRICS_REPORT_RECIPIENTS; `test_unavailable_body_leaks_nothing` fails only on the passwordless embedded Postgres; `.env.example` still carries the user's uncommitted `EMAIL_SENDER=resend`; no Docker: local Postgres via `uv run --no-project --with pgserver`
 **Branch**: development
