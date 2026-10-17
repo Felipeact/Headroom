@@ -107,3 +107,4 @@ Context used per request, measured against a context window of about 250,000 tok
 | Spec 33: signed-in CSP pass (embedded Postgres), 2FA table, incident rehearsal and plan fixes, decision log | ~95,000 (~38%) | High (smart zone) |
 | Spec 33: verifier rounds 1-3 (separate contexts), the-judge review, F1-F4 fixes, mark Done | ~150,000 (~60%) | Medium (attention degrades) |
 | Spec 34: plan (no domain, Plaid Trial research), checks, local build (alerts, IaC, credential check, runbook) | ~140,000 (~56%) | Medium (attention degrades) |
+| Spec 17a: Flinks provider plan (Flinks docs research), checks | ~75,000 (~30%) | High (smart zone) |
