@@ -90,6 +90,8 @@ describe('flinks connect', () => {
 
     expect(connectFlinksBank).toHaveBeenCalledWith(BUSINESS, LOGIN_ID, '/onboarding/accounts')
     expect(screen.queryByRole('dialog')).toBeNull()
+    // The connect failed, and the iframe token is spent: the page asks for a fresh one.
+    expect(router.refresh).toHaveBeenCalledTimes(1)
   })
 
   test('message origin: a REDIRECT without a loginId is a failed connect', async () => {

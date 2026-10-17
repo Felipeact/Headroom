@@ -32,9 +32,11 @@ export function useFlinksConnect(
       startTransition(async () => {
         const result = await connectFlinksBank(businessId, id, returnTo)
         setError(result.error)
+        // The iframe spent its single-use token on this login: a later open needs a new one.
+        router.refresh()
       })
     },
-    [businessId, returnTo],
+    [businessId, returnTo, router],
   )
 
   useEffect(() => {

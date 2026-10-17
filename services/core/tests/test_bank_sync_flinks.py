@@ -23,7 +23,6 @@ from app.modules.bank_sync.flinks import SYNC_POLLS, FlinksAccount, FlinksError
 from app.modules.bank_sync.models import BankAccount, BankConnection, BankTransaction
 from tests.flinks_support import (
     FakeFlinks,
-    flinks,  # noqa: F401 - fixture
     flinks_account,
     flinks_tx,
     login_error,
@@ -347,7 +346,7 @@ def api_connection(flinks_fake: FakeFlinks) -> tuple[Caller, str, str, str]:
     return caller, business_id, created.json()["id"], login_id
 
 
-def test_disconnect_flinks(flinks: FakeFlinks) -> None:  # noqa: F811
+def test_disconnect_flinks(flinks: FakeFlinks) -> None:
     """C30: DeleteCard gets the loginId, and the bank is gone."""
     caller, business_id, connection_id, login_id = api_connection(flinks)
 
@@ -365,7 +364,7 @@ def test_disconnect_flinks(flinks: FakeFlinks) -> None:  # noqa: F811
 
 
 def test_disconnect_flinks_when_delete_card_fails(
-    flinks: FakeFlinks,  # noqa: F811
+    flinks: FakeFlinks,
     capsys: pytest.CaptureFixture[str],
 ) -> None:
     """C30: a DeleteCard failure still deletes locally, and logs the orphan by ID."""
@@ -389,7 +388,7 @@ def test_disconnect_flinks_when_delete_card_fails(
     assert login_id not in logs
 
 
-def test_flinks_link_token_is_409(flinks: FakeFlinks) -> None:  # noqa: F811
+def test_flinks_link_token_is_409(flinks: FakeFlinks) -> None:
     """C31."""
     caller, business_id, connection_id, _ = api_connection(flinks)
 

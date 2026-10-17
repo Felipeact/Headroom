@@ -26,9 +26,7 @@ from tests.flinks_support import (
     HOLDER_NAME,
     INSTITUTION_ID,
     FakeFlinks,
-    flinks,  # noqa: F401 - fixture
     flinks_account,
-    no_flinks,  # noqa: F401 - fixture
 )
 from tests.test_bank_connect import (
     PUBLIC_TOKEN,
@@ -142,7 +140,7 @@ def test_connect_url(instance: str, origin: str, demo: list[str] | None) -> None
     assert query.get("demo") == demo
 
 
-def test_connect_url_sandbox(flinks: FakeFlinks) -> None:  # noqa: F811
+def test_connect_url_sandbox(flinks: FakeFlinks) -> None:
     """C7: through the route, with the fake, the origin is passed on as is."""
     caller, business_id = owner()
 
@@ -176,7 +174,7 @@ def test_connect_url_not_configured(
     assert response.json()["detail"] == "Connecting through Flinks isn't available."
 
 
-def test_connect_url_denied(flinks: FakeFlinks) -> None:  # noqa: F811
+def test_connect_url_denied(flinks: FakeFlinks) -> None:
     """C10: a bookkeeper gets 403 and another business's owner 404."""
     _, business_id = owner()
     bookkeeper = add_bookkeeper(business_id)
@@ -192,7 +190,7 @@ def test_connect_url_denied(flinks: FakeFlinks) -> None:  # noqa: F811
     assert flinks.calls == []
 
 
-def test_flinks_connect_denied(flinks: FakeFlinks) -> None:  # noqa: F811
+def test_flinks_connect_denied(flinks: FakeFlinks) -> None:
     """C10."""
     _, business_id = owner()
     bookkeeper = add_bookkeeper(business_id)
@@ -207,7 +205,7 @@ def test_flinks_connect_denied(flinks: FakeFlinks) -> None:  # noqa: F811
 # Connect
 
 
-def test_flinks_connect_stores_connection(flinks: FakeFlinks) -> None:  # noqa: F811
+def test_flinks_connect_stores_connection(flinks: FakeFlinks) -> None:
     """C11."""
     caller, business_id = owner()
 
@@ -237,7 +235,7 @@ def test_flinks_connect_stores_connection(flinks: FakeFlinks) -> None:  # noqa: 
     }
 
 
-def test_flinks_connect_unknown_type_is_other(flinks: FakeFlinks) -> None:  # noqa: F811
+def test_flinks_connect_unknown_type_is_other(flinks: FakeFlinks) -> None:
     """C11: an account type Flinks names and we don't map is stored as `other`."""
     flinks.accounts_list = [flinks_account("Brokerage", type="other")]
     caller, business_id = owner()
@@ -248,7 +246,7 @@ def test_flinks_connect_unknown_type_is_other(flinks: FakeFlinks) -> None:  # no
     assert (account.type, account.included) == ("other", False)
 
 
-def test_flinks_connect_queues_first_sync(flinks: FakeFlinks) -> None:  # noqa: F811
+def test_flinks_connect_queues_first_sync(flinks: FakeFlinks) -> None:
     """C13: the background sync runs once, with transactions."""
     caller, business_id = owner()
 
@@ -259,7 +257,7 @@ def test_flinks_connect_queues_first_sync(flinks: FakeFlinks) -> None:  # noqa: 
     assert syncs[0].login_id == LOGIN_ID
 
 
-def test_flinks_connect_enables_refresh(flinks: FakeFlinks) -> None:  # noqa: F811
+def test_flinks_connect_enables_refresh(flinks: FakeFlinks) -> None:
     """C14."""
     caller, business_id = owner()
 
@@ -281,8 +279,8 @@ def test_flinks_connect_enables_refresh(flinks: FakeFlinks) -> None:  # noqa: F8
 )
 def test_connect_body_validation(
     body: dict[str, str],
-    flinks: FakeFlinks,  # noqa: F811
-    fake: FakePlaid,  # noqa: F811
+    flinks: FakeFlinks,
+    fake: FakePlaid,  # noqa: F811 - test_bank_connect's fixture
 ) -> None:
     """C15."""
     caller, business_id = owner()
@@ -297,8 +295,8 @@ def test_connect_body_validation(
 
 
 def test_connect_body_validation_plaid_default(
-    flinks: FakeFlinks,  # noqa: F811
-    fake: FakePlaid,  # noqa: F811
+    flinks: FakeFlinks,
+    fake: FakePlaid,  # noqa: F811 - test_bank_connect's fixture
 ) -> None:
     """C15: a body with only `public_token` is still a Plaid connect."""
     caller, business_id = owner()
@@ -314,7 +312,7 @@ def test_connect_body_validation_plaid_default(
     assert flinks.calls == []
 
 
-def test_flinks_duplicate_institution_is_409(flinks: FakeFlinks) -> None:  # noqa: F811
+def test_flinks_duplicate_institution_is_409(flinks: FakeFlinks) -> None:
     """C16."""
     caller, business_id = owner()
     assert connect_flinks(caller, business_id).status_code == 201
@@ -326,7 +324,7 @@ def test_flinks_duplicate_institution_is_409(flinks: FakeFlinks) -> None:  # noq
     assert len(stored(business_id)[0]) == 1
 
 
-def test_flinks_connect_still_preparing(flinks: FakeFlinks) -> None:  # noqa: F811
+def test_flinks_connect_still_preparing(flinks: FakeFlinks) -> None:
     """C17."""
     caller, business_id = owner()
     flinks.pending_calls = 1
@@ -347,7 +345,7 @@ def test_flinks_connect_still_preparing(flinks: FakeFlinks) -> None:  # noqa: F8
 
 
 @pytest.mark.parametrize("method", ["accounts", "enable_nightly_refresh"])
-def test_flinks_failure_is_503(method: str, flinks: FakeFlinks) -> None:  # noqa: F811
+def test_flinks_failure_is_503(method: str, flinks: FakeFlinks) -> None:
     """C19: nothing is stored when any Flinks call of the connect fails."""
     flinks.fail[method] = FlinksError(http_status=500, flinks_code="INTERNAL")
     caller, business_id = owner()
@@ -359,7 +357,7 @@ def test_flinks_failure_is_503(method: str, flinks: FakeFlinks) -> None:  # noqa
     assert stored(business_id) == ([], [])
 
 
-def test_flinks_connect_url_failure_is_503(flinks: FakeFlinks) -> None:  # noqa: F811
+def test_flinks_connect_url_failure_is_503(flinks: FakeFlinks) -> None:
     """C19."""
     flinks.fail["connect_url"] = FlinksError(
         http_status=None, flinks_code="ReadTimeout"
@@ -372,7 +370,10 @@ def test_flinks_connect_url_failure_is_503(flinks: FakeFlinks) -> None:  # noqa:
     assert response.json()["detail"] == PROVIDER_UNAVAILABLE
 
 
-def test_list_shows_provider(flinks: FakeFlinks, fake: FakePlaid) -> None:  # noqa: F811
+def test_list_shows_provider(
+    flinks: FakeFlinks,
+    fake: FakePlaid,  # noqa: F811 - test_bank_connect's fixture
+) -> None:
     """C6."""
     caller, business_id = owner()
     assert connect_flinks(caller, business_id).status_code == 201
