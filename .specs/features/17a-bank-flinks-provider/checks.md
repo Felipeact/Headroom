@@ -173,3 +173,7 @@ Proof: `npx playwright test e2e/bank-connect.spec.ts -g "C43|flinks layout keybo
 - S2 = `flinks.py` (new), `service.py`, `api.py`, `settings.py`, tests: ~140 KB → ~35k, total 60k
 - S3 = `service.py` sync/nightly/disconnect (already read), `jobs/nightly.py`, the sync tests: ~120 KB → ~30k, total 90k
 - S4 enters the web at ~75 KB → ~20k, total 110k, under the 150k budget. One builder.
+- Mechanism: one builder (the estimate fit the budget)
+- **Boundary:** C1-C37 closed at `bd3a9a0` (C32 and the Flinks-on part of C37 are blocked by open question 1: no Flinks sandbox credentials)
+- **Settled mid-build:** the institution unique was renamed `uq_bank_connections_business_provider_institution` (63-character limit, plan Landing 1a). Callers pass `flinks=` as a keyword instead of a `BankProviders` holder (plan Landing 2a), so the startup-config member "API dependency" is `get_flinks_client`. The CSP change became a violation row in `context/security/rules.md`, following that file's precedent (AD-130), instead of a policy edit. The log redactor now hides the loginId in httpx's `DeleteCard/{loginId}` request line. The Plaid audit details stay unchanged (no `provider` key) so that C5 holds. The migration downgrade refuses while a Flinks connection exists.
+- **Abandoned:** S1's `sed` rename also rewrote `tests/test_migrations.py`, which checks older revisions that still have `plaid_*` columns. Restored in `8503eb3`.
