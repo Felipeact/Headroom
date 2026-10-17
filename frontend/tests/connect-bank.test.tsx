@@ -151,6 +151,7 @@ describe('provider choice (spec 17a)', () => {
     expect(follows(plaid, flinks)).toBe(true)
     expect(screen.getByText(P.hint)).toBeTruthy()
     expect(screen.getByText(BANK.providerBoth)).toBeTruthy()
+    expect(screen.queryByText(BANK.rbcHint)).toBeNull()
     fireEvent.click(plaid)
     expect(link.open).toHaveBeenCalledTimes(1)
   })
@@ -162,5 +163,7 @@ describe('provider choice (spec 17a)', () => {
     expect(button().textContent).toBe(BANK.connect)
     expect(screen.queryByText(P.hint)).toBeNull()
     expect(screen.getByText(BANK.provider)).toBeTruthy()
+    // Plaid alone: RBC owners are told the MFA setting that lets Plaid connect.
+    expect(follows(screen.getByText(BANK.provider), screen.getByText(BANK.rbcHint))).toBe(true)
   })
 })

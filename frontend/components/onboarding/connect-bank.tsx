@@ -52,6 +52,9 @@ export function ConnectBank({
         ))}
       </ul>
       <p className="text-[13px] text-ink-3">{t(flinks ? "Bank.providerBoth" : "Bank.provider")}</p>
+      {/* Plaid cannot finish RBC sign-ins that use an authenticator app; a text-message code
+          works (Plaid docs). With Flinks offered, its own hint covers RBC instead. */}
+      {!flinks && <p className="text-[13px] leading-[1.45] text-ink-3">{t("Bank.rbcHint")}</p>}
       <div className="mt-auto flex flex-col gap-3">
         <div role="alert">
           {error && (
