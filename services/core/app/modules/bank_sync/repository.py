@@ -9,12 +9,13 @@ from app.modules.bank_sync.models import BankAccount, BankConnection, BankTransa
 
 
 def has_institution(
-    session: Session, *, business_id: uuid.UUID, institution_id: str
+    session: Session, *, business_id: uuid.UUID, provider: str, institution_id: str
 ) -> bool:
     return (
         session.scalar(
             select(BankConnection.id).where(
                 BankConnection.business_id == business_id,
+                BankConnection.provider == provider,
                 BankConnection.provider_institution_id == institution_id,
             )
         )
@@ -26,6 +27,7 @@ def insert_connection(
     session: Session,
     *,
     business_id: uuid.UUID,
+    provider: str = "plaid",
     provider_item_id: str,
     provider_institution_id: str,
     institution_name: str,
@@ -33,6 +35,7 @@ def insert_connection(
 ) -> BankConnection:
     connection = BankConnection(
         business_id=business_id,
+        provider=provider,
         provider_item_id=provider_item_id,
         provider_institution_id=provider_institution_id,
         institution_name=institution_name,
@@ -106,7 +109,8 @@ def connection_for_item(
     """
     return session.scalar(
         select(BankConnection).where(
-            BankConnection.provider_item_id == provider_item_id
+            BankConnection.provider == "plaid",
+            BankConnection.provider_item_id == provider_item_id,
         )
     )
 
@@ -138,7 +142,7 @@ def connection_accounts(
     )
 
 
-def transactions_by_plaid_id(
+def transactions_by_provider_id(
     session: Session, *, business_id: uuid.UUID, provider_transaction_ids: Sequence[str]
 ) -> dict[str, BankTransaction]:
     if not provider_transaction_ids:

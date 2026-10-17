@@ -64,6 +64,8 @@ CONNECTION_KEYS = {
     "accounts",
     "status",
     "last_synced_at",
+    # Spec 17a added the provider (AD-142).
+    "provider",
 }
 # Spec 13 added available_cents, included and primary (AD-044).
 ACCOUNT_KEYS = {

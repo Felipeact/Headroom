@@ -28,7 +28,14 @@ class Settings(BaseSettings):
     # Public URL of POST /v1/webhooks/plaid, sent on every link token. Unset (local runs):
     # Plaid sends no webhooks, and banks sync on connect and from the nightly job.
     plaid_webhook_url: str | None = None
-    # Fernet keys for Plaid access tokens, comma-separated; the first encrypts, any decrypts.
+    # Flinks (spec 17a), the second bank provider. All optional: unless all four are set,
+    # Flinks is off and owners connect through Plaid only. `flinks_instance` is the host
+    # prefix Flinks assigns (`toolbox` is the sandbox).
+    flinks_instance: str | None = None
+    flinks_customer_id: str | None = None
+    flinks_auth_key: str | None = None
+    flinks_api_key: str | None = None
+    # Fernet keys for Plaid access tokens and Flinks loginIds, comma-separated; the first encrypts, any decrypts.
     token_encryption_keys: Annotated[list[str], NoDecode]
     # The forecasting method (spec 21, AD-078); `rolling_average` is also the fallback.
     forecast_strategy: Literal["recurring_pattern", "rolling_average"] = (
@@ -66,6 +73,20 @@ class Settings(BaseSettings):
     @field_validator("resend_api_key", mode="before")
     @classmethod
     def empty_resend_key_is_unset(cls, value: object) -> object:
+        if isinstance(value, str) and not value.strip():
+            return None
+        return value
+
+    @field_validator(
+        "flinks_instance",
+        "flinks_customer_id",
+        "flinks_auth_key",
+        "flinks_api_key",
+        mode="before",
+    )
+    @classmethod
+    def empty_flinks_setting_is_unset(cls, value: object) -> object:
+        # `FLINKS_AUTH_KEY=` copied from .env.example means "not set", not "".
         if isinstance(value, str) and not value.strip():
             return None
         return value

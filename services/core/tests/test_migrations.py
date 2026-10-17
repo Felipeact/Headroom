@@ -289,15 +289,12 @@ def test_bank_connections_and_accounts_upgrade_downgrade_and_check(
     text_not_null = [
         ("bank_connections", c)
         for c in (
-            "provider_item_id",
-            "provider_institution_id",
+            "plaid_item_id",
+            "plaid_institution_id",
             "institution_name",
             "access_token_ciphertext",
         )
-    ] + [
-        ("bank_accounts", c)
-        for c in ("provider_account_id", "name", "type", "currency")
-    ]
+    ] + [("bank_accounts", c) for c in ("plaid_account_id", "name", "type", "currency")]
     expected_columns = {
         *((t, c, "text", "NO") for t, c in text_not_null),
         ("bank_connections", "id", "uuid", "NO"),
@@ -318,31 +315,31 @@ def test_bank_connections_and_accounts_upgrade_downgrade_and_check(
         ("bank_connections", "pk_bank_connections", "PRIMARY KEY", "id", None),
         (
             "bank_connections",
-            "uq_bank_connections_provider_item_id",
+            "uq_bank_connections_plaid_item_id",
             "UNIQUE",
-            "provider_item_id",
+            "plaid_item_id",
             None,
         ),
         (
             "bank_connections",
-            "uq_bank_connections_business_id_provider_institution_id",
+            "uq_bank_connections_business_id_plaid_institution_id",
             "UNIQUE",
             "business_id",
             None,
         ),
         (
             "bank_connections",
-            "uq_bank_connections_business_id_provider_institution_id",
+            "uq_bank_connections_business_id_plaid_institution_id",
             "UNIQUE",
-            "provider_institution_id",
+            "plaid_institution_id",
             None,
         ),
         ("bank_accounts", "pk_bank_accounts", "PRIMARY KEY", "id", None),
         (
             "bank_accounts",
-            "uq_bank_accounts_provider_account_id",
+            "uq_bank_accounts_plaid_account_id",
             "UNIQUE",
-            "provider_account_id",
+            "plaid_account_id",
             None,
         ),
         (
@@ -391,15 +388,15 @@ def test_bank_accounts_cash_columns_upgrade_backfill_downgrade_and_check(
         with engine.begin() as conn:
             for business in (business_a, business_b):
                 conn.exec_driver_sql(
-                    "INSERT INTO bank_connections (id, business_id, provider_item_id,"
-                    " provider_institution_id, institution_name, access_token_ciphertext)"
+                    "INSERT INTO bank_connections (id, business_id, plaid_item_id,"
+                    " plaid_institution_id, institution_name, access_token_ciphertext)"
                     " VALUES (%s, %s, %s, 'ins_42', 'Bank', 'x')",
                     (business, business, f"item-{business}"),
                 )
             for business, name, kind, currency, cents in seeded:
                 conn.exec_driver_sql(
                     "INSERT INTO bank_accounts (id, business_id, connection_id,"
-                    " provider_account_id, name, type, currency, balance_cents)"
+                    " plaid_account_id, name, type, currency, balance_cents)"
                     " VALUES (%s, %s, %s, %s, %s, %s, %s, %s)",
                     (
                         uuid.uuid4(),
@@ -512,7 +509,7 @@ def test_bank_transactions_upgrade_downgrade_and_check(empty_database_url: str) 
         ("id", "uuid", "NO"),
         ("business_id", "uuid", "NO"),
         ("account_id", "uuid", "NO"),
-        ("provider_transaction_id", "text", "NO"),
+        ("plaid_transaction_id", "text", "NO"),
         ("amount_cents", "bigint", "NO"),
         ("currency", "text", "NO"),
         ("date", "date", "NO"),
@@ -527,9 +524,9 @@ def test_bank_transactions_upgrade_downgrade_and_check(empty_database_url: str) 
     assert tuple(cursor) == ("text", "YES")
     assert ("pk_bank_transactions", "p", "PRIMARY KEY (id)") in constraints
     assert (
-        "uq_bank_transactions_provider_transaction_id",
+        "uq_bank_transactions_plaid_transaction_id",
         "u",
-        "UNIQUE (provider_transaction_id)",
+        "UNIQUE (plaid_transaction_id)",
     ) in constraints
     assert (
         "fk_bank_transactions_account_id_bank_accounts",
@@ -561,8 +558,8 @@ def test_nightly_state_upgrade_downgrade_and_check(empty_database_url: str) -> N
     try:
         with engine.begin() as conn:
             conn.exec_driver_sql(
-                "INSERT INTO bank_connections (id, business_id, provider_item_id,"
-                " provider_institution_id, institution_name, access_token_ciphertext)"
+                "INSERT INTO bank_connections (id, business_id, plaid_item_id,"
+                " plaid_institution_id, institution_name, access_token_ciphertext)"
                 " VALUES (gen_random_uuid(), gen_random_uuid(), 'item-existing',"
                 " 'ins_1', 'TD Canada Trust', 'ciphertext')"
             )
@@ -636,15 +633,15 @@ def test_transaction_labels_upgrade_downgrade_and_check(
     try:
         with engine.begin() as conn:
             conn.exec_driver_sql(
-                "INSERT INTO bank_connections (id, business_id, provider_item_id,"
-                " provider_institution_id, institution_name, access_token_ciphertext)"
+                "INSERT INTO bank_connections (id, business_id, plaid_item_id,"
+                " plaid_institution_id, institution_name, access_token_ciphertext)"
                 " VALUES ('00000000-0000-0000-0000-00000000c001',"
                 " '00000000-0000-0000-0000-00000000b001', 'item-existing', 'ins_1',"
                 " 'TD Canada Trust', 'ciphertext')"
             )
             conn.exec_driver_sql(
                 "INSERT INTO bank_accounts (id, business_id, connection_id,"
-                " provider_account_id, name, type, currency, included)"
+                " plaid_account_id, name, type, currency, included)"
                 " VALUES ('00000000-0000-0000-0000-00000000a001',"
                 " '00000000-0000-0000-0000-00000000b001',"
                 " '00000000-0000-0000-0000-00000000c001', 'acc-existing', 'Savings',"
@@ -652,7 +649,7 @@ def test_transaction_labels_upgrade_downgrade_and_check(
             )
             conn.exec_driver_sql(
                 "INSERT INTO bank_transactions (id, business_id, account_id,"
-                " provider_transaction_id, amount_cents, currency, date, pending,"
+                " plaid_transaction_id, amount_cents, currency, date, pending,"
                 " description) VALUES (gen_random_uuid(),"
                 " '00000000-0000-0000-0000-00000000b001',"
                 " '00000000-0000-0000-0000-00000000a001', 'tx-existing', -1000000,"
@@ -702,8 +699,8 @@ def test_connection_settings_upgrade_downgrade_and_check(
     try:
         with engine.begin() as conn:
             conn.exec_driver_sql(
-                "INSERT INTO bank_connections (id, business_id, provider_item_id,"
-                " provider_institution_id, institution_name, access_token_ciphertext)"
+                "INSERT INTO bank_connections (id, business_id, plaid_item_id,"
+                " plaid_institution_id, institution_name, access_token_ciphertext)"
                 " VALUES (gen_random_uuid(), gen_random_uuid(), 'item-existing',"
                 " 'ins_1', 'TD Canada Trust', 'ciphertext')"
             )

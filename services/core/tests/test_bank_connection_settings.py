@@ -52,6 +52,8 @@ CONNECTION_KEYS = {
     "accounts",
     "status",
     "last_synced_at",
+    # Spec 17a added the provider (AD-142).
+    "provider",
 }
 SYNCED_AT = datetime(2026, 10, 6, 6, 4, tzinfo=UTC)
 ROUTES = [("POST", "/link-token"), ("POST", "/repair"), ("DELETE", "")]

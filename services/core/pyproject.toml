@@ -44,5 +44,8 @@ ignore_missing_imports = true
 [tool.pytest.ini_options]
 pythonpath = ["."]
 # Tests that call the real Plaid sandbox run only through their proof script (spec 12).
-markers = ["plaid_sandbox: calls the real Plaid sandbox; needs the keys in .env.local"]
-addopts = "-m 'not plaid_sandbox'"
+markers = [
+    "plaid_sandbox: calls the real Plaid sandbox; needs the keys in .env.local",
+    "flinks_sandbox: calls the real Flinks sandbox; needs the FLINKS_* keys in .env.local",
+]
+addopts = "-m 'not plaid_sandbox and not flinks_sandbox'"

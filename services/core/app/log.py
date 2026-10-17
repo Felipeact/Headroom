@@ -29,7 +29,10 @@ TOKEN_PATTERN = re.compile(
     r"[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}"
     r"|Bearer\s+[^\s\"',;]+"
     # An invitation link's token is the path segment after `/v1/invitations/` (spec 31).
-    r"|(?<=/v1/invitations/)[A-Za-z0-9_-]{20,}",
+    r"|(?<=/v1/invitations/)[A-Za-z0-9_-]{20,}"
+    # A Flinks loginId is a permanent token, and DeleteCard takes it in the path, which
+    # httpx logs on every request (spec 17a).
+    r"|(?<=/DeleteCard/)[A-Za-z0-9-]+",
     re.IGNORECASE,
 )
 

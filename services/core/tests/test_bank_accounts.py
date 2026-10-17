@@ -646,6 +646,8 @@ def test_list_connections(owner_a: tuple[Caller, str], fake: FakePlaid) -> None:
             "accounts",
             "status",
             "last_synced_at",
+            # Spec 17a added the provider (AD-142).
+            "provider",
         }
     assert [a["name"] for a in body["items"][0]["accounts"]] == ["Alpha", "Zed"]
 
