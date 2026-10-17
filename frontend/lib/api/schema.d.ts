@@ -176,6 +176,23 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/v1/businesses/{business_id}/bank/flinks/connect-url": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Create Flinks Connect Url */
+        post: operations["create_flinks_connect_url_v1_businesses__business_id__bank_flinks_connect_url_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/v1/businesses/{business_id}/bank/connections": {
         parameters: {
             query?: never;
@@ -766,6 +783,11 @@ export interface components {
              * Format: uuid
              */
             id: string;
+            /**
+             * Provider
+             * @enum {string}
+             */
+            provider: "plaid" | "flinks";
             /** Institution Name */
             institution_name: string;
             /**
@@ -786,10 +808,15 @@ export interface components {
         /** ConnectionCreate */
         ConnectionCreate: {
             /**
-             * Public Token
-             * Format: password
+             * Provider
+             * @default plaid
+             * @enum {string}
              */
-            public_token: string;
+            provider: "plaid" | "flinks";
+            /** Public Token */
+            public_token?: string | null;
+            /** Login Id */
+            login_id?: string | null;
         };
         /** ConnectionList */
         ConnectionList: {
@@ -1154,6 +1181,13 @@ export interface components {
             available_cents: number | null;
             /** New Lowest Balance Cents */
             new_lowest_balance_cents: number;
+        };
+        /** FlinksConnectUrl */
+        FlinksConnectUrl: {
+            /** Connect Url */
+            connect_url: string;
+            /** Origin */
+            origin: string;
         };
         /** Forecast */
         Forecast: {
@@ -2236,6 +2270,73 @@ export interface operations {
             };
         };
     };
+    create_flinks_connect_url_v1_businesses__business_id__bank_flinks_connect_url_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                business_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["FlinksConnectUrl"];
+                };
+            };
+            /** @description Unauthorized */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ProblemDetails"];
+                };
+            };
+            /** @description Forbidden */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ProblemDetails"];
+                };
+            };
+            /** @description Not Found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ProblemDetails"];
+                };
+            };
+            /** @description Unprocessable Entity */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ValidationProblemDetails"];
+                };
+            };
+            /** @description Service Unavailable */
+            503: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ProblemDetails"];
+                };
+            };
+        };
+    };
     list_connections_v1_businesses__business_id__bank_connections_get: {
         parameters: {
             query?: never;
@@ -2374,6 +2475,15 @@ export interface operations {
             };
             /** @description Bad Gateway */
             502: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ProblemDetails"];
+                };
+            };
+            /** @description Service Unavailable */
+            503: {
                 headers: {
                     [name: string]: unknown;
                 };
@@ -2564,6 +2674,15 @@ export interface operations {
                     "application/json": components["schemas"]["ProblemDetails"];
                 };
             };
+            /** @description Conflict */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ProblemDetails"];
+                };
+            };
             /** @description Unprocessable Entity */
             422: {
                 headers: {
@@ -2652,6 +2771,15 @@ export interface operations {
             };
             /** @description Bad Gateway */
             502: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ProblemDetails"];
+                };
+            };
+            /** @description Service Unavailable */
+            503: {
                 headers: {
                     [name: string]: unknown;
                 };

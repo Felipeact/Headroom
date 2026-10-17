@@ -6,7 +6,8 @@ import { connectBank } from '@/app/onboarding/bank/actions'
 import { ConnectBank } from '@/components/onboarding/connect-bank'
 import messages from '@/messages/en.json'
 
-vi.mock('@/app/onboarding/bank/actions', () => ({ connectBank: vi.fn() }))
+vi.mock('@/app/onboarding/bank/actions', () => ({ connectBank: vi.fn(), connectFlinksBank: vi.fn() }))
+vi.mock('next/navigation', () => ({ useRouter: () => ({ refresh: vi.fn() }) }))
 const link = vi.hoisted(() => ({
   open: vi.fn(),
   ready: true,
@@ -128,5 +129,38 @@ describe('connect bank view', () => {
     expect(alert().textContent).toBe(BANK.errors.connectFailed)
     expect(button().disabled).toBe(false)
     expect(follows(alert(), button())).toBe(true)
+  })
+})
+
+describe('provider choice (spec 17a)', () => {
+  const P = messages.BankProviders
+  const FLINKS = {
+    connect_url: 'https://toolbox-iframe.private.fin.ag/v2/?authorizeToken=token-1',
+    origin: 'https://toolbox-iframe.private.fin.ag',
+  }
+
+  test('provider choice: with Flinks, both actions and the hint', () => {
+    render(
+      <NextIntlClientProvider locale="en" messages={messages}>
+        <ConnectBank businessId={BUSINESS} linkToken="link-sandbox-123" flinks={FLINKS} />
+      </NextIntlClientProvider>,
+    )
+
+    const plaid = screen.getByRole('button', { name: P.plaid })
+    const flinks = screen.getByRole('button', { name: P.flinks })
+    expect(follows(plaid, flinks)).toBe(true)
+    expect(screen.getByText(P.hint)).toBeTruthy()
+    expect(screen.getByText(BANK.providerBoth)).toBeTruthy()
+    fireEvent.click(plaid)
+    expect(link.open).toHaveBeenCalledTimes(1)
+  })
+
+  test('provider choice: without Flinks, only the Plaid action', () => {
+    renderView()
+
+    expect(screen.getAllByRole('button')).toHaveLength(1)
+    expect(button().textContent).toBe(BANK.connect)
+    expect(screen.queryByText(P.hint)).toBeNull()
+    expect(screen.getByText(BANK.provider)).toBeTruthy()
   })
 })

@@ -61,6 +61,8 @@ const SAMPLE: Payment[] = [
 const CONNECTIONS: Connection[] = [
   {
     id: 'conn-1',
+    provider: 'plaid',
+
     institution_name: 'Harbor Community Bank',
     created_at: '2026-09-01T10:00:00Z',
     status: 'synced',

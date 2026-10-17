@@ -64,6 +64,8 @@ const LINE = account('Line of credit', {
 function bank(name: string, accounts: Account[], id = `c-${name}`): Connection {
   return {
     id,
+    provider: 'plaid',
+
     institution_name: name,
     created_at: '2026-10-04T15:00:00Z',
     accounts,

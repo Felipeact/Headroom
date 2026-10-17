@@ -89,7 +89,8 @@
       "errors": {
         "alreadyConnected": "This bank is already connected.",
         "connectFailed": "We couldn't connect your bank. Try again."
-      }
+      },
+      "providerBoth": "Bank connections are provided by Plaid or Flinks."
     },
     "Accounts": {
       "title": "Which accounts count as cash?",
@@ -527,5 +528,26 @@
     "ownerTitle": "You already own this business",
     "ownerBody": "This invitation is for a bookkeeper, so there is nothing to accept.",
     "failed": "We couldn't accept the invitation. Try again."
+  },
+  "BankProviders": {
+    "plaid": "Connect with Plaid",
+    "flinks": "Connect with Flinks",
+    "hint": "If Plaid can't finish your bank's sign-in, for example RBC with an authenticator app, connect with Flinks.",
+    "dialogTitle": "Connect with Flinks",
+    "dialogDescription": "Log in on your bank's own screen. Headroom never sees your password.",
+    "frameTitle": "Flinks Connect",
+    "loading": "Loading Flinks…",
+    "connecting": "Connecting your bank…",
+    "retry": "Try again",
+    "via": {
+      "plaid": "via Plaid",
+      "flinks": "via Flinks"
+    },
+    "reconnectFlinks": "Disconnect it, then connect it again.",
+    "errors": {
+      "stillPreparing": "Your bank is still preparing your accounts. Try again in a minute.",
+      "alreadyConnected": "This bank is already connected.",
+      "connectFailed": "We couldn't connect your bank. Try again."
+    }
   }
 }
