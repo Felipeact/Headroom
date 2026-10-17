@@ -102,6 +102,7 @@ describe('flinks connect', () => {
 
     expect(connectFlinksBank).not.toHaveBeenCalled()
     expect(screen.getByRole('alert').textContent).toContain(P.errors.connectFailed)
+    expect(router.refresh).toHaveBeenCalledTimes(1)
   })
 
   test('still preparing retry reuses the same loginId', async () => {

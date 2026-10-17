@@ -54,12 +54,17 @@ export function useFlinksConnect(
         id = null
       }
       setOpen(false)
-      if (id) submit(id)
-      else setError("connectFailed")
+      if (id) {
+        submit(id)
+        return
+      }
+      setError("connectFailed")
+      // The iframe finished, so its token is spent even without a loginId.
+      router.refresh()
     }
     window.addEventListener("message", onMessage)
     return () => window.removeEventListener("message", onMessage)
-  }, [open, origin, submit])
+  }, [open, origin, submit, router])
 
   const onOpenChange = useCallback(
     (next: boolean) => {
