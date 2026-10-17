@@ -15,7 +15,7 @@ def has_institution(
         session.scalar(
             select(BankConnection.id).where(
                 BankConnection.business_id == business_id,
-                BankConnection.plaid_institution_id == institution_id,
+                BankConnection.provider_institution_id == institution_id,
             )
         )
         is not None
@@ -26,15 +26,15 @@ def insert_connection(
     session: Session,
     *,
     business_id: uuid.UUID,
-    plaid_item_id: str,
-    plaid_institution_id: str,
+    provider_item_id: str,
+    provider_institution_id: str,
     institution_name: str,
     access_token_ciphertext: str,
 ) -> BankConnection:
     connection = BankConnection(
         business_id=business_id,
-        plaid_item_id=plaid_item_id,
-        plaid_institution_id=plaid_institution_id,
+        provider_item_id=provider_item_id,
+        provider_institution_id=provider_institution_id,
         institution_name=institution_name,
         access_token_ciphertext=access_token_ciphertext,
     )
@@ -97,7 +97,7 @@ def lock_accounts(session: Session, *, business_id: uuid.UUID) -> list[BankAccou
 
 
 def connection_for_item(
-    session: Session, *, plaid_item_id: str
+    session: Session, *, provider_item_id: str
 ) -> BankConnection | None:
     """The connection for a Plaid item, whatever its business.
 
@@ -105,7 +105,9 @@ def connection_for_item(
     after it is scoped to the business this returns.
     """
     return session.scalar(
-        select(BankConnection).where(BankConnection.plaid_item_id == plaid_item_id)
+        select(BankConnection).where(
+            BankConnection.provider_item_id == provider_item_id
+        )
     )
 
 
@@ -137,17 +139,17 @@ def connection_accounts(
 
 
 def transactions_by_plaid_id(
-    session: Session, *, business_id: uuid.UUID, plaid_transaction_ids: Sequence[str]
+    session: Session, *, business_id: uuid.UUID, provider_transaction_ids: Sequence[str]
 ) -> dict[str, BankTransaction]:
-    if not plaid_transaction_ids:
+    if not provider_transaction_ids:
         return {}
     rows = session.scalars(
         select(BankTransaction).where(
             BankTransaction.business_id == business_id,
-            BankTransaction.plaid_transaction_id.in_(plaid_transaction_ids),
+            BankTransaction.provider_transaction_id.in_(provider_transaction_ids),
         )
     )
-    return {row.plaid_transaction_id: row for row in rows}
+    return {row.provider_transaction_id: row for row in rows}
 
 
 def business_transactions(
@@ -194,15 +196,15 @@ def insert_transaction(
 
 
 def delete_transactions(
-    session: Session, *, business_id: uuid.UUID, plaid_transaction_ids: Sequence[str]
+    session: Session, *, business_id: uuid.UUID, provider_transaction_ids: Sequence[str]
 ) -> int:
     """Delete these transactions of the business; returns how many existed."""
-    if not plaid_transaction_ids:
+    if not provider_transaction_ids:
         return 0
     result = session.execute(
         delete(BankTransaction).where(
             BankTransaction.business_id == business_id,
-            BankTransaction.plaid_transaction_id.in_(plaid_transaction_ids),
+            BankTransaction.provider_transaction_id.in_(provider_transaction_ids),
         )
     )
     return int(result.rowcount)  # type: ignore[attr-defined]

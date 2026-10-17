@@ -32,7 +32,7 @@ READY_SECONDS = 180
 def stored_amounts(business_id: uuid.UUID) -> dict[str, int]:
     with get_sessionmaker()() as session:
         return {
-            t.plaid_transaction_id: t.amount_cents
+            t.provider_transaction_id: t.amount_cents
             for t in session.scalars(
                 select(BankTransaction).where(
                     BankTransaction.business_id == business_id

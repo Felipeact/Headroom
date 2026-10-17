@@ -78,7 +78,7 @@ def test_sync_failed_other_is_error(capsys: pytest.CaptureFixture[str]) -> None:
 def test_webhook_levels_key_fetch_fails(
     fake: SyncFake, connected: Connected, capsys: pytest.CaptureFixture[str]
 ) -> None:
-    content = signing.body(connected.plaid_item_id)
+    content = signing.body(connected.provider_item_id)
     fake.fail = {
         "key": PlaidError(error_type="API_ERROR", error_code="X", request_id="r-k")
     }
@@ -99,7 +99,7 @@ def test_webhook_levels_key_fetch_fails(
 def test_webhook_levels_invalid_signature(
     fake: SyncFake, connected: Connected, capsys: pytest.CaptureFixture[str]
 ) -> None:
-    content = signing.body(connected.plaid_item_id)
+    content = signing.body(connected.provider_item_id)
     configure_logging()
     capsys.readouterr()
 

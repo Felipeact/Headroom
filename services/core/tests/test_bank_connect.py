@@ -331,11 +331,11 @@ def test_connect_stores_rows(owner_a: tuple[Caller, str], fake: FakePlaid) -> No
     assert len(connections) == 1
     connection = connections[0]
     assert str(connection.id) == body["id"]
-    assert connection.plaid_institution_id == INSTITUTION_ID
-    assert connection.plaid_item_id == fake.item_ids[0]
+    assert connection.provider_institution_id == INSTITUTION_ID
+    assert connection.provider_item_id == fake.item_ids[0]
     assert len(rows) == 3
     assert {r.connection_id for r in rows} == {connection.id}
-    assert {r.plaid_account_id for r in rows} == {a.account_id for a in accounts}
+    assert {r.provider_account_id for r in rows} == {a.account_id for a in accounts}
 
 
 @pytest.mark.parametrize(
@@ -613,7 +613,7 @@ def test_orphaned_item_logged(
     assert len(orphaned) == 1
     assert orphaned[0]["level"] == "error"
     assert orphaned[0]["business_id"] == business_id
-    assert orphaned[0]["plaid_item_id"] == fake.item_ids[0]
+    assert orphaned[0]["provider_item_id"] == fake.item_ids[0]
 
 
 @pytest.mark.parametrize(
@@ -646,8 +646,8 @@ def test_database_constraints(owner_a: tuple[Caller, str]) -> None:
     def connection(item: str, institution: str) -> BankConnection:
         return BankConnection(
             business_id=bid,
-            plaid_item_id=item,
-            plaid_institution_id=institution,
+            provider_item_id=item,
+            provider_institution_id=institution,
             institution_name="Bank",
             access_token_ciphertext="x",
         )
@@ -656,7 +656,7 @@ def test_database_constraints(owner_a: tuple[Caller, str]) -> None:
         return BankAccount(
             business_id=bid,
             connection_id=connection_id,
-            plaid_account_id=plaid_id,
+            provider_account_id=plaid_id,
             name="A",
             type=type,
             currency="CAD",

@@ -88,8 +88,8 @@ def stored(
         connection = repository.insert_connection(
             session,
             business_id=bid,
-            plaid_item_id=item_id,
-            plaid_institution_id=f"ins_{uuid.uuid4().hex[:8]}",
+            provider_item_id=item_id,
+            provider_institution_id=f"ins_{uuid.uuid4().hex[:8]}",
             institution_name=institution_name,
             access_token_ciphertext=encrypt_access_token(token),
         )
@@ -530,7 +530,7 @@ def test_disconnect_audited(fake: SyncFake, owner: tuple[Caller, str]) -> None:
     with get_sessionmaker()() as session:
         connection = session.get(BankConnection, c.connection_id)
         assert connection is not None
-        institution_id = connection.plaid_institution_id
+        institution_id = connection.provider_institution_id
     before = {a.id for a in audits(c.business_id)}
 
     response = call(caller, "DELETE", path(business_id, c.connection_id))
@@ -668,7 +668,7 @@ def test_disconnect_stops_syncing(
     assert c.connection_id not in candidates
 
     fake.calls.clear()
-    content = signing.body(c.plaid_item_id)
+    content = signing.body(c.provider_item_id)
     hook = client.post(
         "/v1/webhooks/plaid", content=content, headers=signing.headers(content)
     )

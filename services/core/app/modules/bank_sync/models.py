@@ -28,6 +28,10 @@ ACCOUNT_TYPES: tuple[str, ...] = get_args(AccountType)
 CASH_TYPES = ("checking", "savings")
 CASH_CURRENCY = "CAD"
 
+# Who fetches a connection's data (spec 17a): Plaid, or Flinks where Plaid can't sign in.
+Provider = Literal["plaid", "flinks"]
+PROVIDERS: tuple[str, ...] = get_args(Provider)
+
 TransactionLabel = Literal[
     "internal_transfer",
     "in_transit",
@@ -43,7 +47,7 @@ LINKED_LABELS = ("internal_transfer", "card_payment", "credit_draw", "credit_rep
 
 
 class BankConnection(Base):
-    """One Plaid item: one login at one bank, for one business.
+    """One login at one bank, for one business: a Plaid item or a Flinks login.
 
     `business_id` has no foreign key: `businesses` belongs to the accounts module.
     """
@@ -51,21 +55,35 @@ class BankConnection(Base):
     __tablename__ = "bank_connections"
     __table_args__ = (
         CheckConstraint("failed_nights >= 0", name="failed_nights"),
+        CheckConstraint(
+            f"provider IN ({', '.join(repr(p) for p in PROVIDERS)})", name="provider"
+        ),
+        UniqueConstraint(
+            "provider",
+            "provider_item_id",
+            name="uq_bank_connections_provider_provider_item_id",
+        ),
         UniqueConstraint(
             "business_id",
-            "plaid_institution_id",
-            name="uq_bank_connections_business_id_plaid_institution_id",
+            "provider",
+            "provider_institution_id",
+            name="uq_bank_connections_business_provider_institution",
         ),
     )
 
     id: Mapped[uuid.UUID] = mapped_column(Uuid, primary_key=True, default=uuid.uuid4)
     business_id: Mapped[uuid.UUID] = mapped_column(Uuid)
-    plaid_item_id: Mapped[str] = mapped_column(Text, unique=True)
-    plaid_institution_id: Mapped[str] = mapped_column(Text)
+    provider: Mapped[str] = mapped_column(
+        Text, default="plaid", server_default=text("'plaid'")
+    )
+    # Plaid's item ID; for Flinks, the SHA-256 hex of the loginId, which is a secret.
+    provider_item_id: Mapped[str] = mapped_column(Text)
+    provider_institution_id: Mapped[str] = mapped_column(Text)
     institution_name: Mapped[str] = mapped_column(Text)
-    # Fernet token text; the plaintext access token is never stored.
+    # Fernet token text: Plaid's access token or the Flinks loginId; never stored plain.
     access_token_ciphertext: Mapped[str] = mapped_column(Text)
-    # Plaid's /transactions/sync cursor; None until the first sync (spec 14).
+    # Plaid's /transactions/sync cursor; None until the first sync (spec 14). Always None
+    # for Flinks, which has no cursor.
     transactions_cursor: Mapped[str | None] = mapped_column(Text)
     # Nightly sync state (spec 15). The business-local date of the last night whose sync
     # finished, whether it succeeded or ran out of attempts.
@@ -121,7 +139,7 @@ class BankAccount(Base):
     id: Mapped[uuid.UUID] = mapped_column(Uuid, primary_key=True, default=uuid.uuid4)
     business_id: Mapped[uuid.UUID] = mapped_column(Uuid)
     connection_id: Mapped[uuid.UUID] = mapped_column(ForeignKey("bank_connections.id"))
-    plaid_account_id: Mapped[str] = mapped_column(Text, unique=True)
+    provider_account_id: Mapped[str] = mapped_column(Text, unique=True)
     name: Mapped[str] = mapped_column(Text)
     type: Mapped[str] = mapped_column(Text)
     mask: Mapped[str | None] = mapped_column(Text)
@@ -144,7 +162,7 @@ class BankAccount(Base):
 
 
 class BankTransaction(Base):
-    """One bank transaction, stored once per Plaid transaction ID (spec 14).
+    """One bank transaction, stored once per provider transaction ID (spec 14).
 
     `amount_cents` is signed our way: money in is positive, money out negative.
     `label` and `linked_transaction_id` are recomputed by every sync (spec 16).
@@ -167,7 +185,7 @@ class BankTransaction(Base):
     id: Mapped[uuid.UUID] = mapped_column(Uuid, primary_key=True, default=uuid.uuid4)
     business_id: Mapped[uuid.UUID] = mapped_column(Uuid)
     account_id: Mapped[uuid.UUID] = mapped_column(ForeignKey("bank_accounts.id"))
-    plaid_transaction_id: Mapped[str] = mapped_column(Text, unique=True)
+    provider_transaction_id: Mapped[str] = mapped_column(Text, unique=True)
     amount_cents: Mapped[int] = mapped_column(BigInteger)
     currency: Mapped[str] = mapped_column(Text)
     date: Mapped[date] = mapped_column(Date)

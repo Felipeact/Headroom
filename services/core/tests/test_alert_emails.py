@@ -416,7 +416,9 @@ def test_params_hold_no_account(sample: SampleEmail) -> None:
             )
             if i.source_id is not None
         ]
-    forbidden = [str(a.id) for a in accounts] + [a.plaid_account_id for a in accounts]
+    forbidden = [str(a.id) for a in accounts] + [
+        a.provider_account_id for a in accounts
+    ]
     forbidden += ["2381", "9025", "5530", "7702", sample.owner_clerk_id, *source_ids]
     assert accounts and source_ids
     (email,) = sample.sent
