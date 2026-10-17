@@ -116,7 +116,8 @@ def _date(value: str) -> date:
 def _datetime(value: str | None) -> datetime | None:
     if not value:
         return None
-    moment = datetime.fromisoformat(value)
+    # The same yyyy/MM/dd as `_date` is accepted, in case Flinks writes it here too.
+    moment = datetime.fromisoformat(value[:10].replace("/", "-") + value[10:])
     return moment if moment.tzinfo else moment.replace(tzinfo=UTC)
 
 
@@ -151,7 +152,8 @@ def _snapshot(body: dict[str, Any]) -> FlinksSnapshot:
             )
     login = body.get("Login") or {}
     return FlinksSnapshot(
-        institution_id=str(body.get("InstitutionId") or body.get("Institution") or ""),
+        # Never the display name: the duplicate-bank check compares this ID.
+        institution_id=str(body.get("InstitutionId") or ""),
         institution_name=str(body.get("Institution") or ""),
         accounts=accounts,
         transactions=transactions,
@@ -269,7 +271,14 @@ class HttpxFlinksClient:
             )
         if response.status_code == 202:
             raise FlinksError(http_status=202, flinks_code=PENDING)
-        return _snapshot(response.json())
+        try:
+            return _snapshot(response.json())
+        except (KeyError, TypeError, ValueError, AttributeError):
+            # A malformed answer is a Flinks failure (503), never a 500 whose traceback
+            # carries the raw response; `from None` drops that context.
+            raise FlinksError(
+                http_status=response.status_code, flinks_code="INVALID_RESPONSE"
+            ) from None
 
     def enable_nightly_refresh(self, login_id: str) -> None:
         self._send(

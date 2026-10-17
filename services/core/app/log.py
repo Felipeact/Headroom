@@ -22,6 +22,16 @@ SECRET_KEY_FRAGMENTS = (
     "private_key",
     # Raw request bodies (Sentry frame locals such as `body_bytes`): spec 12 door 8.
     "body",
+    # Flinks (spec 17a): the loginId is a permanent token, and a raw account carries the
+    # full `AccountNumber` and the holder's identity, as frame locals or nested keys.
+    "login_id",
+    "loginid",
+    "accountnumber",
+    "holder",
+    "username",
+    # Flinks' header names (`x-api-key`, `flinks-auth-key`) in a request's frame locals.
+    "api-key",
+    "auth-key",
 )
 
 TOKEN_PATTERN = re.compile(

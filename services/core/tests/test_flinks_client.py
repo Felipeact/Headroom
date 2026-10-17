@@ -266,3 +266,120 @@ def test_authorize_cached_body() -> None:
         r for r in recorder.requests if r.url.path.endswith("/GenerateAuthorizeToken")
     )
     assert token.headers["flinks-auth-key"] == "auth-key-secret"
+
+
+def sentry_events(monkeypatch: pytest.MonkeyPatch) -> list[dict[str, object]]:
+    """The app's own Sentry init, delivering to a list (frame locals included)."""
+    import sentry_sdk
+    from sentry_sdk.envelope import Envelope
+    from sentry_sdk.transport import Transport
+
+    from app import monitoring
+    from app.settings import get_settings
+
+    events: list[dict[str, object]] = []
+
+    class Capture(Transport):
+        def capture_envelope(self, envelope: Envelope) -> None:
+            event = envelope.get_event()
+            if event is not None:
+                events.append(dict(event))
+
+    real_init = sentry_sdk.init
+    monkeypatch.setattr(
+        monitoring.sentry_sdk,
+        "init",
+        lambda *a, **k: real_init(*a, transport=Capture(), **k),
+    )
+    settings = get_settings().model_copy(
+        update={"sentry_dsn": "https://public@sentry.example.invalid/1"}
+    )
+    assert monitoring.init_sentry(settings)
+    return events
+
+
+def test_sentry_event_carries_no_flinks_secrets(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    """C20 (Sentry): an unexpected error inside a Flinks call, and a malformed answer,
+    reach Sentry without the loginId, the keys, the account number or the holder."""
+    import sentry_sdk
+
+    events = sentry_events(monkeypatch)
+    try:
+
+        def explode(request: httpx.Request) -> httpx.Response:
+            if request.url.path.endswith("/GetAccountsDetail"):
+                raise RuntimeError("unexpected")
+            return flinks_api()(request)
+
+        client, _, _ = mock_client(explode)
+        with pytest.raises(RuntimeError):
+            client.accounts(LOGIN_ID, with_transactions=True, days="Days90", polls=3)
+        sentry_sdk.capture_exception()
+
+        broken = json.loads(json.dumps(DETAIL))
+        del broken["Accounts"][0]["Id"]
+
+        def malformed(request: httpx.Request) -> httpx.Response:
+            if request.url.path.endswith("/GetAccountsDetail"):
+                return httpx.Response(200, json=broken)
+            return flinks_api()(request)
+
+        client, _, _ = mock_client(malformed)
+        with pytest.raises(FlinksError) as raised:
+            client.accounts(LOGIN_ID, with_transactions=True, days="Days90", polls=3)
+        assert raised.value.flinks_code == "INVALID_RESPONSE"
+        assert raised.value.__suppress_context__
+        sentry_sdk.capture_exception(raised.value)
+        sentry_sdk.flush()
+    finally:
+        sentry_sdk.get_global_scope().set_client(None)
+
+    assert len(events) == 2
+    serialized = json.dumps(events, default=str)
+    assert '"vars"' in serialized  # frame locals were sent, and redacted
+    for secret in (
+        LOGIN_ID,
+        "auth-key-secret",
+        "api-key-secret",
+        "token-1",
+        "00012345678901",
+        "Dana Holder",
+    ):
+        assert secret not in serialized, secret
+
+
+def test_last_refresh_accepts_slash_dates() -> None:
+    """F2: `LastRefresh` in Flinks' yyyy/MM/dd form still parses."""
+    detail = json.loads(json.dumps(DETAIL))
+    detail["Login"]["LastRefresh"] = "2026/10/15 07:30:00"
+
+    def handler(request: httpx.Request) -> httpx.Response:
+        if request.url.path.endswith("/GetAccountsDetail"):
+            return httpx.Response(200, json=detail)
+        return flinks_api()(request)
+
+    client, _, _ = mock_client(handler)
+    snapshot = client.accounts(LOGIN_ID, with_transactions=True, days="Days90", polls=3)
+
+    assert snapshot.last_refresh is not None
+    assert snapshot.last_refresh.isoformat() == "2026-10-15T07:30:00+00:00"
+
+
+def test_missing_institution_id_is_not_the_name() -> None:
+    """F4: no InstitutionId means no institution, never the display name."""
+    detail = json.loads(json.dumps(DETAIL))
+    del detail["InstitutionId"]
+
+    def handler(request: httpx.Request) -> httpx.Response:
+        if request.url.path.endswith("/GetAccountsDetail"):
+            return httpx.Response(200, json=detail)
+        return flinks_api()(request)
+
+    client, _, _ = mock_client(handler)
+    snapshot = client.accounts(
+        LOGIN_ID, with_transactions=False, days="Days90", polls=3
+    )
+
+    assert snapshot.institution_id == ""
