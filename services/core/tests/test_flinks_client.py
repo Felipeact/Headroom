@@ -383,3 +383,45 @@ def test_missing_institution_id_is_not_the_name() -> None:
     )
 
     assert snapshot.institution_id == ""
+
+
+def test_delete_card_login_id_redacted_in_any_form() -> None:
+    """F5: the loginId after `DeleteCard/` is redacted with or without a leading slash, as
+    a frame's `path` local or in httpx's request line."""
+    from app.log import redact
+
+    redacted = redact(
+        {
+            "path": f"DeleteCard/{LOGIN_ID}",
+            "url": f"https://toolbox-api.private.fin.ag{BASE}/DeleteCard/{LOGIN_ID}",
+        }
+    )
+
+    assert LOGIN_ID not in json.dumps(redacted)
+
+
+def test_sentry_event_from_delete_carries_no_login_id(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    """F5: an unexpected error during DeleteCard reaches Sentry without the loginId."""
+    import sentry_sdk
+
+    events = sentry_events(monkeypatch)
+    try:
+
+        def explode(request: httpx.Request) -> httpx.Response:
+            raise RuntimeError("unexpected")
+
+        client, _, _ = mock_client(explode)
+        try:
+            client.delete(LOGIN_ID)
+        except RuntimeError as error:
+            sentry_sdk.capture_exception(error)
+        sentry_sdk.flush()
+    finally:
+        sentry_sdk.get_global_scope().set_client(None)
+
+    serialized = json.dumps(events, default=str)
+    assert len(events) == 1 and '"vars"' in serialized
+    assert LOGIN_ID not in serialized
+    assert "api-key-secret" not in serialized
