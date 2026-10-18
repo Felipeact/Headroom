@@ -1,5 +1,5 @@
 import { beforeEach, describe, expect, test, vi } from 'vitest'
-import { connectBank, connectFlinksBank } from '@/app/onboarding/bank/actions'
+import { connectBank } from '@/app/onboarding/bank/actions'
 import { api } from '@/lib/api/client'
 
 vi.mock('server-only', () => ({}))
@@ -42,7 +42,7 @@ describe('connect bank action', () => {
     expect(redirect).toHaveBeenCalledWith('/onboarding/accounts')
     expect(api.POST).toHaveBeenCalledWith('/v1/businesses/{business_id}/bank/connections', {
       params: { path: { business_id: BUSINESS } },
-      body: { provider: 'plaid', public_token: PUBLIC_TOKEN },
+      body: { public_token: PUBLIC_TOKEN },
       headers: { Authorization: 'Bearer tok_test' },
     })
   })
@@ -86,46 +86,5 @@ describe('connect bank action', () => {
 
     await expect(connectBank(BUSINESS, PUBLIC_TOKEN)).resolves.toEqual({ error: 'connectFailed' })
     expect(redirect).not.toHaveBeenCalled()
-  })
-})
-
-describe('connect flinks bank action (spec 17a)', () => {
-  const LOGIN_ID = '8b35f6c8-e7b6-41d3-98f8-08d68b7f8d31'
-
-  test('flinks: 201 posts the provider and the loginId, then redirects', async () => {
-    answers(201)
-
-    await expect(connectFlinksBank(BUSINESS, LOGIN_ID, '/settings/banks')).rejects.toThrow('NEXT_REDIRECT')
-
-    expect(api.POST).toHaveBeenCalledWith('/v1/businesses/{business_id}/bank/connections', {
-      params: { path: { business_id: BUSINESS } },
-      body: { provider: 'flinks', login_id: LOGIN_ID },
-      headers: { Authorization: 'Bearer tok_test' },
-    })
-    expect(redirect).toHaveBeenCalledWith('/settings/banks')
-  })
-
-  test('flinks: 503 is still preparing, and does not redirect', async () => {
-    answers(503)
-
-    await expect(connectFlinksBank(BUSINESS, LOGIN_ID)).resolves.toEqual({ error: 'stillPreparing' })
-    expect(redirect).not.toHaveBeenCalled()
-  })
-
-  test('flinks: 409 is already connected', async () => {
-    answers(409)
-
-    await expect(connectFlinksBank(BUSINESS, LOGIN_ID)).resolves.toEqual({ error: 'alreadyConnected' })
-  })
-
-  test('flinks: a loginId that is not a UUID is never sent', async () => {
-    await expect(connectFlinksBank(BUSINESS, 'not-a-uuid')).resolves.toEqual({ error: 'connectFailed' })
-    expect(api.POST).not.toHaveBeenCalled()
-  })
-
-  test('plaid: a 503 is still the generic error', async () => {
-    answers(503)
-
-    await expect(connectBank(BUSINESS, PUBLIC_TOKEN)).resolves.toEqual({ error: 'connectFailed' })
   })
 })

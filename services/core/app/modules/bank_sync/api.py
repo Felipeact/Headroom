@@ -32,12 +32,6 @@ from app.auth import Member, require_member
 from app.db import get_session
 from app.modules.accounts.service import Role
 from app.modules.bank_sync import service, webhooks
-from app.modules.bank_sync.flinks import (
-    PENDING,
-    FlinksClient,
-    FlinksError,
-    get_flinks_client,
-)
 from app.modules.bank_sync.models import AccountType, Provider, TransactionLabel
 from app.modules.bank_sync.plaid import PlaidClient, PlaidError, get_plaid_client
 from app.problems import ProblemDetails, ValidationProblemDetails
@@ -49,9 +43,6 @@ ACCOUNT_NOT_FOUND = "Account not found."
 CONNECTION_NOT_FOUND = "Bank connection not found."
 STILL_LOGIN_REQUIRED = "Your bank still needs you to log in."
 INVALID_SIGNATURE = "Invalid webhook signature."
-FLINKS_NOT_AVAILABLE = "Connecting through Flinks isn't available."
-STILL_PREPARING = "Your bank is still preparing your accounts. Try again in a minute."
-RECONNECT_REQUIRED = "Reconnect this bank: disconnect it, then connect it again."
 ACCOUNT_CONFLICTS: dict[service.AccountConflict, str] = {
     "credit": "Credit cards and lines of credit can't count as cash.",
     "other": "This type of account can't count as cash.",
@@ -69,8 +60,6 @@ webhook_router = APIRouter(tags=["bank_sync"])
 
 SessionDep = Annotated[Session, Depends(get_session)]
 PlaidDep = Annotated[PlaidClient, Depends(get_plaid_client)]
-# None while Flinks is not configured (spec 17a).
-FlinksDep = Annotated[FlinksClient | None, Depends(get_flinks_client)]
 OwnerDep = Annotated[Member, Depends(require_member(Role.OWNER))]
 
 OWNER_ERRORS: dict[int | str, dict[str, object]] = {
@@ -86,39 +75,11 @@ class LinkToken(BaseModel):
     expiration: datetime
 
 
-class FlinksConnectUrl(BaseModel):
-    # The Flinks Connect iframe, with a single-use authorize token.
-    connect_url: str
-    # The iframe's origin: the web app accepts messages only from it.
-    origin: str
-
-
 class ConnectionCreate(BaseModel):
     model_config = ConfigDict(extra="forbid")
 
-    provider: Provider = "plaid"
-    # SecretStr: neither token ever shows in a repr, a log line or an error report.
-    # Plaid Link's public token.
-    public_token: Annotated[SecretStr, Field(min_length=1)] | None = None
-    # The loginId Flinks Connect returns: a UUID, and a permanent secret.
-    login_id: SecretStr | None = None
-
-    @model_validator(mode="after")
-    def _one_token_for_the_provider(self) -> "ConnectionCreate":
-        wanted, other = (
-            (self.login_id, self.public_token)
-            if self.provider == "flinks"
-            else (self.public_token, self.login_id)
-        )
-        if wanted is None or other is not None:
-            field = "login_id" if self.provider == "flinks" else "public_token"
-            raise ValueError(f"Send {field}, and only {field}, for {self.provider}.")
-        if self.login_id is not None:
-            try:
-                uuid.UUID(self.login_id.get_secret_value())
-            except ValueError:
-                raise ValueError("login_id must be a UUID.") from None
-        return self
+    # SecretStr: the token never shows in a repr, a log line or an error report.
+    public_token: Annotated[SecretStr, Field(min_length=1)]
 
 
 class Account(BaseModel):
@@ -191,18 +152,6 @@ def _plaid_failed(exc: PlaidError, *, business_id: uuid.UUID) -> None:
     )
 
 
-def _flinks_failed(exc: FlinksError, *, business_id: uuid.UUID) -> HTTPException:
-    """Log a Flinks failure by its code only, and answer `503` (spec 17a)."""
-    log.warning(
-        "flinks.request_failed",
-        business_id=str(business_id),
-        http_status=exc.http_status,
-        flinks_code=exc.flinks_code,
-    )
-    detail = STILL_PREPARING if exc.flinks_code == PENDING else PROVIDER_UNAVAILABLE
-    return HTTPException(status.HTTP_503_SERVICE_UNAVAILABLE, detail=detail)
-
-
 def _unavailable() -> HTTPException:
     return HTTPException(status.HTTP_502_BAD_GATEWAY, detail=PROVIDER_UNAVAILABLE)
 
@@ -225,75 +174,12 @@ def create_link_token(member: OwnerDep, plaid: PlaidDep) -> LinkToken:
     return LinkToken(link_token=token.link_token, expiration=token.expiration)
 
 
-FLINKS_ERRORS: dict[int | str, dict[str, object]] = {
-    status.HTTP_503_SERVICE_UNAVAILABLE: {"model": ProblemDetails},
-}
-
-
-@router.post(
-    "/businesses/{business_id}/bank/flinks/connect-url",
-    response_model=FlinksConnectUrl,
-    responses={
-        **{k: v for k, v in OWNER_ERRORS.items() if k != status.HTTP_502_BAD_GATEWAY},
-        **FLINKS_ERRORS,
-    },
-)
-def create_flinks_connect_url(member: OwnerDep, flinks: FlinksDep) -> FlinksConnectUrl:
-    if flinks is None:
-        raise HTTPException(status.HTTP_404_NOT_FOUND, detail=FLINKS_NOT_AVAILABLE)
-    try:
-        connect = flinks.connect_url()
-    except FlinksError as exc:
-        raise _flinks_failed(exc, business_id=member.business_id) from None
-    return FlinksConnectUrl(connect_url=connect.url, origin=connect.origin)
-
-
-def _connect(
-    body: ConnectionCreate,
-    member: Member,
-    plaid: PlaidClient,
-    flinks: FlinksClient | None,
-    session: Session,
-) -> service.ConnectionView:
-    if body.provider == "flinks":
-        assert body.login_id is not None  # ConnectionCreate's validator
-        if flinks is None:
-            raise HTTPException(status.HTTP_404_NOT_FOUND, detail=FLINKS_NOT_AVAILABLE)
-        try:
-            return service.connect_flinks_bank(
-                session,
-                flinks,
-                business_id=member.business_id,
-                user_id=member.user_id,
-                login_id=body.login_id.get_secret_value(),
-            )
-        except FlinksError as exc:
-            raise _flinks_failed(exc, business_id=member.business_id) from None
-    assert body.public_token is not None  # ConnectionCreate's validator
-    try:
-        return service.connect_bank(
-            session,
-            plaid,
-            business_id=member.business_id,
-            user_id=member.user_id,
-            public_token=body.public_token.get_secret_value(),
-        )
-    except PlaidError as exc:
-        _plaid_failed(exc, business_id=member.business_id)
-        if exc.error_type == "INVALID_INPUT":
-            raise HTTPException(
-                status.HTTP_400_BAD_REQUEST, detail=CONNECT_FAILED
-            ) from None
-        raise _unavailable() from None
-
-
 @router.post(
     "/businesses/{business_id}/bank/connections",
     status_code=status.HTTP_201_CREATED,
     response_model=Connection,
     responses={
         **OWNER_ERRORS,
-        **FLINKS_ERRORS,
         status.HTTP_400_BAD_REQUEST: {"model": ProblemDetails},
         status.HTTP_409_CONFLICT: {"model": ProblemDetails},
     },
@@ -302,16 +188,28 @@ def create_connection(
     body: ConnectionCreate,
     member: OwnerDep,
     plaid: PlaidDep,
-    flinks: FlinksDep,
     session: SessionDep,
     background: BackgroundTasks,
 ) -> Connection:
     try:
-        connection = _connect(body, member, plaid, flinks, session)
+        connection = service.connect_bank(
+            session,
+            plaid,
+            business_id=member.business_id,
+            user_id=member.user_id,
+            public_token=body.public_token.get_secret_value(),
+        )
     except service.DuplicateBankError:
         raise HTTPException(
             status.HTTP_409_CONFLICT, detail=ALREADY_CONNECTED
         ) from None
+    except PlaidError as exc:
+        _plaid_failed(exc, business_id=member.business_id)
+        if exc.error_type == "INVALID_INPUT":
+            raise HTTPException(
+                status.HTTP_400_BAD_REQUEST, detail=CONNECT_FAILED
+            ) from None
+        raise _unavailable() from None
     # The first sync after the response: it pulls the history, and Plaid sends this
     # item's webhooks only once it has been called.
     background.add_task(
@@ -319,7 +217,6 @@ def create_connection(
         plaid,
         business_id=member.business_id,
         connection_id=connection.id,
-        flinks=flinks,
     )
     return Connection.model_validate(connection, from_attributes=True)
 
@@ -416,7 +313,7 @@ def update_account(
 @router.post(
     "/businesses/{business_id}/bank/connections/{connection_id}/link-token",
     response_model=LinkToken,
-    responses={**OWNER_ERRORS, status.HTTP_409_CONFLICT: {"model": ProblemDetails}},
+    responses=OWNER_ERRORS,
 )
 def create_update_link_token(
     connection_id: uuid.UUID, member: OwnerDep, plaid: PlaidDep, session: SessionDep
@@ -431,10 +328,6 @@ def create_update_link_token(
         )
     except service.ConnectionNotFoundError:
         raise _connection_not_found() from None
-    except service.ReconnectRequiredError:
-        raise HTTPException(
-            status.HTTP_409_CONFLICT, detail=RECONNECT_REQUIRED
-        ) from None
     except PlaidError as exc:
         _plaid_failed(exc, business_id=member.business_id)
         raise _unavailable() from None
@@ -444,18 +337,10 @@ def create_update_link_token(
 @router.post(
     "/businesses/{business_id}/bank/connections/{connection_id}/repair",
     response_model=Connection,
-    responses={
-        **OWNER_ERRORS,
-        **FLINKS_ERRORS,
-        status.HTTP_409_CONFLICT: {"model": ProblemDetails},
-    },
+    responses={**OWNER_ERRORS, status.HTTP_409_CONFLICT: {"model": ProblemDetails}},
 )
 def repair_connection(
-    connection_id: uuid.UUID,
-    member: OwnerDep,
-    plaid: PlaidDep,
-    flinks: FlinksDep,
-    session: SessionDep,
+    connection_id: uuid.UUID, member: OwnerDep, plaid: PlaidDep, session: SessionDep
 ) -> Connection:
     try:
         connection = service.repair_connection(
@@ -463,7 +348,6 @@ def repair_connection(
             plaid,
             business_id=member.business_id,
             connection_id=connection_id,
-            flinks=flinks,
         )
     except service.ConnectionNotFoundError:
         raise _connection_not_found() from None
@@ -474,8 +358,6 @@ def repair_connection(
     except PlaidError as exc:
         _plaid_failed(exc, business_id=member.business_id)
         raise _unavailable() from None
-    except FlinksError as exc:
-        raise _flinks_failed(exc, business_id=member.business_id) from None
     return Connection.model_validate(connection, from_attributes=True)
 
 
@@ -485,11 +367,7 @@ def repair_connection(
     responses=OWNER_ERRORS,
 )
 def disconnect_bank(
-    connection_id: uuid.UUID,
-    member: OwnerDep,
-    plaid: PlaidDep,
-    flinks: FlinksDep,
-    session: SessionDep,
+    connection_id: uuid.UUID, member: OwnerDep, plaid: PlaidDep, session: SessionDep
 ) -> None:
     try:
         service.disconnect_bank(
@@ -498,7 +376,6 @@ def disconnect_bank(
             business_id=member.business_id,
             connection_id=connection_id,
             user_id=member.user_id,
-            flinks=flinks,
         )
     except service.ConnectionNotFoundError:
         raise _connection_not_found() from None

@@ -6,11 +6,9 @@ import { useRouter } from "next/navigation"
 import { useTranslations } from "next-intl"
 import { updateAccount, type AccountChange } from "@/app/onboarding/accounts/actions"
 import { AccountCard } from "@/components/onboarding/account-card"
-import { FlinksConnect } from "@/components/onboarding/flinks-connect"
 import { useConnectBank } from "@/components/onboarding/use-connect-bank"
 import { Button } from "@/components/ui/button"
 import { RadioGroup } from "@/components/ui/radio-group"
-import type { FlinksConnect as FlinksConnectInfo } from "@/lib/api/bank"
 import type { components } from "@/lib/api/schema"
 
 type Connection = components["schemas"]["Connection"]
@@ -22,17 +20,13 @@ type Message = "saveFailed" | "noneIncluded"
 export function ChooseAccounts({
   businessId,
   linkToken,
-  flinks = null,
   connections,
 }: {
   businessId: string
   linkToken: string
-  // Offered next to Plaid when the API has Flinks (spec 17a).
-  flinks?: FlinksConnectInfo | null
   connections: Connection[]
 }) {
   const t = useTranslations("Onboarding")
-  const providers = useTranslations("BankProviders")
   const router = useRouter()
   const [message, setMessage] = useState<Message | null>(null)
   const [saving, startSaving] = useTransition()
@@ -132,20 +126,8 @@ export function ChooseAccounts({
           className="min-h-[52px] rounded-xl text-base"
         >
           <Plus aria-hidden="true" className="size-[18px]" strokeWidth={2} />
-          {connect.pending
-            ? t("Bank.connecting")
-            : flinks
-              ? providers("plaid")
-              : t("Accounts.connectAnother")}
+          {connect.pending ? t("Bank.connecting") : t("Accounts.connectAnother")}
         </Button>
-        {flinks && (
-          <FlinksConnect
-            businessId={businessId}
-            flinks={flinks}
-            disabled={busy}
-            className="min-h-[52px] rounded-xl text-base"
-          />
-        )}
         <Button
           type="button"
           disabled={busy}

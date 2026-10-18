@@ -1,5 +1,7 @@
 # Flinks as a second bank provider
 
+> **Status: abandoned 2026-10-17.** Flinks would not accept a personal-email signup, and the user chose to remove it and find another provider. The Flinks code was deleted before release. What stayed: the `provider` column and `provider_*` column names (migrations 86276e8fa7aa, then 8cbe90de5769, which restricts `provider` to `plaid`) and the RBC text-message hint on onboarding step 3. This file is kept as the decision record.
+
 ## Problem
 
 An owner whose bank is RBC and who signs in with RBC's authenticator app can't connect it, because Plaid rejects the login with `MFA_NOT_SUPPORTED`. Without the bank there's no forecast, so onboarding ends at step 3 for that owner. Evidence: spec 34's production check C21 is blocked on exactly this (`STATE.md` Handoff, 2026-10-16). RBC is one of Canada's largest banks, so the gap hits a large share of the target market. We have no measured figure for how many.

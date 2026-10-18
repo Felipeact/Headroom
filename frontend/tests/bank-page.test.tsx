@@ -45,13 +45,9 @@ function businesses(status: number, body?: unknown) {
 }
 
 function linkToken(status: number) {
-  // Flinks is off here (spec 17a): its connect URL answers 404, and the page shows Plaid alone.
-  vi.mocked(api.POST).mockImplementation(((path: string) =>
-    Promise.resolve(
-      path.endsWith('/flinks/connect-url')
-        ? reply(404)
-        : reply(status, { link_token: 'link-sandbox-123', expiration: '2026-10-04T16:00:00Z' }),
-    )) as unknown as typeof api.POST)
+  vi.mocked(api.POST).mockResolvedValue(
+    reply(status, { link_token: 'link-sandbox-123', expiration: '2026-10-04T16:00:00Z' }),
+  )
 }
 
 async function renderPage() {

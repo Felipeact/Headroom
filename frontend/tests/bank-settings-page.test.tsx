@@ -122,8 +122,7 @@ function arrange(connections: Connection[], status: Answer = 200) {
       ? answer(200, BUSINESSES)
       : answer(status, { items: connections })) as unknown as typeof api.GET)
   vi.mocked(api.POST).mockImplementation(((path: string, init: { params: { path: { connection_id?: string } } }) =>
-    // Flinks is off here (spec 17a): its connect URL answers 404.
-    path.endsWith('/flinks/connect-url') ? answer(404, undefined) : answer(200, {
+    answer(200, {
       link_token: path.includes('{connection_id}') ? `update-${init.params.path.connection_id}` : 'link-sandbox-123',
       expiration: '2026-10-06T18:00:00Z',
     })) as unknown as typeof api.POST)
@@ -389,24 +388,5 @@ describe('bank settings page', () => {
     expect(disconnectBank).toHaveBeenCalledWith(BUSINESS, td.id)
     expect(screen.queryByRole('dialog')).toBeNull()
     expect(toast).toHaveBeenCalledWith('TD Canada Trust disconnected')
-  })
-})
-
-describe('bank settings provider (spec 17a)', () => {
-  test('provider labels, and a Flinks bank needing attention has no Reconnect', async () => {
-    await renderPage([
-      bank(TD, { status: 'login_required', provider: 'flinks' }),
-      bank('Harbor Community Bank', { provider: 'plaid' }),
-    ])
-
-    expect(card(TD).getByText(messages.BankProviders.via.flinks)).toBeTruthy()
-    expect(card('Harbor Community Bank').getByText(messages.BankProviders.via.plaid)).toBeTruthy()
-    const alert = card(TD).getByRole('alert')
-    expect(alert.textContent).toContain('TD Canada Trust asked you to log in again.')
-    expect(alert.textContent).toContain(messages.BankProviders.reconnectFlinks)
-    expect(within(alert).queryByRole('button', { name: BANKS.reconnect })).toBeNull()
-    // No update-mode link token is asked for a Flinks bank: it has no update mode.
-    const paths = vi.mocked(api.POST).mock.calls.map((call) => String(call[0]))
-    expect(paths).not.toContain('/v1/businesses/{business_id}/bank/connections/{connection_id}/link-token')
   })
 })

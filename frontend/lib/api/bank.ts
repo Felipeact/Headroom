@@ -61,28 +61,3 @@ export async function createUpdateLinkToken(businessId: string, connectionId: st
   }
   return null
 }
-
-export type FlinksConnect = components["schemas"]["FlinksConnectUrl"]
-
-/**
- * The Flinks Connect iframe for the business (spec 17a), or null when Flinks is off (`404`) or
- * the call fails. Its authorize token is single-use, so every render asks for a new one.
- */
-export async function createFlinksConnectUrl(businessId: string): Promise<FlinksConnect | null> {
-  try {
-    const { data, response } = await api.POST("/v1/businesses/{business_id}/bank/flinks/connect-url", {
-      params: { path: { business_id: businessId } },
-      headers: await authHeaders(),
-    })
-    if (data) return data
-    // 404: Flinks isn't configured here, which is not a failure.
-    if (response.status !== 404) {
-      Sentry.captureException(
-        new Error(`POST /v1/businesses/{business_id}/bank/flinks/connect-url returned ${response.status}`),
-      )
-    }
-  } catch (error) {
-    Sentry.captureException(error)
-  }
-  return null
-}

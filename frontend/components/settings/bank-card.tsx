@@ -35,7 +35,6 @@ export function BankCard({
   onChange: (accountId: string, change: AccountChange) => void
 }) {
   const t = useTranslations("Settings.Banks")
-  const providers = useTranslations("BankProviders")
   const headingId = useId()
   const bank = connection.institution_name
   const attention = connection.status === "login_required" || connection.status === "sync_failing"
@@ -54,7 +53,6 @@ export function BankCard({
             <h3 id={headingId} data-user-content className="text-base font-semibold">
               {bank}
             </h3>
-            <p className="text-[13px] text-ink-3">{providers(`via.${connection.provider}`)}</p>
             {attention ? (
               <Badge variant="warning">{t("needsAttention")}</Badge>
             ) : connection.status === "synced" && connection.last_synced_at ? (
@@ -70,19 +68,7 @@ export function BankCard({
         <DisconnectDialog businessId={businessId} connectionId={connection.id} bank={bank} />
       </div>
 
-      {attention && connection.provider === "flinks" && (
-        <div
-          role="alert"
-          className="rounded-[10px] border border-warning-border bg-warning-bg px-4 py-3 text-sm leading-[1.45] text-warning-text"
-        >
-          <p data-user-content>
-            {t(connection.status === "login_required" ? "loginBanner" : "syncFailingBanner", { bank })}{" "}
-            {providers("reconnectFlinks")}
-          </p>
-        </div>
-      )}
-
-      {attention && connection.provider !== "flinks" && (
+      {attention && (
         <ReconnectBanner
           businessId={businessId}
           connectionId={connection.id}
