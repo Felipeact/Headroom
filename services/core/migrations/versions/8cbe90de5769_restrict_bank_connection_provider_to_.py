@@ -26,7 +26,9 @@ def upgrade() -> None:
         op.f("ck_bank_connections_provider"), "bank_connections", type_="check"
     )
     op.create_check_constraint(
-        op.f("ck_bank_connections_provider"), "bank_connections", "provider IN ('plaid')"
+        op.f("ck_bank_connections_provider"),
+        "bank_connections",
+        "provider IN ('plaid')",
     )
 
 
