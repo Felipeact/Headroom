@@ -61,11 +61,6 @@ export default defineRailway((ctx) => {
       PLAID_SECRET: preserve(),
       PLAID_ENV: preserve(),
       PLAID_WEBHOOK_URL: preserve(),
-      // Flinks (spec 17a), set with `railway variable set`; all four unset keeps Flinks off.
-      FLINKS_INSTANCE: preserve(),
-      FLINKS_CUSTOMER_ID: preserve(),
-      FLINKS_AUTH_KEY: preserve(),
-      FLINKS_API_KEY: preserve(),
       TOKEN_ENCRYPTION_KEYS: preserve(),
       // Email (spec 28), set with `railway variable set`: the sender (`console` or `resend`)
       // and its key, the From address, the footer's mailing address, the public web and API
@@ -128,11 +123,6 @@ export default defineRailway((ctx) => {
       PLAID_CLIENT_ID: "${{api.PLAID_CLIENT_ID}}",
       PLAID_SECRET: "${{api.PLAID_SECRET}}",
       PLAID_ENV: "${{api.PLAID_ENV}}",
-      // Spec 17a: the nightly sync reads Flinks banks through the same settings as `api`.
-      FLINKS_INSTANCE: "${{api.FLINKS_INSTANCE}}",
-      FLINKS_CUSTOMER_ID: "${{api.FLINKS_CUSTOMER_ID}}",
-      FLINKS_AUTH_KEY: "${{api.FLINKS_AUTH_KEY}}",
-      FLINKS_API_KEY: "${{api.FLINKS_API_KEY}}",
       TOKEN_ENCRYPTION_KEYS: "${{api.TOKEN_ENCRYPTION_KEYS}}",
       SENTRY_DSN: "${{api.SENTRY_DSN}}",
       SENTRY_ENVIRONMENT: "${{api.SENTRY_ENVIRONMENT}}",

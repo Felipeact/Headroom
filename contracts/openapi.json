@@ -902,94 +902,6 @@
         }
       }
     },
-    "/v1/businesses/{business_id}/bank/flinks/connect-url": {
-      "post": {
-        "tags": [
-          "bank_sync"
-        ],
-        "summary": "Create Flinks Connect Url",
-        "operationId": "create_flinks_connect_url_v1_businesses__business_id__bank_flinks_connect_url_post",
-        "security": [
-          {
-            "HTTPBearer": []
-          }
-        ],
-        "parameters": [
-          {
-            "name": "business_id",
-            "in": "path",
-            "required": true,
-            "schema": {
-              "type": "string",
-              "format": "uuid",
-              "title": "Business Id"
-            }
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": "Successful Response",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/FlinksConnectUrl"
-                }
-              }
-            }
-          },
-          "401": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ProblemDetails"
-                }
-              }
-            },
-            "description": "Unauthorized"
-          },
-          "403": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ProblemDetails"
-                }
-              }
-            },
-            "description": "Forbidden"
-          },
-          "404": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ProblemDetails"
-                }
-              }
-            },
-            "description": "Not Found"
-          },
-          "422": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ValidationProblemDetails"
-                }
-              }
-            },
-            "description": "Unprocessable Entity"
-          },
-          "503": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ProblemDetails"
-                }
-              }
-            },
-            "description": "Service Unavailable"
-          }
-        }
-      }
-    },
     "/v1/businesses/{business_id}/bank/connections": {
       "post": {
         "tags": [
@@ -1084,16 +996,6 @@
               }
             },
             "description": "Bad Gateway"
-          },
-          "503": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ProblemDetails"
-                }
-              }
-            },
-            "description": "Service Unavailable"
           },
           "400": {
             "content": {
@@ -1503,16 +1405,6 @@
               }
             },
             "description": "Bad Gateway"
-          },
-          "409": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ProblemDetails"
-                }
-              }
-            },
-            "description": "Conflict"
           }
         }
       }
@@ -1611,16 +1503,6 @@
               }
             },
             "description": "Bad Gateway"
-          },
-          "503": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ProblemDetails"
-                }
-              }
-            },
-            "description": "Service Unavailable"
           },
           "409": {
             "content": {
@@ -3741,10 +3623,7 @@
           },
           "provider": {
             "type": "string",
-            "enum": [
-              "plaid",
-              "flinks"
-            ],
+            "const": "plaid",
             "title": "Provider"
           },
           "institution_name": {
@@ -3800,45 +3679,19 @@
       },
       "ConnectionCreate": {
         "properties": {
-          "provider": {
-            "type": "string",
-            "enum": [
-              "plaid",
-              "flinks"
-            ],
-            "title": "Provider",
-            "default": "plaid"
-          },
           "public_token": {
-            "anyOf": [
-              {
-                "type": "string",
-                "minLength": 1,
-                "format": "password",
-                "writeOnly": true
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Public Token"
-          },
-          "login_id": {
-            "anyOf": [
-              {
-                "type": "string",
-                "format": "password",
-                "writeOnly": true
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Login Id"
+            "type": "string",
+            "minLength": 1,
+            "format": "password",
+            "title": "Public Token",
+            "writeOnly": true
           }
         },
         "additionalProperties": false,
         "type": "object",
+        "required": [
+          "public_token"
+        ],
         "title": "ConnectionCreate"
       },
       "ConnectionList": {
@@ -4896,24 +4749,6 @@
           "new_lowest_balance_cents"
         ],
         "title": "Fix"
-      },
-      "FlinksConnectUrl": {
-        "properties": {
-          "connect_url": {
-            "type": "string",
-            "title": "Connect Url"
-          },
-          "origin": {
-            "type": "string",
-            "title": "Origin"
-          }
-        },
-        "type": "object",
-        "required": [
-          "connect_url",
-          "origin"
-        ],
-        "title": "FlinksConnectUrl"
       },
       "Forecast": {
         "properties": {

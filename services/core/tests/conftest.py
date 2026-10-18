@@ -146,6 +146,3 @@ def isolated_database() -> Iterator[str]:
 
 # Spec 28: the email tests' fake sender, fake Clerk and test template, as `mail`.
 from tests.email_support import mail  # noqa: F401
-
-# Spec 17a: the fake Flinks, as `flinks`, and Flinks switched off, as `no_flinks`.
-from tests.flinks_support import flinks, no_flinks  # noqa: F401

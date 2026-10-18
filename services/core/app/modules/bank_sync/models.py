@@ -28,8 +28,9 @@ ACCOUNT_TYPES: tuple[str, ...] = get_args(AccountType)
 CASH_TYPES = ("checking", "savings")
 CASH_CURRENCY = "CAD"
 
-# Who fetches a connection's data (spec 17a): Plaid, or Flinks where Plaid can't sign in.
-Provider = Literal["plaid", "flinks"]
+# Who fetches a connection's data (spec 17a). Plaid only for now; the next provider adds
+# its value here and to `ck_bank_connections_provider`.
+Provider = Literal["plaid"]
 PROVIDERS: tuple[str, ...] = get_args(Provider)
 
 TransactionLabel = Literal[
@@ -47,7 +48,7 @@ LINKED_LABELS = ("internal_transfer", "card_payment", "credit_draw", "credit_rep
 
 
 class BankConnection(Base):
-    """One login at one bank, for one business: a Plaid item or a Flinks login.
+    """One login at one bank, for one business: a provider's item (a Plaid item).
 
     `business_id` has no foreign key: `businesses` belongs to the accounts module.
     """
@@ -76,14 +77,13 @@ class BankConnection(Base):
     provider: Mapped[str] = mapped_column(
         Text, default="plaid", server_default=text("'plaid'")
     )
-    # Plaid's item ID; for Flinks, the SHA-256 hex of the loginId, which is a secret.
+    # The provider's ID for this login: Plaid's item ID.
     provider_item_id: Mapped[str] = mapped_column(Text)
     provider_institution_id: Mapped[str] = mapped_column(Text)
     institution_name: Mapped[str] = mapped_column(Text)
-    # Fernet token text: Plaid's access token or the Flinks loginId; never stored plain.
+    # Fernet token text; the plaintext access token is never stored.
     access_token_ciphertext: Mapped[str] = mapped_column(Text)
-    # Plaid's /transactions/sync cursor; None until the first sync (spec 14). Always None
-    # for Flinks, which has no cursor.
+    # Plaid's /transactions/sync cursor; None until the first sync (spec 14).
     transactions_cursor: Mapped[str | None] = mapped_column(Text)
     # Nightly sync state (spec 15). The business-local date of the last night whose sync
     # finished, whether it succeeded or ran out of attempts.

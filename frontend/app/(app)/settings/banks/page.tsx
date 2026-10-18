@@ -2,12 +2,7 @@ import { auth } from "@clerk/nextjs/server"
 import { redirect } from "next/navigation"
 import { BankConnections } from "@/components/settings/bank-connections"
 import { BankSettingsError } from "@/components/settings/bank-settings-error"
-import {
-  createFlinksConnectUrl,
-  createLinkToken,
-  createUpdateLinkToken,
-  loadConnections,
-} from "@/lib/api/bank"
+import { createLinkToken, createUpdateLinkToken, loadConnections } from "@/lib/api/bank"
 import { loadBusinesses } from "@/lib/api/businesses"
 
 const NEEDS_ATTENTION = new Set(["login_required", "sync_failing"])
@@ -24,14 +19,10 @@ export default async function BankSettingsPage() {
   if (!connections) return <BankSettingsError />
 
   // Link tokens last four hours and cost nothing: one to connect another bank, and one in
-  // update mode for each Plaid bank that needs the owner to log in again. A Flinks bank has no
-  // update mode (spec 17a): the owner disconnects it and connects it again.
-  const attention = connections.filter(
-    (connection) => connection.provider === "plaid" && NEEDS_ATTENTION.has(connection.status),
-  )
-  const [linkToken, flinks, ...updates] = await Promise.all([
+  // update mode for each bank that needs the owner to log in again.
+  const attention = connections.filter((connection) => NEEDS_ATTENTION.has(connection.status))
+  const [linkToken, ...updates] = await Promise.all([
     createLinkToken(business.id),
-    createFlinksConnectUrl(business.id),
     ...attention.map((connection) => createUpdateLinkToken(business.id, connection.id)),
   ])
   const updateTokens = Object.fromEntries(attention.map((connection, i) => [connection.id, updates[i]]))
@@ -43,7 +34,6 @@ export default async function BankSettingsPage() {
       now={new Date().toISOString()}
       connections={connections}
       linkToken={linkToken}
-      flinks={flinks}
       updateTokens={updateTokens}
     />
   )

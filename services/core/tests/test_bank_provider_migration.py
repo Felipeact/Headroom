@@ -1,4 +1,4 @@
-"""Spec 17a S1: the provider column and the renamed provider ID columns (C1-C4)."""
+"""Spec 17a: the provider column and the renamed provider ID columns."""
 
 import os
 import subprocess
@@ -178,13 +178,26 @@ def test_downgrade_restores_plaid_names(database_url: str, engine: Engine) -> No
         )
 
 
-def test_provider_check_constraint(database_url: str, engine: Engine) -> None:
+@pytest.mark.parametrize("rejected", ["flinks", "other"])
+def test_provider_check_constraint(
+    database_url: str, engine: Engine, rejected: str
+) -> None:
+    """At head only `plaid` is a provider: Flinks was removed before release."""
     alembic("upgrade", "head", database_url=database_url)
 
     insert_connection(engine, item="a", institution="i", provider="plaid")
-    insert_connection(engine, item="b", institution="i", provider="flinks")
     with pytest.raises(IntegrityError, match="ck_bank_connections_provider"):
-        insert_connection(engine, item="c", institution="i", provider="other")
+        insert_connection(engine, item="b", institution="i", provider=rejected)
+
+
+def test_restriction_downgrade_allows_flinks_again(
+    database_url: str, engine: Engine
+) -> None:
+    """8cbe90de5769 reverses cleanly to 86276e8fa7aa's constraint."""
+    alembic("upgrade", "head", database_url=database_url)
+    alembic("downgrade", REVISION, database_url=database_url)
+
+    insert_connection(engine, item="b", institution="i", provider="flinks")
 
 
 def test_provider_uniques(database_url: str, engine: Engine) -> None:
@@ -196,14 +209,6 @@ def test_provider_uniques(database_url: str, engine: Engine) -> None:
         item="same",
         institution="ins_9",
         provider="plaid",
-        business_id=business_id,
-    )
-    # The same institution and item IDs under the other provider are a different login.
-    insert_connection(
-        engine,
-        item="same",
-        institution="ins_9",
-        provider="flinks",
         business_id=business_id,
     )
     with pytest.raises(

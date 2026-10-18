@@ -32,4 +32,3 @@ empty or every row says "allow in the policy".
 | every signed-in screen | The same Clerk, Sentry, `blob:` worker, inline script and inline style violations as `/sign-in`, and no other kind | Covered by the decisions above |
 | `/settings/banks` | Plaid Link script from `cdn.plaid.com` blocked by `default-src 'self'` | Allow `script-src https://cdn.plaid.com` before enforcing |
 | `/settings/banks` | Plaid Link iframe from `cdn.plaid.com` blocked by `default-src 'self'` | Allow `frame-src https://cdn.plaid.com` before enforcing; `frame-ancestors 'none'` stays |
-| `/onboarding/bank`, `/onboarding/accounts`, `/settings/banks` (spec 17a, expected, not yet seen in a report) | Flinks Connect iframe from `https://<FLINKS_INSTANCE>-iframe.private.fin.ag` blocked by `default-src 'self'` | Allow `frame-src` for the environment's Flinks iframe origin before enforcing |

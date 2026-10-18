@@ -4,7 +4,7 @@ import { getTranslations } from "next-intl/server"
 import { ChooseAccounts } from "@/components/onboarding/choose-accounts"
 import { StepIndicator } from "@/components/onboarding/step-indicator"
 import { LayoutError } from "@/components/shell/layout-error"
-import { createFlinksConnectUrl, createLinkToken, loadConnections } from "@/lib/api/bank"
+import { createLinkToken, loadConnections } from "@/lib/api/bank"
 import { loadBusinesses } from "@/lib/api/businesses"
 
 export default async function AccountsStepPage() {
@@ -15,10 +15,7 @@ export default async function AccountsStepPage() {
   const connections = business ? await loadConnections(business.id) : null
   if (connections && connections.length === 0) redirect("/onboarding/bank")
   // For "Connect another bank"; link tokens last four hours and cost nothing.
-  const [linkToken, flinks] =
-    business && connections
-      ? await Promise.all([createLinkToken(business.id), createFlinksConnectUrl(business.id)])
-      : [null, null]
+  const linkToken = business && connections ? await createLinkToken(business.id) : null
   const t = await getTranslations()
 
   return (
@@ -31,12 +28,7 @@ export default async function AccountsStepPage() {
         </StepIndicator>
       </header>
       {business && connections && linkToken ? (
-        <ChooseAccounts
-          businessId={business.id}
-          linkToken={linkToken}
-          flinks={flinks}
-          connections={connections}
-        />
+        <ChooseAccounts businessId={business.id} linkToken={linkToken} connections={connections} />
       ) : (
         <LayoutError />
       )}

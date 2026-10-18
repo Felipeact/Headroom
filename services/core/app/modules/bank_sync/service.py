@@ -1,8 +1,8 @@
-import hashlib
 import uuid
 from collections.abc import Iterable, Mapping
 from dataclasses import dataclass, replace
 from datetime import UTC, date, datetime, timedelta
+from decimal import ROUND_HALF_EVEN, Decimal
 from typing import Literal
 from zoneinfo import ZoneInfo
 
@@ -17,11 +17,6 @@ from app.db import get_sessionmaker
 from app.modules.accounts import service as accounts_service
 from app.modules.bank_sync import labels, repository
 from app.modules.bank_sync.events import TRANSACTIONS_SYNCED
-from app.modules.bank_sync.flinks import (
-    CONNECT_POLLS,
-    FlinksClient,
-    FlinksError,
-)
 from app.modules.bank_sync.models import (
     CASH_CURRENCY,
     CASH_TYPES,
@@ -38,17 +33,8 @@ from app.modules.bank_sync.plaid import (
     PlaidAccount,
     PlaidClient,
     PlaidError,
-)
-from app.modules.bank_sync.providers import (
-    ReportedAccount,
-    ReportedTransaction,
-    Update,
-    fetch,
-    flinks_account,
-    invalid_response,
-    plaid_account,
-    remove_at_provider,
-    synced_at,
+    PlaidTransaction,
+    SyncPage,
 )
 from app.modules.bank_sync.tokens import decrypt_access_token, encrypt_access_token
 from app.modules.forecasting.events import FORECAST_INPUTS_CHANGED
@@ -56,14 +42,23 @@ from app.settings import get_settings
 
 INSTITUTION_INDEX = "uq_bank_connections_business_provider_institution"
 PRIMARY_INDEX = "uq_bank_accounts_primary_business_id"
-FLINKS_ITEM_INDEX = "uq_bank_connections_provider_provider_item_id"
 # 24 months of history, Plaid's maximum.
 DAYS_REQUESTED = 730
+# Plaid asks for the whole update to restart when the data changes while paging.
+MUTATION_DURING_PAGINATION = "TRANSACTIONS_SYNC_MUTATION_DURING_PAGINATION"
+SYNC_ATTEMPTS = 3
 # The Plaid error codes this module acts on (spec 17).
 LOGIN_REQUIRED = "ITEM_LOGIN_REQUIRED"
-# The Flinks codes that mean the owner must connect the bank again (spec 17a, AD-146).
-FLINKS_LOGIN_CODES = frozenset({"INVALID_LOGIN", "DISABLED_LOGIN"})
+ITEM_NOT_FOUND = "ITEM_NOT_FOUND"
 
+# Plaid (type, subtype) -> our account type. Anything not listed is `other`.
+ACCOUNT_TYPES: dict[tuple[str, str | None], str] = {
+    ("depository", "checking"): "checking",
+    ("depository", "savings"): "savings",
+    ("credit", "credit card"): "credit_card",
+    ("credit", "line of credit"): "line_of_credit",
+    ("loan", "line of credit"): "line_of_credit",
+}
 
 # Types the dashboard's read router names through this module (AD-102); the
 # module's own functions stay public as before.
@@ -86,10 +81,6 @@ class ConnectionNotFoundError(Exception):
 
 class LoginRequiredError(Exception):
     """The bank still wants the owner to log in again (Plaid ITEM_LOGIN_REQUIRED)."""
-
-
-class ReconnectRequiredError(Exception):
-    """A Flinks connection has no update mode: disconnect it and connect again."""
 
 
 # What the owner sees about a connection (spec 17 door 3).
@@ -175,6 +166,20 @@ class TransactionPage:
     next_after: tuple[date, uuid.UUID] | None
 
 
+def account_type(plaid_type: str, plaid_subtype: str | None) -> str:
+    """Our account type for a Plaid type and subtype; `other` when there is no match."""
+    return ACCOUNT_TYPES.get((plaid_type, plaid_subtype), "other")
+
+
+def to_cents(amount: float | None) -> int | None:
+    """A Plaid amount in dollars as integer cents, rounded half-even; None stays None."""
+    if amount is None:
+        return None
+    # str() first: Decimal(1234.565) would carry the float's binary error.
+    cents = Decimal(str(amount)) * 100
+    return int(cents.quantize(Decimal(1), rounding=ROUND_HALF_EVEN))
+
+
 def _view(row: BankAccount) -> AccountView:
     return AccountView(
         id=row.id,
@@ -203,7 +208,7 @@ def _connection_view(
 ) -> ConnectionView:
     return ConnectionView(
         id=connection.id,
-        provider="flinks" if connection.provider == "flinks" else "plaid",
+        provider="plaid",
         institution_name=connection.institution_name,
         created_at=connection.created_at,
         accounts=sorted((_view(a) for a in accounts), key=lambda a: (a.name, a.id)),
@@ -241,16 +246,13 @@ def create_update_link_token(
     """A Plaid Link token in update mode, to repair the connection's bank login.
 
     Update mode takes the item's access token and no products (Plaid docs). Raises
-    `ConnectionNotFoundError`, `ReconnectRequiredError` for a Flinks connection, and
-    `PlaidError` when Plaid fails or times out.
+    `ConnectionNotFoundError`, and `PlaidError` when Plaid fails or times out.
     """
     connection = repository.get_connection(
         session, business_id=business_id, connection_id=connection_id
     )
     if connection is None:
         raise ConnectionNotFoundError
-    if connection.provider == "flinks":
-        raise ReconnectRequiredError
     return plaid.create_link_token(
         LinkTokenRequest(
             client_user_id=str(user_id),
@@ -268,26 +270,24 @@ def create_update_link_token(
 def _account(
     account: PlaidAccount, *, business_id: uuid.UUID, connection_id: uuid.UUID
 ) -> BankAccount:
-    return _account_row(
-        plaid_account(account), business_id=business_id, connection_id=connection_id
-    )
-
-
-def _account_row(
-    account: ReportedAccount, *, business_id: uuid.UUID, connection_id: uuid.UUID
-) -> BankAccount:
+    currency = account.iso_currency_code or account.unofficial_currency_code
+    if currency is None:
+        raise PlaidError(
+            error_type="INVALID_RESPONSE", error_code="NO_CURRENCY", request_id=None
+        )
+    type_ = account_type(account.type, account.subtype)
     return BankAccount(
         business_id=business_id,
         connection_id=connection_id,
         provider_account_id=account.account_id,
         name=account.name,
-        type=account.type,
+        type=type_,
         mask=account.mask,
-        currency=account.currency,
-        balance_cents=account.balance_cents,
-        available_cents=account.available_cents,
+        currency=currency,
+        balance_cents=to_cents(account.current),
+        available_cents=to_cents(account.available),
         # Checking counts as cash by default; savings waits for the owner (spec 13).
-        included=account.type == "checking" and account.currency == CASH_CURRENCY,
+        included=type_ == "checking" and currency == CASH_CURRENCY,
         is_primary=False,
     )
 
@@ -399,94 +399,6 @@ def connect_bank(
         "bank_connection.created",
         business_id=str(business_id),
         connection_id=str(view.id),
-        institution_id=institution_id,
-        account_count=len(view.accounts),
-    )
-    return view
-
-
-def flinks_item_id(login_id: str) -> str:
-    """A Flinks connection's `provider_item_id`; the loginId itself is a secret (AD-145)."""
-    return hashlib.sha256(login_id.encode()).hexdigest()
-
-
-def connect_flinks_bank(
-    session: Session,
-    flinks: FlinksClient,
-    *,
-    business_id: uuid.UUID,
-    user_id: uuid.UUID,
-    login_id: str,
-) -> ConnectionView:
-    """Store the bank a Flinks Connect login just added, its accounts and an audit entry.
-
-    Reads Flinks' cached accounts (no transactions: the first sync brings 365 days),
-    turns on Flinks' nightly refresh, and stores everything in one transaction with the
-    loginId encrypted. On a failure nothing is stored and the Flinks login is kept, so
-    the owner can retry with the same loginId. Raises `DuplicateBankError` when the
-    business already has this institution through Flinks, or the login is stored, and
-    `FlinksError` when Flinks fails or is still preparing the accounts. Commits.
-    """
-    try:
-        snapshot = flinks.accounts(
-            login_id, with_transactions=False, days="Days90", polls=CONNECT_POLLS
-        )
-        institution_id = snapshot.institution_id
-        if not institution_id:
-            raise FlinksError(http_status=None, flinks_code="NO_INSTITUTION")
-        if repository.has_institution(
-            session,
-            business_id=business_id,
-            provider="flinks",
-            institution_id=institution_id,
-        ):
-            raise DuplicateBankError
-        reported = [flinks_account(a) for a in snapshot.accounts]
-        try:
-            connection = repository.insert_connection(
-                session,
-                business_id=business_id,
-                provider="flinks",
-                provider_item_id=flinks_item_id(login_id),
-                provider_institution_id=institution_id,
-                institution_name=snapshot.institution_name,
-                access_token_ciphertext=encrypt_access_token(login_id),
-            )
-        except IntegrityError as exc:
-            if _violates(exc, INSTITUTION_INDEX) or _violates(exc, FLINKS_ITEM_INDEX):
-                raise DuplicateBankError from None
-            raise
-        rows = [
-            _account_row(a, business_id=business_id, connection_id=connection.id)
-            for a in reported
-        ]
-        repository.insert_accounts(session, rows)
-        _choose_primary(session, rows, business_id=business_id)
-        audit.record(
-            session,
-            action="bank_connection.created",
-            business_id=business_id,
-            actor_user_id=str(user_id),
-            target_type="bank_connection",
-            target_id=str(connection.id),
-            details={
-                "provider": "flinks",
-                "institution_id": institution_id,
-                "account_count": len(rows),
-            },
-        )
-        view = _connection_view(connection, rows)
-        # Last before the commit: a failure here stores nothing, and a retry turns it on.
-        flinks.enable_nightly_refresh(login_id)
-        session.commit()
-    except BaseException:
-        session.rollback()
-        raise
-    log.info(
-        "bank_connection.created",
-        business_id=str(business_id),
-        connection_id=str(view.id),
-        provider="flinks",
         institution_id=institution_id,
         account_count=len(view.accounts),
     )
@@ -662,24 +574,68 @@ def update_account(
     return view
 
 
-def _values(
-    transaction: ReportedTransaction, account: BankAccount
-) -> dict[str, object]:
+def _invalid(error_code: str) -> PlaidError:
+    return PlaidError(
+        error_type="INVALID_RESPONSE", error_code=error_code, request_id=None
+    )
+
+
+def _fetch_pages(
+    plaid: PlaidClient, access_token: str, cursor: str | None
+) -> list[SyncPage]:
+    """Every page of the update after `cursor`.
+
+    When Plaid reports that the data changed while paging, the whole update restarts
+    from `cursor`, up to `SYNC_ATTEMPTS` times (Plaid's documented rule).
+    """
+    for attempt in range(1, SYNC_ATTEMPTS + 1):
+        pages: list[SyncPage] = []
+        next_cursor = cursor
+        try:
+            while True:
+                page = plaid.sync_transactions(access_token, next_cursor)
+                pages.append(page)
+                next_cursor = page.next_cursor
+                if not page.has_more:
+                    return pages
+        except PlaidError as exc:
+            if exc.error_code != MUTATION_DURING_PAGINATION or attempt == SYNC_ATTEMPTS:
+                raise
+    raise AssertionError("unreachable")
+
+
+def _values(transaction: PlaidTransaction, account: BankAccount) -> dict[str, object]:
+    """A Plaid transaction in our terms: cents, money in positive, one currency code.
+
+    The only place a Plaid amount's sign is flipped (AGENTS.md).
+    """
+    currency = transaction.iso_currency_code or transaction.unofficial_currency_code
+    if currency is None:
+        raise _invalid("NO_CURRENCY")
+    cents = to_cents(transaction.amount)
+    assert cents is not None
+    counterparty = (
+        transaction.counterparties[0]
+        if transaction.counterparties
+        else transaction.merchant_name
+    )
     return {
         "business_id": account.business_id,
         "account_id": account.id,
-        "amount_cents": transaction.amount_cents,
-        "currency": transaction.currency,
+        "amount_cents": -cents,
+        "currency": currency,
         "date": transaction.date,
         "pending": transaction.pending,
-        "description": transaction.description,
-        "counterparty": transaction.counterparty,
+        "description": transaction.name,
+        "counterparty": counterparty,
         "category": transaction.category,
         "category_detailed": transaction.category_detailed,
     }
 
 
-def _apply(session: Session, connection: BankConnection, update: Update) -> SyncResult:
+def _apply(
+    session: Session, connection: BankConnection, pages: list[SyncPage]
+) -> SyncResult:
     business_id = connection.business_id
     accounts = {
         a.provider_account_id: a
@@ -688,30 +644,32 @@ def _apply(session: Session, connection: BankConnection, update: Update) -> Sync
         )
     }
     new_accounts: list[BankAccount] = []
-    for reported in update.accounts:
-        if reported.account_id not in accounts:
-            row = _account_row(
-                reported, business_id=business_id, connection_id=connection.id
-            )
-            # The owner decides whether an account found later counts as cash.
-            row.included = False
-            accounts[reported.account_id] = row
-            new_accounts.append(row)
+    for page in pages:
+        for reported in page.accounts:
+            if reported.account_id not in accounts:
+                row = _account(
+                    reported, business_id=business_id, connection_id=connection.id
+                )
+                # The owner decides whether an account found later counts as cash.
+                row.included = False
+                accounts[reported.account_id] = row
+                new_accounts.append(row)
     if new_accounts:
         repository.insert_accounts(session, new_accounts)
 
     added = modified = removed = 0
-    for batch in update.batches:
+    for page in pages:
+        changes = [*page.added, *page.modified]
         existing = repository.transactions_by_provider_id(
             session,
             business_id=business_id,
-            provider_transaction_ids=[t.transaction_id for t in batch.changes],
+            provider_transaction_ids=[t.transaction_id for t in changes],
         )
         replaced: list[str] = []
-        for transaction in batch.changes:
+        for transaction in changes:
             account = accounts.get(transaction.account_id)
             if account is None:
-                raise invalid_response("UNKNOWN_ACCOUNT")
+                raise _invalid("UNKNOWN_ACCOUNT")
             values = _values(transaction, account)
             stored = existing.get(transaction.transaction_id)
             if stored is None:
@@ -730,26 +688,27 @@ def _apply(session: Session, connection: BankConnection, update: Update) -> Sync
                 modified += 1
             # The posted version replaces its pending one, even when Plaid's removal
             # of the pending ID comes in a later page or not at all.
-            if transaction.replaces is not None:
-                replaced.append(transaction.replaces)
+            pending_id = transaction.pending_transaction_id
+            if pending_id is not None and pending_id != transaction.transaction_id:
+                replaced.append(pending_id)
         removed += repository.delete_transactions(
             session,
             business_id=business_id,
-            provider_transaction_ids=[*batch.removed, *replaced],
+            provider_transaction_ids=[*page.removed, *replaced],
         )
 
     balances_changed = bool(new_accounts)
-    latest = {a.account_id: a for a in update.accounts}
-    for reported in latest.values():
+    for reported in pages[-1].accounts:
         row = accounts[reported.account_id]
-        balance, available = reported.balance_cents, reported.available_cents
+        balance = to_cents(reported.current)
+        available = to_cents(reported.available)
         if (row.balance_cents, row.available_cents) != (balance, available):
             row.balance_cents = balance
             row.available_cents = available
             row.updated_at = func.now()
             balances_changed = True
 
-    connection.transactions_cursor = update.cursor
+    connection.transactions_cursor = pages[-1].next_cursor
     session.flush()
     return SyncResult(
         added=added,
@@ -809,11 +768,7 @@ def _relabel(session: Session, business_id: uuid.UUID, now: datetime) -> int:
 
 
 def _sync_locked(
-    session: Session,
-    plaid: PlaidClient,
-    connection: BankConnection,
-    now: datetime,
-    flinks: FlinksClient | None = None,
+    session: Session, plaid: PlaidClient, connection: BankConnection, now: datetime
 ) -> SyncResult:
     """Fetch and apply every change since the cursor, inside the caller's transaction.
 
@@ -823,13 +778,17 @@ def _sync_locked(
     sync that succeeds also clears the connection's run of failed nights (spec 15) and
     its login problem, and records `now` as when it last synced (spec 17).
     """
-    update = fetch(plaid, flinks, connection)
+    pages = _fetch_pages(
+        plaid,
+        decrypt_access_token(connection.access_token_ciphertext),
+        connection.transactions_cursor,
+    )
     repository.lock_accounts(session, business_id=connection.business_id)
-    result = _apply(session, connection, update)
+    result = _apply(session, connection, pages)
     result = replace(result, relabeled=_relabel(session, connection.business_id, now))
     connection.failed_nights = 0
     connection.login_required = False
-    connection.last_synced_at = synced_at(connection, update.refreshed_at, now)
+    connection.last_synced_at = now
     return result
 
 
@@ -864,15 +823,6 @@ def _announce(
         )
 
 
-def _wants_login(exc: Exception) -> bool:
-    """Whether a provider failure means the owner must log in to the bank again."""
-    if isinstance(exc, PlaidError):
-        return exc.error_code == LOGIN_REQUIRED
-    if isinstance(exc, FlinksError):
-        return exc.flinks_code in FLINKS_LOGIN_CODES
-    return False
-
-
 def sync_connection(
     session: Session,
     plaid: PlaidClient,
@@ -880,7 +830,6 @@ def sync_connection(
     business_id: uuid.UUID,
     connection_id: uuid.UUID,
     now: datetime | None = None,
-    flinks: FlinksClient | None = None,
 ) -> SyncResult:
     """Bring in every transaction and balance change since the connection's last sync.
 
@@ -892,9 +841,8 @@ def sync_connection(
     transaction, for the business-local date at `now` (default: the current time).
     Publishes `transactions.synced` after the commit when something changed. When Plaid
     answers that the bank wants a new login, records that on the connection, in a
-    transaction of its own, before raising. A Flinks connection syncs through `flinks`.
-    Commits the session. Raises `ConnectionNotFoundError`, and `PlaidError` or
-    `FlinksError` when the provider fails.
+    transaction of its own, before raising. Commits the session.
+    Raises `ConnectionNotFoundError`, and `PlaidError` when Plaid fails.
     """
     try:
         connection = repository.lock_connection(
@@ -902,13 +850,11 @@ def sync_connection(
         )
         if connection is None:
             raise ConnectionNotFoundError
-        result = _sync_locked(
-            session, plaid, connection, now or datetime.now(UTC), flinks
-        )
+        result = _sync_locked(session, plaid, connection, now or datetime.now(UTC))
         session.commit()
-    except (PlaidError, FlinksError) as exc:
+    except PlaidError as exc:
         session.rollback()
-        if _wants_login(exc):
+        if exc.error_code == LOGIN_REQUIRED:
             _record_login_required(
                 session, business_id=business_id, connection_id=connection_id
             )
@@ -921,11 +867,7 @@ def sync_connection(
 
 
 def sync_in_background(
-    plaid: PlaidClient,
-    *,
-    business_id: uuid.UUID,
-    connection_id: uuid.UUID,
-    flinks: FlinksClient | None = None,
+    plaid: PlaidClient, *, business_id: uuid.UUID, connection_id: uuid.UUID
 ) -> None:
     """`sync_connection` in a session of its own, for work that runs after a response.
 
@@ -936,11 +878,7 @@ def sync_in_background(
     with get_sessionmaker()() as session:
         try:
             sync_connection(
-                session,
-                plaid,
-                business_id=business_id,
-                connection_id=connection_id,
-                flinks=flinks,
+                session, plaid, business_id=business_id, connection_id=connection_id
             )
         except ConnectionNotFoundError:
             log.info(
@@ -948,8 +886,15 @@ def sync_in_background(
                 business_id=str(business_id),
                 connection_id=str(connection_id),
             )
-        except (PlaidError, FlinksError) as exc:
-            _log_failure(business_id, connection_id, exc)
+        except PlaidError as exc:
+            log.error(
+                "bank_sync.sync_failed",
+                business_id=str(business_id),
+                connection_id=str(connection_id),
+                error_type=exc.error_type,
+                error_code=exc.error_code,
+                request_id=exc.request_id,
+            )
 
 
 def connection_for_item(
@@ -1008,18 +953,11 @@ def _log_failure(
     business_id: uuid.UUID, connection_id: uuid.UUID, exc: Exception
 ) -> None:
     # Never the exception text: it can carry provider data.
-    details: dict[str, object]
     if isinstance(exc, PlaidError):
         details = {
             "error_type": exc.error_type,
             "error_code": exc.error_code,
             "request_id": exc.request_id,
-        }
-    elif isinstance(exc, FlinksError):
-        details = {
-            "provider": "flinks",
-            "http_status": exc.http_status,
-            "error_code": exc.flinks_code,
         }
     else:
         details = {"error_type": type(exc).__name__}
@@ -1032,11 +970,7 @@ def _log_failure(
 
 
 def _nightly_sync(
-    plaid: PlaidClient,
-    flinks: FlinksClient | None,
-    candidate: BankConnection,
-    time_zone: str,
-    now: datetime,
+    plaid: PlaidClient, candidate: BankConnection, time_zone: str, now: datetime
 ) -> Literal["synced", "failed", "skipped_locked", "not_due"]:
     """One connection's nightly sync, its outcome stored under the connection's lock."""
     business_id, connection_id = candidate.business_id, candidate.id
@@ -1053,11 +987,11 @@ def _nightly_sync(
             # A savepoint: a failed sync rolls back to here and keeps the lock, so the
             # failure is recorded before any other run can take the connection.
             with session.begin_nested():
-                result = _sync_locked(session, plaid, connection, now, flinks)
+                result = _sync_locked(session, plaid, connection, now)
                 _end_night(connection, night)
         except Exception as exc:  # noqa: BLE001 - any failure is one failed attempt
             _log_failure(business_id, connection_id, exc)
-            if _wants_login(exc):
+            if isinstance(exc, PlaidError) and exc.error_code == LOGIN_REQUIRED:
                 connection.login_required = True
             attempts = connection.nightly_attempts + 1
             if attempts > len(RETRY_DELAYS):
@@ -1073,16 +1007,13 @@ def _nightly_sync(
     return "synced"
 
 
-def run_nightly_syncs(
-    plaid: PlaidClient, now: datetime, flinks: FlinksClient | None = None
-) -> NightlyCounts:
+def run_nightly_syncs(plaid: PlaidClient, now: datetime) -> NightlyCounts:
     """Sync every connection whose business night is due at `now`, once per night.
 
     A connection is due from 02:00 in its business's time zone until it has synced that
     night, starting with the first night after it was connected. A failed sync is
     retried 1, 2 and 4 hours later; after the fourth failure the night counts as failed.
     A connection another sync holds is skipped and stays due. Safe to run twice at once.
-    Flinks connections sync through `flinks`, from Flinks' nightly-refreshed cache.
     """
     with get_sessionmaker()() as session:
         candidates = repository.nightly_candidates(session)
@@ -1097,7 +1028,7 @@ def run_nightly_syncs(
     ]
     counts = NightlyCounts(due=len(due))
     for candidate, time_zone in due:
-        outcome = _nightly_sync(plaid, flinks, candidate, time_zone, now)
+        outcome = _nightly_sync(plaid, candidate, time_zone, now)
         if outcome == "synced":
             counts.synced += 1
         elif outcome == "failed":
@@ -1167,14 +1098,12 @@ def repair_connection(
     business_id: uuid.UUID,
     connection_id: uuid.UUID,
     now: datetime | None = None,
-    flinks: FlinksClient | None = None,
 ) -> ConnectionView:
     """Sync the connection after the owner logged in again through Link's update mode.
 
     The sync proves the repair: it clears the login problem only when it succeeds.
     Commits the session. Raises `ConnectionNotFoundError`, `LoginRequiredError` when the
-    bank still wants a login, and `PlaidError` or `FlinksError` when the provider fails
-    otherwise.
+    bank still wants a login, and `PlaidError` when Plaid fails otherwise.
     """
     try:
         sync_connection(
@@ -1183,10 +1112,9 @@ def repair_connection(
             business_id=business_id,
             connection_id=connection_id,
             now=now,
-            flinks=flinks,
         )
-    except (PlaidError, FlinksError) as exc:
-        if _wants_login(exc):
+    except PlaidError as exc:
+        if exc.error_code == LOGIN_REQUIRED:
             raise LoginRequiredError from None
         raise
     connection = repository.get_connection(
@@ -1210,9 +1138,8 @@ def disconnect_bank(
     connection_id: uuid.UUID,
     user_id: uuid.UUID,
     now: datetime | None = None,
-    flinks: FlinksClient | None = None,
 ) -> None:
-    """Remove the bank at its provider, then delete its token, accounts and transactions.
+    """Remove the bank at Plaid, then delete its token, accounts and transactions.
 
     Waits for a sync of the connection in progress (the connection lock, then the
     business's accounts, as every sync takes them). Plaid's item is removed first, so a
@@ -1229,7 +1156,11 @@ def disconnect_bank(
         )
         if connection is None:
             raise ConnectionNotFoundError
-        remove_at_provider(plaid, flinks, connection)
+        try:
+            plaid.remove_item(decrypt_access_token(connection.access_token_ciphertext))
+        except PlaidError as exc:
+            if exc.error_code != ITEM_NOT_FOUND:
+                raise
         institution_id = connection.provider_institution_id
         accounts = repository.lock_accounts(session, business_id=business_id)
         removed_accounts = [a for a in accounts if a.connection_id == connection_id]

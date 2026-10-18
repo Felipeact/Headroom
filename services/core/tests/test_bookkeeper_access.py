@@ -35,7 +35,6 @@ OWNER_ONLY = {
     ("POST", "/invitations"),
     ("DELETE", "/members/{user_id}"),
     ("POST", "/bank/link-token"),
-    ("POST", "/bank/flinks/connect-url"),
     ("POST", "/bank/connections"),
     ("GET", "/bank/connections"),
     ("GET", "/bank/transactions"),
