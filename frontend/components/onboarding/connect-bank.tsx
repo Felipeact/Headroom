@@ -2,8 +2,10 @@
 
 import { CircleAlert, Eye, Lock, Power, type LucideIcon } from "lucide-react"
 import { useTranslations } from "next-intl"
+import { FlinksConnect } from "@/components/onboarding/flinks-connect"
 import { useConnectBank } from "@/components/onboarding/use-connect-bank"
 import { Button } from "@/components/ui/button"
+import type { FlinksConnect as FlinksConnectInfo } from "@/lib/api/bank"
 
 const TRUST_ITEMS = [
   { icon: Eye, title: "Bank.readOnlyTitle", body: "Bank.readOnlyBody" },
@@ -13,8 +15,18 @@ const TRUST_ITEMS = [
 
 // Onboarding step 3, from design/mockups/onboarding-3-connect-bank.dc.html (spec 12). The owner
 // logs in on the bank's own screen inside Plaid Link; only the public token comes back here.
-export function ConnectBank({ businessId, linkToken }: { businessId: string; linkToken: string }) {
+// Where the API offers Flinks (spec 17a), the owner can connect through it instead.
+export function ConnectBank({
+  businessId,
+  linkToken,
+  flinks = null,
+}: {
+  businessId: string
+  linkToken: string
+  flinks?: FlinksConnectInfo | null
+}) {
   const t = useTranslations("Onboarding")
+  const providers = useTranslations("BankProviders")
   const { open, ready, pending, error } = useConnectBank(businessId, linkToken)
 
   return (
@@ -39,7 +51,10 @@ export function ConnectBank({ businessId, linkToken }: { businessId: string; lin
           </li>
         ))}
       </ul>
-      <p className="text-[13px] text-ink-3">{t("Bank.provider")}</p>
+      <p className="text-[13px] text-ink-3">{t(flinks ? "Bank.providerBoth" : "Bank.provider")}</p>
+      {/* Plaid cannot finish RBC sign-ins that use an authenticator app; a text-message code
+          works (Plaid docs). With Flinks offered, its own hint covers RBC instead. */}
+      {!flinks && <p className="text-[13px] leading-[1.45] text-ink-3">{t("Bank.rbcHint")}</p>}
       <div className="mt-auto flex flex-col gap-3">
         <div role="alert">
           {error && (
@@ -56,8 +71,16 @@ export function ConnectBank({ businessId, linkToken }: { businessId: string; lin
           onClick={() => open()}
           className="min-h-[52px] text-base"
         >
-          {pending ? t("Bank.connecting") : t("Bank.connect")}
+          {pending ? t("Bank.connecting") : flinks ? providers("plaid") : t("Bank.connect")}
         </Button>
+        {flinks && (
+          <FlinksConnect
+            businessId={businessId}
+            flinks={flinks}
+            disabled={pending}
+            className="min-h-[52px] text-base"
+          />
+        )}
       </div>
     </div>
   )

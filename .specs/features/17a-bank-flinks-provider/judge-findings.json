@@ -1,0 +1,38 @@
+{
+  "language": "en",
+  "round": 1,
+  "carryover": {"blocker": 0, "should-fix": 0},
+  "verdict": "COMMENT",
+  "summary": "## TL;DR\nThe diff d49f5fd..HEAD adds Flinks as a second bank provider next to Plaid, chosen per connection. Verdict COMMENT: two should-fix findings (provider logic bloating service.py, and a spent single-use Flinks token reused after a failed connect) plus one nit. All three were fixed in the working tree right after this review.\n\n## Findings\n| ID | Severity | Location | Summary |\n|---|---|---|---|\n| F1 | should-fix | services/core/app/modules/bank_sync/service.py | Provider adapters and five provider branches grew service.py from 1216 to 1581 lines |\n| F2 | should-fix | frontend/components/onboarding/use-flinks-connect.ts | A failed Flinks connect reopens the iframe with its spent single-use token |\n| F3 | nit | services/core/tests/test_bank_connect_flinks.py | Fixture imports force a noqa F811 on every Flinks test |\n\n## Promote to lint rule\n- F3: flag `# noqa: F811` on test parameters whose fixture could be imported once in tests/conftest.py. Sketch: a ruff per-file check, or a grep in CI that counts F811 suppressions in tests/ and fails above a threshold.\n\n## Research log\n- https://docs.flinks.com/api/authorize/endpoints/generate-authorize-token.md : the authorize token is single-use and expires after 30 minutes of inactivity; supports F2.\n- https://docs.flinks.com/guides/connect/flinks-connect/use-event-listener.md : the REDIRECT message carries `url` with `loginId`; the origin check in use-flinks-connect.ts matches this shape.\n- https://docs.flinks.com/api/connect/endpoints/account-linking/get-accounts-detail.md : `x-api-key` header, `WithAccountIdentity` and `WithKYC` flags, 202 then async polling; the client follows it.\n- https://docs.flinks.com/api/connect/endpoints/account-linking/delete-card.md : `DeleteCard/{loginId}` path, which is why the redactor needs the DeleteCard pattern.\n- https://docs.flinks.com/guides/connect/flinks-connect/test-users.md : sandbox users used by the flinks_sandbox test.\n\n## Checks run\n- API: ruff format and ruff check clean, mypy clean (76 files), pytest 1183 passed, 6 deselected (full suite at 93fb8fb); bank and Flinks subset after fixes: 337 passed and 61 passed.\n- Web: eslint clean, tsc clean, vitest 433 passed, next build compiled.\n- Playwright: C43 passed, flinks layout keyboard and axe skipped (no Flinks credentials).\n- scan_bypasses.py: 28 candidates. 24 are noqa F401/F811 fixture imports (F3); 1 test.skip with a stated reason (credential blocker, accepted); 2 `as unknown as` mock casts matching existing test precedent; 1 `type: ignore[misc]` copied from tests/test_nightly_sync.py; 1 `time.sleep(10)` in the sandbox test following the documented Flinks 10 s polling interval.\n\n## Skipped files\ncontracts/openapi.json, frontend/lib/api/schema.d.ts (generated); .specs/ and context/ documents.",
+  "findings": [
+    {
+      "id": "F1",
+      "path": "services/core/app/modules/bank_sync/service.py",
+      "line": 1042,
+      "severity": "should-fix",
+      "body": "🟠 The Plaid and Flinks converters, Plaid paging, fetch dispatch and at-provider removal all sit in service.py (services/core/app/modules/bank_sync/service.py:1042, :1064, :1472), growing it from 1216 to 1581 lines. Fix: move them to a `bank_sync/providers.py` that returns one `Update`, so service.py only applies it and the provider branches live in one module.",
+      "evidence": [
+        {"type": "internal", "ref": "services/core/app/modules/bank_sync/service.py:1042"},
+        {"type": "internal", "ref": "services/core/app/modules/bank_sync/service.py:1472"}
+      ]
+    },
+    {
+      "id": "F2",
+      "path": "frontend/components/onboarding/use-flinks-connect.ts",
+      "line": 34,
+      "severity": "should-fix",
+      "body": "🟠 After a REDIRECT, a failed `connectFlinksBank` keeps the page, so reopening the dialog loads the same `authorizeToken`, which Flinks makes single-use (frontend/components/onboarding/use-flinks-connect.ts:34). The refresh on close is skipped because `loginId.current` is set. Fix: call `router.refresh()` after every submit, one line.",
+      "evidence": [
+        {"type": "internal", "ref": "frontend/components/onboarding/use-flinks-connect.ts:34"},
+        {"type": "external", "ref": "https://docs.flinks.com/api/authorize/endpoints/generate-authorize-token.md"}
+      ]
+    },
+    {
+      "id": "F3",
+      "path": "services/core/tests/test_bank_connect_flinks.py",
+      "line": 145,
+      "severity": "nit",
+      "body": "🟡 Importing the `flinks` fixture per module forces `# noqa: F811` on each test (services/core/tests/test_bank_connect_flinks.py:145). Import it once in tests/conftest.py, as `mail` is."
+    }
+  ]
+}

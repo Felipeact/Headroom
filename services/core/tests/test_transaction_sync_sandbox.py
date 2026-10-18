@@ -17,6 +17,7 @@ from app.main import app
 from app.modules.bank_sync import service
 from app.modules.bank_sync.models import BankConnection, BankTransaction
 from app.modules.bank_sync.plaid import get_plaid_client
+from app.modules.bank_sync.providers import to_cents
 from app.modules.bank_sync.tokens import decrypt_access_token
 from app.settings import get_settings
 from tests.test_bank_connect_sandbox import sandbox_public_token
@@ -32,7 +33,7 @@ READY_SECONDS = 180
 def stored_amounts(business_id: uuid.UUID) -> dict[str, int]:
     with get_sessionmaker()() as session:
         return {
-            t.plaid_transaction_id: t.amount_cents
+            t.provider_transaction_id: t.amount_cents
             for t in session.scalars(
                 select(BankTransaction).where(
                     BankTransaction.business_id == business_id
@@ -101,7 +102,7 @@ def test_sandbox_sync_signs_amounts_and_repeats_cleanly() -> None:
         stored = stored_amounts(business_id)
         assert set(stored) == set(plaid_amounts)
         for transaction_id, cents in stored.items():
-            assert cents == -(service.to_cents(plaid_amounts[transaction_id]) or 0), (
+            assert cents == -(to_cents(plaid_amounts[transaction_id]) or 0), (
                 transaction_id
             )
         assert any(cents > 0 for cents in stored.values())

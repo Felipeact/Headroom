@@ -765,7 +765,7 @@ def test_params_hold_no_account(mail: Mail) -> None:
     stored = json.dumps(params)
     (sent,) = [e for e in mail.sender.sent if e.subject == SUBJECT]
     forbidden = [str(a.id) for a in accounts]
-    forbidden += [a.plaid_account_id for a in accounts]
+    forbidden += [a.provider_account_id for a in accounts]
     forbidden += [a.mask for a in accounts if a.mask]
     forbidden += [str(s) for s in source_ids] + [sample.owner_clerk_id]
     for value in forbidden:

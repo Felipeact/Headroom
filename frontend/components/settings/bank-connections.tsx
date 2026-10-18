@@ -4,11 +4,13 @@ import { useState, useTransition } from "react"
 import { CircleAlert, Landmark, Lock, Plus } from "lucide-react"
 import { useTranslations } from "next-intl"
 import { updateBankAccount, type AccountChange } from "@/app/(app)/settings/banks/actions"
+import { FlinksConnect } from "@/components/onboarding/flinks-connect"
 import { useConnectBank } from "@/components/onboarding/use-connect-bank"
 import { BankCard } from "@/components/settings/bank-card"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent } from "@/components/ui/card"
 import { Toaster } from "@/components/ui/sonner"
+import type { FlinksConnect as FlinksConnectInfo } from "@/lib/api/bank"
 import type { components } from "@/lib/api/schema"
 
 type Connection = components["schemas"]["Connection"]
@@ -21,6 +23,7 @@ export function BankConnections({
   now,
   connections,
   linkToken,
+  flinks = null,
   updateTokens,
 }: {
   businessId: string
@@ -28,9 +31,12 @@ export function BankConnections({
   now: string
   connections: Connection[]
   linkToken: string | null
+  // Offered next to Plaid when the API has Flinks (spec 17a).
+  flinks?: FlinksConnectInfo | null
   updateTokens: Record<string, string | null>
 }) {
   const t = useTranslations("Settings.Banks")
+  const providers = useTranslations("BankProviders")
   const [saveFailed, setSaveFailed] = useState(false)
   const [saving, startSaving] = useTransition()
   const connect = useConnectBank(businessId, linkToken ?? "", "/settings/banks")
@@ -51,7 +57,10 @@ export function BankConnections({
   }
 
   const alert = saveFailed ? t("errors.saveFailed") : connect.error ? t(`errors.${connect.error}`) : null
-  const connectLabel = connect.pending ? t("connecting") : null
+  const connectLabel = connect.pending ? t("connecting") : flinks ? providers("plaid") : null
+  const flinksAction = flinks && (
+    <FlinksConnect businessId={businessId} flinks={flinks} returnTo="/settings/banks" disabled={busy} />
+  )
 
   return (
     <>
@@ -74,6 +83,7 @@ export function BankConnections({
           </Button>
         )}
       </div>
+      {connections.length > 0 && flinksAction}
 
       <div role="alert">
         {alert && (
@@ -98,6 +108,7 @@ export function BankConnections({
             >
               {connectLabel ?? t("connect")}
             </Button>
+            {flinksAction}
           </CardContent>
         </Card>
       ) : (

@@ -9,7 +9,7 @@ import type { components } from '@/lib/api/schema'
 import messages from '@/messages/en.json'
 
 vi.mock('@/app/onboarding/accounts/actions', () => ({ updateAccount: vi.fn() }))
-vi.mock('@/app/onboarding/bank/actions', () => ({ connectBank: vi.fn() }))
+vi.mock('@/app/onboarding/bank/actions', () => ({ connectBank: vi.fn(), connectFlinksBank: vi.fn() }))
 const link = vi.hoisted(() => ({
   open: vi.fn(),
   ready: true,
@@ -64,6 +64,8 @@ const LINE = account('Line of credit', {
 function bank(name: string, accounts: Account[], id = `c-${name}`): Connection {
   return {
     id,
+    provider: 'plaid',
+
     institution_name: name,
     created_at: '2026-10-04T15:00:00Z',
     accounts,
@@ -318,5 +320,38 @@ describe('choose accounts view', () => {
 
     expect(push).not.toHaveBeenCalled()
     expect(screen.getByRole('alert').textContent).toContain(ACCOUNTS.errors.noneIncluded)
+  })
+})
+
+describe('choose accounts provider choice (spec 17a)', () => {
+  const P = messages.BankProviders
+  const FLINKS = {
+    connect_url: 'https://toolbox-iframe.private.fin.ag/v2/?authorizeToken=token-1',
+    origin: 'https://toolbox-iframe.private.fin.ag',
+  }
+
+  test('provider choice: with Flinks, connect another bank through either provider', () => {
+    render(
+      <NextIntlClientProvider locale="en" messages={messages}>
+        <ChooseAccounts businessId={BUSINESS} linkToken="link-sandbox-123" flinks={FLINKS} connections={[HARBOR]} />
+      </NextIntlClientProvider>,
+    )
+
+    const plaid = screen.getByRole('button', { name: P.plaid })
+    const flinks = screen.getByRole('button', { name: P.flinks })
+    const continueButton = screen.getByRole('button', { name: ACCOUNTS.continue })
+    expect(follows(plaid, flinks)).toBe(true)
+    expect(follows(flinks, continueButton)).toBe(true)
+    expect(screen.getByText(P.hint)).toBeTruthy()
+    expect(screen.queryByRole('button', { name: ACCOUNTS.connectAnother })).toBeNull()
+    fireEvent.click(plaid)
+    expect(link.open).toHaveBeenCalledTimes(1)
+  })
+
+  test('provider choice: without Flinks, the one "Connect another bank" action', () => {
+    renderView()
+
+    expect(screen.getByRole('button', { name: ACCOUNTS.connectAnother })).toBeTruthy()
+    expect(screen.queryByRole('button', { name: P.flinks })).toBeNull()
   })
 })

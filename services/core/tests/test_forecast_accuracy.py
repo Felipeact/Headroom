@@ -100,7 +100,7 @@ def add_tx(cash: Cash, account_id: uuid.UUID, cents: int, day: date) -> None:
             BankTransaction(
                 business_id=uuid.UUID(cash.business_id),
                 account_id=account_id,
-                plaid_transaction_id=f"accuracy-{uuid.uuid4().hex}",
+                provider_transaction_id=f"accuracy-{uuid.uuid4().hex}",
                 amount_cents=cents,
                 currency="CAD",
                 date=day,

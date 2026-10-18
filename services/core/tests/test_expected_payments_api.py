@@ -86,7 +86,7 @@ def cash_business() -> Cash:
     connection = make_connection(business_id, [operating, reserve, visa])
     with get_sessionmaker()() as session:
         rows = {
-            a.plaid_account_id: a
+            a.provider_account_id: a
             for a in session.scalars(
                 select(BankAccount).where(
                     BankAccount.business_id == uuid.UUID(business_id)

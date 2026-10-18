@@ -107,3 +107,8 @@ Context used per request, measured against a context window of about 250,000 tok
 | Spec 33: signed-in CSP pass (embedded Postgres), 2FA table, incident rehearsal and plan fixes, decision log | ~95,000 (~38%) | High (smart zone) |
 | Spec 33: verifier rounds 1-3 (separate contexts), the-judge review, F1-F4 fixes, mark Done | ~150,000 (~60%) | Medium (attention degrades) |
 | Spec 34: plan (no domain, Plaid Trial research), checks, local build (alerts, IaC, credential check, runbook) | ~140,000 (~56%) | Medium (attention degrades) |
+| Spec 17a: Flinks provider plan (Flinks docs research), checks | ~75,000 (~30%) | High (smart zone) |
+| Spec 17a: build (schema rename, Flinks client, service dispatch, API, web), proofs, e2e pass | ~150,000 (~60%) | Medium (attention degrades) |
+| Spec 17a: verifier round 1 (separate context) | ~177,000 (~71%) | Low (past 60%) |
+| Spec 17a: round-1 fixes (Sentry redaction, parsing, tests), verifier round 2 (separate context, ~128,000) | ~60,000 (~24%) | High (smart zone) |
+| Spec 17a: the-judge review and fixes (providers.py extraction, token refresh, fixtures) | ~40,000 (~16%) | High (smart zone) |

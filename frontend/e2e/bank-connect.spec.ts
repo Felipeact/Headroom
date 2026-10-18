@@ -79,3 +79,32 @@ test('C43 layout keyboard and axe', async ({ page }) => {
     plaidLink(page).getByRole('button', { name: 'Continue without phone number' }),
   ).toBeVisible({ timeout: 30_000 })
 })
+
+// Spec 17a C37: the same checks with Flinks offered. It needs the API to run with the Flinks
+// sandbox settings (FLINKS_* in services/core/.env.local); without them the API answers 404 and
+// step 3 shows Plaid alone, so the test is skipped as blocked (spec 17a open question 1).
+test('flinks layout keyboard and axe', async ({ page }) => {
+  const flinksButton = page.getByRole('button', { name: 'Connect with Flinks' })
+  await page.setViewportSize({ width: 375, height: 812 })
+  await page.goto(STEP)
+  await expect(page.getByRole('button', { name: 'Connect with Plaid' }).or(connectButton(page))).toBeVisible()
+  test.skip((await flinksButton.count()) === 0, 'Flinks is not configured: spec 17a open question 1')
+
+  expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBeLessThanOrEqual(375)
+  for (const button of [page.getByRole('button', { name: 'Connect with Plaid' }), flinksButton]) {
+    expect((await button.boundingBox())?.height ?? 0).toBeGreaterThanOrEqual(44)
+  }
+  expect((await new AxeBuilder({ page }).analyze()).violations).toEqual([])
+
+  await tabTo(page, flinksButton)
+  await page.keyboard.press('Enter')
+  const dialog = page.getByRole('dialog', { name: 'Connect with Flinks' })
+  await expect(dialog).toBeVisible()
+  await expect(dialog.locator('iframe[title="Flinks Connect"]')).toBeVisible()
+  expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBeLessThanOrEqual(375)
+  expect((await new AxeBuilder({ page }).include('[role="dialog"]').analyze()).violations).toEqual([])
+
+  await page.keyboard.press('Escape')
+  await expect(dialog).toBeHidden()
+  await expect(flinksButton).toBeFocused()
+})
