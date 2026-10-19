@@ -330,14 +330,15 @@ class HttpxYodleeClient:
     def institution_name(self, login_name: str, provider_id: str) -> str:
         token, _ = self._token(login_name)
         body = self._send("GET", f"/providers/{provider_id}", token=token)
-        providers = body.get("provider")
-        if (
-            not isinstance(providers, list)
-            or not providers
-            or not providers[0].get("name")
-        ):
-            raise YodleeError(http_status=None, error_code="INVALID_RESPONSE")
-        return str(providers[0]["name"])
+        with _parsing():
+            providers = body.get("provider")
+            if (
+                not isinstance(providers, list)
+                or not providers
+                or not providers[0].get("name")
+            ):
+                raise YodleeError(http_status=None, error_code="INVALID_RESPONSE")
+            return str(providers[0]["name"])
 
     def accounts(self, login_name: str, provider_account_id: str) -> list[PlaidAccount]:
         token, _ = self._token(login_name)
@@ -372,10 +373,11 @@ class HttpxYodleeClient:
                     "top": TRANSACTIONS_PAGE_SIZE,
                 },
             )
-            page = body.get("transaction") or []
-            if not page:
-                return found
-            skip += len(page)
+            with _parsing():
+                page = body.get("transaction") or []
+                if not page:
+                    return found
+                skip += len(page)
             with _parsing():
                 found.extend(
                     _transaction(t)

@@ -484,6 +484,29 @@ def _remove_new_provider_account(
         )
 
 
+def _is_ours_to_delete(
+    session: Session,
+    exc: BaseException,
+    business_id: uuid.UUID,
+    provider_account_id: str,
+) -> bool:
+    """Whether a failed connect may delete the provider account it was handed at Yodlee.
+
+    Never when this account is already stored (a racing connect won), and never on the
+    shared sandbox user, where the account may belong to another business.
+    """
+    if isinstance(exc, _ProviderAccountStoredError):
+        return False
+    if get_settings().yodlee_test_login_name is not None:
+        return False
+    return not repository.has_provider_item(
+        session,
+        business_id=business_id,
+        provider="yodlee",
+        provider_item_id=provider_account_id,
+    )
+
+
 def connect_yodlee_bank(
     session: Session,
     yodlee: YodleeClient,
@@ -558,7 +581,7 @@ def connect_yodlee_bank(
         session.commit()
     except BaseException as exc:
         session.rollback()
-        if not isinstance(exc, _ProviderAccountStoredError):
+        if _is_ours_to_delete(session, exc, business_id, provider_account_id):
             _remove_new_provider_account(
                 yodlee, login_name, provider_account_id, business_id=business_id
             )
@@ -1412,11 +1435,18 @@ def disconnect_bank(
             raise ConnectionNotFoundError
         if connection.provider == "yodlee":
             if yodlee is None:
-                raise YodleeError(http_status=None, error_code="NOT_CONFIGURED")
-            yodlee.delete_provider_account(
-                decrypt_access_token(connection.access_token_ciphertext),
-                connection.provider_item_id,
-            )
+                # Yodlee is switched off: the owner can still remove the bank here. The
+                # provider account stays at Yodlee until someone deletes it by hand.
+                log.error(
+                    "bank_connection.orphaned",
+                    business_id=str(business_id),
+                    provider_item_id=connection.provider_item_id,
+                )
+            else:
+                yodlee.delete_provider_account(
+                    decrypt_access_token(connection.access_token_ciphertext),
+                    connection.provider_item_id,
+                )
         else:
             try:
                 plaid.remove_item(

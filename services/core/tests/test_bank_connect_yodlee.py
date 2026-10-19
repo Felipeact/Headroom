@@ -2,13 +2,19 @@
 
 # ruff: noqa: F811
 
+import json
 import uuid
 from collections.abc import Callable, Iterator
 from typing import Any
 
 import pytest
+import sentry_sdk
 from fastapi.testclient import TestClient
+from sentry_sdk.envelope import Envelope
+from sentry_sdk.transport import Transport
+from sentry_sdk.types import Event
 
+from app import monitoring
 from app.main import app
 from app.modules.bank_sync import repository
 from app.modules.bank_sync.tokens import decrypt_access_token
@@ -28,6 +34,7 @@ from tests.test_bank_connect import (  # noqa: F401  (pytest fixtures)
 from tests.test_bookkeeper_access import add_bookkeeper
 from tests.test_businesses import Caller
 from tests.yodlee_support import (  # noqa: F401  (pytest fixtures)
+    ACCESS_TOKEN,
     CONFIG_NAME,
     FASTLINK_URL,
     FakeYodlee,
@@ -481,8 +488,15 @@ def test_connect_race_on_the_unique_index_keeps_it_at_yodlee(
     owner, business_id = owner_a
     pa = new_provider_account()
     assert yconnect(owner, business_id, pa).status_code == 201
-    monkeypatch.setattr(repository, "has_provider_item", lambda *a, **k: False)
-    monkeypatch.setattr(repository, "has_institution", lambda *a, **k: False)
+    # Only the pre-check misses it; the institution check and the index see the first.
+    real = repository.has_provider_item
+    calls: list[int] = []
+
+    def miss_once(*args: Any, **kwargs: Any) -> bool:
+        calls.append(1)
+        return False if len(calls) == 1 else real(*args, **kwargs)
+
+    monkeypatch.setattr(repository, "has_provider_item", miss_once)
 
     again = yconnect(owner, business_id, pa)
 
@@ -555,3 +569,100 @@ def test_repair_and_disconnect_over_http(
     gone = client.delete(path, headers=owner.headers)
     assert gone.status_code == 204
     assert stored(business_id)[0] == []
+
+
+def test_shared_sandbox_user_never_deletes_a_provider_account(
+    owner_a: tuple[Caller, str],
+    owner_b: tuple[Caller, str],
+    fake: FakePlaid,
+    yodlee: FakeYodlee,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    """With one test user for every business, a failed connect cannot tell whose account it is."""
+    monkeypatch.setenv("YODLEE_TEST_LOGIN_NAME", "sbMemTest1")
+    get_settings.cache_clear()
+    owner, business_id = owner_a
+    stranger, stranger_business = owner_b
+    pa_a = new_provider_account()
+    assert yconnect(owner, business_id, pa_a).status_code == 201
+    # B already has this institution, so the duplicate comes from the institution check.
+    assert yconnect(stranger, stranger_business).status_code == 201
+
+    response = yconnect(stranger, stranger_business, pa_a)
+
+    assert response.status_code == 409
+    assert yodlee.deleted == []
+
+
+def test_connect_yodlee_off_is_404(
+    owner_a: tuple[Caller, str], fake: FakePlaid, yodlee: FakeYodlee
+) -> None:
+    owner, business_id = owner_a
+    app.dependency_overrides[get_yodlee_client] = lambda: None
+
+    response = yconnect(owner, business_id)
+
+    assert response.status_code == 404
+    assert stored(business_id) == ([], [])
+
+
+class FakeTransport(Transport):
+    def __init__(self) -> None:
+        super().__init__()
+        self.events: list[Event] = []
+
+    def capture_envelope(self, envelope: Envelope) -> None:
+        for item in envelope.items:
+            event = item.get_event()
+            if event is not None:
+                self.events.append(event)
+
+
+def test_no_yodlee_secret_in_logs_or_sentry(
+    owner_a: tuple[Caller, str],
+    fake: FakePlaid,
+    yodlee: FakeYodlee,
+    monkeypatch: pytest.MonkeyPatch,
+    capsys: pytest.CaptureFixture[str],
+) -> None:
+    """C18: after fastlink, connect, a Yodlee failure and a stray 500, no secret is out."""
+    secret, admin = "yodlee-client-secret-VALUE", "admin-login-VALUE_ADMIN"
+    monkeypatch.setenv("YODLEE_CLIENT_SECRET", secret)
+    monkeypatch.setenv("YODLEE_ADMIN_LOGIN_NAME", admin)
+    transport = FakeTransport()
+    real_init: Callable[..., Any] = sentry_sdk.init
+
+    def init_with_fake_transport(*args: Any, **kwargs: Any) -> Any:
+        return real_init(*args, transport=transport, **kwargs)
+
+    monkeypatch.setattr(monitoring.sentry_sdk, "init", init_with_fake_transport)
+    monkeypatch.setenv("SENTRY_DSN", "https://public@o0.ingest.sentry.io/0")
+    get_settings.cache_clear()
+    owner, business_id = owner_a
+    try:
+        with TestClient(app, raise_server_exceptions=False) as using:
+            capsys.readouterr()
+            using.post(fastlink_path(business_id), json={}, headers=owner.headers)
+            using.post(
+                connections_path(business_id),
+                json={"provider": "yodlee", "provider_account_id": "pa-secret-1"},
+                headers=owner.headers,
+            )
+            yodlee.fail["launch"] = YodleeError(http_status=500, error_code="Y902")
+            using.post(fastlink_path(business_id), json={}, headers=owner.headers)
+            # A stray exception in the client: a 500 that Sentry captures with locals.
+            yodlee.fail["launch"] = RuntimeError("boom")  # type: ignore[assignment]
+            using.post(fastlink_path(business_id), json={}, headers=owner.headers)
+        sentry_sdk.flush()
+    finally:
+        sentry_sdk.get_global_scope().set_client(None)
+        sentry_sdk.get_isolation_scope().clear()
+        get_settings.cache_clear()
+
+    output = capsys.readouterr()
+    logs = output.out + output.err
+    events = json.dumps(transport.events, default=str)
+    assert transport.events, "the stray 500 reports to Sentry"
+    leaks = [ACCESS_TOKEN, secret, admin, login_name(business_id)]
+    assert [v for v in leaks if v in logs] == []
+    assert [v for v in leaks if v in events] == []

@@ -13,6 +13,8 @@ from typing import Any
 
 import httpx
 import pytest
+import structlog
+import structlog.testing
 from sqlalchemy import select, text
 
 from app import events
@@ -468,3 +470,27 @@ def test_disconnect_remote_not_found(fake: FakeYodlee) -> None:
     assert not any(method == "DELETE" for method, _ in sent)
     with get_sessionmaker()() as session:
         assert session.get(BankConnection, c.connection_id) is None
+
+
+def test_disconnect_when_yodlee_is_off_deletes_locally(fake: FakeYodlee) -> None:
+    c = new_connection(fake)
+    fake.transaction_list = [
+        yodlee_transaction("1", c.account_id, amount=10.0, day=DAY)
+    ]
+    sync(c, fake)
+
+    with structlog.testing.capture_logs() as logs, get_sessionmaker()() as session:
+        service.disconnect_bank(
+            session,
+            NO_PLAID,
+            business_id=c.business_id,
+            connection_id=c.connection_id,
+            user_id=uuid.uuid4(),
+            yodlee=None,
+        )
+
+    assert transactions(c) == []
+    with get_sessionmaker()() as session:
+        assert session.get(BankConnection, c.connection_id) is None
+    orphaned = [e for e in logs if e["event"] == "bank_connection.orphaned"]
+    assert [e["provider_item_id"] for e in orphaned] == [c.provider_account_id]
