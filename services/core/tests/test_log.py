@@ -189,3 +189,18 @@ def test_yodlee_secrets_are_redacted() -> None:
     assert cleaned["yodlee_client_secret"] == REDACTED
     assert cleaned["access_token"] == REDACTED
     assert "abc.def.ghi" not in str(cleaned["message"])
+
+
+def test_yodlee_login_names_are_redacted() -> None:
+    """Spec 17b: a Yodlee login name (admin or a business's user) never reaches a log line."""
+    from app.log import REDACTED, redact
+
+    cleaned = redact(
+        {"login_name": "hr-0123", "loginName": "admin_ADMIN", "business_id": "b1"}
+    )
+
+    assert cleaned == {
+        "login_name": REDACTED,
+        "loginName": REDACTED,
+        "business_id": "b1",
+    }

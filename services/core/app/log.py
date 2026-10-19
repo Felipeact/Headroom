@@ -19,6 +19,9 @@ SECRET_KEY_FRAGMENTS = (
     "apikey",
     "dsn",
     "account_number",
+    # Yodlee's loginName (the admin login's, or a business's user), spec 17b.
+    "login_name",
+    "loginname",
     "private_key",
     # Raw request bodies (Sentry frame locals such as `body_bytes`): spec 12 door 8.
     "body",

@@ -85,6 +85,10 @@ class DuplicateBankError(Exception):
     """The business already has a connection to this institution."""
 
 
+class _ProviderAccountStoredError(DuplicateBankError):
+    """This very provider account is already stored; deleting it would break that connection."""
+
+
 class AccountNotFoundError(Exception):
     """The business has no account with this ID."""
 
@@ -502,8 +506,7 @@ def connect_yodlee_bank(
         provider="yodlee",
         provider_item_id=provider_account_id,
     ):
-        # This very login: deleting it would break the connection already stored.
-        raise DuplicateBankError
+        raise _ProviderAccountStoredError
     login_name = login_name_for(business_id)
     try:
         status = yodlee.provider_account(login_name, provider_account_id)
@@ -530,7 +533,10 @@ def connect_yodlee_bank(
                 access_token_ciphertext=encrypt_access_token(login_name),
             )
         except IntegrityError as exc:
-            if _violates(exc, INSTITUTION_INDEX) or _violates(exc, ITEM_INDEX):
+            if _violates(exc, ITEM_INDEX):
+                # Another connect (or another business, on a shared sandbox user) stored it.
+                raise _ProviderAccountStoredError from None
+            if _violates(exc, INSTITUTION_INDEX):
                 raise DuplicateBankError from None
             raise
         rows = [
@@ -550,11 +556,12 @@ def connect_yodlee_bank(
         )
         view = _connection_view(connection, rows)
         session.commit()
-    except BaseException:
+    except BaseException as exc:
         session.rollback()
-        _remove_new_provider_account(
-            yodlee, login_name, provider_account_id, business_id=business_id
-        )
+        if not isinstance(exc, _ProviderAccountStoredError):
+            _remove_new_provider_account(
+                yodlee, login_name, provider_account_id, business_id=business_id
+            )
         raise
     log.info(
         "bank_connection.created",

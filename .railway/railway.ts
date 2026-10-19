@@ -68,6 +68,8 @@ export default defineRailway((ctx) => {
       YODLEE_ADMIN_LOGIN_NAME: preserve(),
       YODLEE_FASTLINK_URL: preserve(),
       YODLEE_FASTLINK_CONFIG_NAME: preserve(),
+      // Sandbox only (door 2a): one Yodlee test user for every business. Leave unset in production.
+      YODLEE_TEST_LOGIN_NAME: preserve(),
       TOKEN_ENCRYPTION_KEYS: preserve(),
       // Email (spec 28), set with `railway variable set`: the sender (`console` or `resend`)
       // and its key, the From address, the footer's mailing address, the public web and API

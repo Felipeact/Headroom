@@ -10,11 +10,13 @@ import pytest
 from fastapi.testclient import TestClient
 
 from app.main import app
+from app.modules.bank_sync import repository
 from app.modules.bank_sync.tokens import decrypt_access_token
 from app.modules.bank_sync.yodlee import YodleeError, get_yodlee_client
 from app.settings import get_settings
 from tests.test_bank_connect import (  # noqa: F401  (pytest fixtures)
     FakePlaid,
+    audit_rows,
     client,
     connect,
     connections_path,
@@ -264,6 +266,9 @@ def test_connect_stores_connection(
         business_id
     )
     assert connection.access_token_ciphertext != login_name(business_id)
+    (entry,) = audit_rows(business_id)
+    assert entry.target_id == str(connection.id)
+    assert entry.details == {"institution_id": "16441", "account_count": 2}
     # The first sync ran after the response.
     assert "transactions" in yodlee.calls
     assert connection.last_synced_at is not None
@@ -417,3 +422,136 @@ def test_unknown_business_404(
 
     assert response.status_code == 404
     assert yodlee.calls == []
+
+
+# Found by verification round 1
+
+
+def test_fastlink_other_business_connection_404(
+    owner_a: tuple[Caller, str],
+    owner_b: tuple[Caller, str],
+    fake: FakePlaid,
+    yodlee: FakeYodlee,
+) -> None:
+    owner, business_id = owner_a
+    connection_id = yconnect(owner, business_id).json()["id"]
+    stranger, stranger_business = owner_b
+
+    response = launch(stranger, stranger_business, {"connection_id": connection_id})
+
+    assert response.status_code == 404
+    assert yodlee.launches == []
+
+
+def test_connect_yodlee_failure_503(
+    owner_a: tuple[Caller, str], fake: FakePlaid, yodlee: FakeYodlee
+) -> None:
+    owner, business_id = owner_a
+    yodlee.fail["accounts"] = YodleeError(http_status=500, error_code="Y902")
+
+    response = yconnect(owner, business_id)
+
+    assert response.status_code == 503
+    assert response.headers["content-type"] == "application/problem+json"
+    assert "Y902" not in response.text
+    assert stored(business_id) == ([], [])
+
+
+def test_connect_same_provider_account_409_keeps_it_at_yodlee(
+    owner_a: tuple[Caller, str], fake: FakePlaid, yodlee: FakeYodlee
+) -> None:
+    owner, business_id = owner_a
+    pa = new_provider_account()
+    assert yconnect(owner, business_id, pa).status_code == 201
+
+    again = yconnect(owner, business_id, pa)
+
+    assert again.status_code == 409
+    assert yodlee.deleted == []
+    assert len(stored(business_id)[0]) == 1
+
+
+def test_connect_race_on_the_unique_index_keeps_it_at_yodlee(
+    owner_a: tuple[Caller, str],
+    fake: FakePlaid,
+    yodlee: FakeYodlee,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    """Two connects of one provider account both pass the pre-check; the loser must not delete it."""
+    owner, business_id = owner_a
+    pa = new_provider_account()
+    assert yconnect(owner, business_id, pa).status_code == 201
+    monkeypatch.setattr(repository, "has_provider_item", lambda *a, **k: False)
+    monkeypatch.setattr(repository, "has_institution", lambda *a, **k: False)
+
+    again = yconnect(owner, business_id, pa)
+
+    assert again.status_code == 409
+    assert yodlee.deleted == []
+
+
+def test_connect_another_businesss_provider_account_409(
+    owner_a: tuple[Caller, str],
+    owner_b: tuple[Caller, str],
+    fake: FakePlaid,
+    yodlee: FakeYodlee,
+) -> None:
+    """On a shared sandbox user, business B posting business A's provider account stores nothing."""
+    owner, business_id = owner_a
+    pa = new_provider_account()
+    assert yconnect(owner, business_id, pa).status_code == 201
+    stranger, stranger_business = owner_b
+
+    response = yconnect(stranger, stranger_business, pa)
+
+    assert response.status_code == 409
+    assert yodlee.deleted == []
+    assert stored(stranger_business) == ([], [])
+
+
+def test_test_login_name_replaces_the_derived_user(
+    owner_a: tuple[Caller, str],
+    fake: FakePlaid,
+    yodlee: FakeYodlee,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    """Door 2a: the sandbox cannot register users, so one test user serves every business."""
+    owner, business_id = owner_a
+    monkeypatch.setenv("YODLEE_TEST_LOGIN_NAME", "sbMemTest1")
+    get_settings.cache_clear()
+
+    assert launch(owner, business_id).status_code == 200
+    assert yconnect(owner, business_id).status_code == 201
+
+    assert yodlee.registered == []
+    assert yodlee.launches == [("sbMemTest1", None)]
+    (connection,), _ = stored(business_id)
+    assert decrypt_access_token(connection.access_token_ciphertext) == "sbMemTest1"
+
+
+def test_repair_and_disconnect_over_http(
+    owner_a: tuple[Caller, str], fake: FakePlaid, yodlee: FakeYodlee
+) -> None:
+    owner, business_id = owner_a
+    connection_id = yconnect(owner, business_id).json()["id"]
+    path = f"{connections_path(business_id)}/{connection_id}"
+
+    repaired = client.post(f"{path}/repair", headers=owner.headers)
+    assert repaired.status_code == 200
+    assert repaired.json()["provider"] == "yodlee"
+
+    yodlee.needs_login = True
+    still = client.post(f"{path}/repair", headers=owner.headers)
+    assert still.status_code == 409
+    yodlee.needs_login = False
+
+    yodlee.fail["delete"] = YodleeError(http_status=500, error_code="Y902")
+    failed = client.delete(path, headers=owner.headers)
+    assert failed.status_code == 503
+    assert failed.headers["content-type"] == "application/problem+json"
+    assert len(stored(business_id)[0]) == 1
+
+    del yodlee.fail["delete"]
+    gone = client.delete(path, headers=owner.headers)
+    assert gone.status_code == 204
+    assert stored(business_id)[0] == []

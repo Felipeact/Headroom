@@ -11,6 +11,8 @@ docs (FastLink 4, data model).
 """
 
 import uuid
+from collections.abc import Iterator
+from contextlib import contextmanager
 from dataclasses import dataclass, field
 from datetime import date, datetime
 from functools import lru_cache
@@ -99,6 +101,16 @@ class YodleeClient(Protocol):
     def delete_provider_account(
         self, login_name: str, provider_account_id: str
     ) -> None: ...
+
+
+@contextmanager
+def _parsing() -> Iterator[None]:
+    """Turn a malformed Yodlee answer into a `YodleeError`, so no stray exception (and the
+    local variables an error report would carry) leaves the client."""
+    try:
+        yield
+    except (KeyError, TypeError, ValueError, AttributeError):
+        raise YodleeError(http_status=None, error_code="INVALID_RESPONSE") from None
 
 
 def login_name_for(business_id: uuid.UUID) -> str:
@@ -206,7 +218,7 @@ class HttpxYodleeClient:
             headers["loginName"] = login_name
         try:
             response = self._http.request(method, path, headers=headers, **kwargs)
-        except httpx.HTTPError:
+        except (httpx.HTTPError, httpx.InvalidURL):
             raise YodleeError(http_status=None, error_code="NETWORK") from None
         if response.status_code >= 400:
             code = None
@@ -244,7 +256,8 @@ class HttpxYodleeClient:
         token = body.get("token")
         if not isinstance(token, dict) or not token.get("accessToken"):
             raise YodleeError(http_status=None, error_code="INVALID_RESPONSE")
-        return str(token["accessToken"]), int(token.get("expiresIn") or 0)
+        with _parsing():
+            return str(token["accessToken"]), int(token.get("expiresIn") or 0)
 
     def register_user(self, login_name: str) -> None:
         """Register `login_name` unless Yodlee already knows it."""
@@ -297,20 +310,22 @@ class HttpxYodleeClient:
         accounts = body.get("providerAccount")
         if not isinstance(accounts, list) or not accounts:
             raise YodleeError(http_status=None, error_code="INVALID_RESPONSE")
-        account = accounts[0]
-        datasets = account.get("dataset") or []
-        refreshed = [
-            datetime.fromisoformat(d["lastUpdated"])
-            for d in datasets
-            if d.get("lastUpdated")
-        ]
-        return ProviderAccountStatus(
-            provider_id=str(account.get("providerId")),
-            last_refreshed=max(refreshed) if refreshed else None,
-            needs_login=any(
-                d.get("additionalStatus") in LOGIN_REQUIRED_STATUSES for d in datasets
-            ),
-        )
+        with _parsing():
+            account = accounts[0]
+            datasets = account.get("dataset") or []
+            refreshed = [
+                datetime.fromisoformat(d["lastUpdated"])
+                for d in datasets
+                if d.get("lastUpdated")
+            ]
+            return ProviderAccountStatus(
+                provider_id=str(account.get("providerId")),
+                last_refreshed=max(refreshed) if refreshed else None,
+                needs_login=any(
+                    d.get("additionalStatus") in LOGIN_REQUIRED_STATUSES
+                    for d in datasets
+                ),
+            )
 
     def institution_name(self, login_name: str, provider_id: str) -> str:
         token, _ = self._token(login_name)
@@ -332,12 +347,13 @@ class HttpxYodleeClient:
             token=token,
             params={"providerAccountId": provider_account_id},
         )
-        return [
-            _account(a)
-            for a in body.get("account") or []
-            if a.get("CONTAINER") in CONTAINERS
-            and str(a.get("providerAccountId")) == provider_account_id
-        ]
+        with _parsing():
+            return [
+                _account(a)
+                for a in body.get("account") or []
+                if a.get("CONTAINER") in CONTAINERS
+                and str(a.get("providerAccountId")) == provider_account_id
+            ]
 
     def transactions(
         self, login_name: str, account_ids: frozenset[str], from_date: date
@@ -360,12 +376,13 @@ class HttpxYodleeClient:
             if not page:
                 return found
             skip += len(page)
-            found.extend(
-                _transaction(t)
-                for t in page
-                if t.get("status") == "POSTED"
-                and str(t.get("accountId")) in account_ids
-            )
+            with _parsing():
+                found.extend(
+                    _transaction(t)
+                    for t in page
+                    if t.get("status") == "POSTED"
+                    and str(t.get("accountId")) in account_ids
+                )
         raise YodleeError(http_status=None, error_code="TOO_MANY_PAGES")
 
     def delete_provider_account(

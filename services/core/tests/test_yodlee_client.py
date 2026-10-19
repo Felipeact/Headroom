@@ -173,3 +173,46 @@ def test_delete_missing_provider_account_is_ok() -> None:
     client(handler).delete_provider_account(USER, "1")
 
     assert "DELETE" not in methods
+
+
+def test_timeout_is_15_seconds() -> None:
+    seen: list[dict[str, float | None]] = []
+
+    def handler(request: httpx.Request) -> httpx.Response:
+        seen.append(request.extensions["timeout"])
+        return token_response()
+
+    client(handler).launch(USER, None)
+
+    assert seen == [{"connect": 15.0, "read": 15.0, "write": 15.0, "pool": 15.0}]
+
+
+@pytest.mark.parametrize(
+    "body",
+    [
+        {"account": [{"CONTAINER": "bank", "providerAccountId": 1}]},
+        {"account": ["not-an-object"]},
+    ],
+    ids=["account_without_id", "account_not_an_object"],
+)
+def test_malformed_answer_is_a_yodlee_error(body: dict[str, object]) -> None:
+    def handler(request: httpx.Request) -> httpx.Response:
+        if request.url.path.endswith("/auth/token"):
+            return token_response()
+        return httpx.Response(200, json=body)
+
+    with pytest.raises(YodleeError) as raised:
+        client(handler).accounts(USER, "1")
+
+    assert raised.value.error_code == "INVALID_RESPONSE"
+
+
+def test_malformed_transaction_date_is_a_yodlee_error() -> None:
+    rows = [row(date="not-a-date")]
+
+    with pytest.raises(YodleeError) as raised:
+        client(transactions_handler(rows)).transactions(
+            USER, frozenset({"5"}), date(2026, 1, 1)
+        )
+
+    assert raised.value.error_code == "INVALID_RESPONSE"
