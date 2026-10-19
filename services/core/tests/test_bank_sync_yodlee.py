@@ -13,8 +13,6 @@ from typing import Any
 
 import httpx
 import pytest
-import structlog
-import structlog.testing
 from sqlalchemy import select, text
 
 from app import events
@@ -472,14 +470,19 @@ def test_disconnect_remote_not_found(fake: FakeYodlee) -> None:
         assert session.get(BankConnection, c.connection_id) is None
 
 
-def test_disconnect_when_yodlee_is_off_deletes_locally(fake: FakeYodlee) -> None:
+def test_disconnect_when_yodlee_is_off_deletes_locally(
+    fake: FakeYodlee, caplog: pytest.LogCaptureFixture
+) -> None:
     c = new_connection(fake)
     fake.transaction_list = [
         yodlee_transaction("1", c.account_id, amount=10.0, day=DAY)
     ]
     sync(c, fake)
 
-    with structlog.testing.capture_logs() as logs, get_sessionmaker()() as session:
+    # caplog, not structlog's capture_logs: cache_logger_on_first_use lets a logger cached
+    # by an earlier test bypass capture_logs, but every record still reaches the root logger.
+    caplog.clear()
+    with get_sessionmaker()() as session:
         service.disconnect_bank(
             session,
             NO_PLAID,
@@ -492,5 +495,6 @@ def test_disconnect_when_yodlee_is_off_deletes_locally(fake: FakeYodlee) -> None
     assert transactions(c) == []
     with get_sessionmaker()() as session:
         assert session.get(BankConnection, c.connection_id) is None
-    orphaned = [e for e in logs if e["event"] == "bank_connection.orphaned"]
+    logs = [r.msg for r in caplog.records if isinstance(r.msg, dict)]
+    orphaned = [e for e in logs if e.get("event") == "bank_connection.orphaned"]
     assert [e["provider_item_id"] for e in orphaned] == [c.provider_account_id]
