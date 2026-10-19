@@ -25,6 +25,8 @@ TIMEOUT_SECONDS = 15
 API_VERSION = "1.1"
 # Yodlee's answer to a token request for a loginName it does not know.
 USER_NOT_REGISTERED = "Y305"
+# Its answer to a request for a resource it does not have.
+NOT_FOUND = "Y807"
 # Our error code for a provider account that needs the owner to log in again.
 LOGIN_REQUIRED = "LOGIN_REQUIRED"
 # The dataset `additionalStatus` values that mean the owner must act at the bank
@@ -83,6 +85,8 @@ class YodleeClient(Protocol):
     def provider_account(
         self, login_name: str, provider_account_id: str
     ) -> ProviderAccountStatus: ...
+
+    def institution_name(self, login_name: str, provider_id: str) -> str: ...
 
     def accounts(
         self, login_name: str, provider_account_id: str
@@ -308,6 +312,18 @@ class HttpxYodleeClient:
             ),
         )
 
+    def institution_name(self, login_name: str, provider_id: str) -> str:
+        token, _ = self._token(login_name)
+        body = self._send("GET", f"/providers/{provider_id}", token=token)
+        providers = body.get("provider")
+        if (
+            not isinstance(providers, list)
+            or not providers
+            or not providers[0].get("name")
+        ):
+            raise YodleeError(http_status=None, error_code="INVALID_RESPONSE")
+        return str(providers[0]["name"])
+
     def accounts(self, login_name: str, provider_account_id: str) -> list[PlaidAccount]:
         token, _ = self._token(login_name)
         body = self._send(
@@ -356,6 +372,14 @@ class HttpxYodleeClient:
         self, login_name: str, provider_account_id: str
     ) -> None:
         token, _ = self._token(login_name)
+        try:
+            self._send("GET", f"/providerAccounts/{provider_account_id}", token=token)
+        except YodleeError as exc:
+            # Yodlee answers a provider account it no longer has with Y807 (a DELETE of
+            # one answers a generic 500), and a gone account counts as deleted.
+            if exc.error_code == NOT_FOUND:
+                return
+            raise
         self._send("DELETE", f"/providerAccounts/{provider_account_id}", token=token)
 
 

@@ -32,6 +32,8 @@ ALLOWED = frozenset(
         "POSTHOG_PROJECT_ID",
         # Plaid issues one client ID per team for every environment; the secret differs.
         "PLAID_CLIENT_ID",
+        # The name of a FastLink configuration, not a credential (spec 17b).
+        "YODLEE_FASTLINK_CONFIG_NAME",
     }
 )
 ALLOWED_PREFIX = "RAILWAY_"

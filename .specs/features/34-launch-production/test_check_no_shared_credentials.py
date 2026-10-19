@@ -22,6 +22,7 @@ ALLOWLISTED = [
     "EMAIL_MAILING_ADDRESS",
     "FORECAST_STRATEGY",
     "PLAID_CLIENT_ID",
+    "YODLEE_FASTLINK_CONFIG_NAME",
     "RAILWAY_PROJECT_ID",
 ]
 
@@ -134,3 +135,31 @@ def test_cli_failure(capsys: pytest.CaptureFixture[str]) -> None:
     assert code == 1
     assert "web" in output.err and "production" in output.err
     assert calls == []
+
+
+@pytest.mark.parametrize(
+    "name", ["YODLEE_CLIENT_ID", "YODLEE_CLIENT_SECRET", "YODLEE_ADMIN_LOGIN_NAME"]
+)
+def test_shared_yodlee_credential_fails(
+    name: str, capsys: pytest.CaptureFixture[str]
+) -> None:
+    """Spec 17b: staging and production never share a Yodlee credential."""
+    data = fixtures()
+    for environment in ("staging", "production"):
+        data[environment]["api"][name] = "yodlee-same-value-7"
+
+    code, output = run(data, capsys)
+
+    assert code == 1
+    assert f"api {name}" in output
+    assert "yodlee-same-value-7" not in output
+
+
+def test_yodlee_config_name_may_match(capsys: pytest.CaptureFixture[str]) -> None:
+    data = fixtures()
+    for environment in ("staging", "production"):
+        data[environment]["api"]["YODLEE_FASTLINK_CONFIG_NAME"] = "Headroom"
+
+    code, _ = run(data, capsys)
+
+    assert code == 0

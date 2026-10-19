@@ -23,6 +23,37 @@ def has_institution(
     )
 
 
+def has_provider_item(
+    session: Session, *, business_id: uuid.UUID, provider: str, provider_item_id: str
+) -> bool:
+    return (
+        session.scalar(
+            select(BankConnection.id).where(
+                BankConnection.business_id == business_id,
+                BankConnection.provider == provider,
+                BankConnection.provider_item_id == provider_item_id,
+            )
+        )
+        is not None
+    )
+
+
+def has_provider_connection(
+    session: Session, *, business_id: uuid.UUID, provider: str
+) -> bool:
+    return (
+        session.scalar(
+            select(BankConnection.id)
+            .where(
+                BankConnection.business_id == business_id,
+                BankConnection.provider == provider,
+            )
+            .limit(1)
+        )
+        is not None
+    )
+
+
 def insert_connection(
     session: Session,
     *,

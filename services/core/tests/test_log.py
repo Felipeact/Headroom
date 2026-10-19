@@ -172,3 +172,20 @@ def test_real_server_writes_json_access_log() -> None:
         r.get("logger") == "uvicorn.access" and "/does-not-exist" in str(r["event"])
         for r in records
     ), output
+
+
+def test_yodlee_secrets_are_redacted() -> None:
+    """Spec 17b: Yodlee's client secret and user token never reach a log line."""
+    from app.log import REDACTED, redact
+
+    cleaned = redact(
+        {
+            "yodlee_client_secret": "s3cret-value",
+            "access_token": "user-token-value",
+            "message": "called with Authorization: Bearer abc.def.ghi",
+        }
+    )
+
+    assert cleaned["yodlee_client_secret"] == REDACTED
+    assert cleaned["access_token"] == REDACTED
+    assert "abc.def.ghi" not in str(cleaned["message"])

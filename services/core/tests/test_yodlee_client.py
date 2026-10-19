@@ -147,3 +147,29 @@ def test_register_uses_admin_token_only_for_registration() -> None:
         ("token", ADMIN),
         ("/ysl/user/register", USER),
     ]
+
+
+def test_register_skips_known_user() -> None:
+    paths: list[str] = []
+
+    def handler(request: httpx.Request) -> httpx.Response:
+        paths.append(request.url.path)
+        return token_response()
+
+    client(handler).register_user(USER)
+
+    assert paths == ["/ysl/auth/token"]
+
+
+def test_delete_missing_provider_account_is_ok() -> None:
+    methods: list[str] = []
+
+    def handler(request: httpx.Request) -> httpx.Response:
+        methods.append(request.method)
+        if request.url.path.endswith("/auth/token"):
+            return token_response()
+        return httpx.Response(400, json={"errorCode": "Y807"})
+
+    client(handler).delete_provider_account(USER, "1")
+
+    assert "DELETE" not in methods

@@ -34,6 +34,7 @@ from app.modules.accounts.service import Role
 from app.modules.bank_sync import service, webhooks
 from app.modules.bank_sync.models import AccountType, Provider, TransactionLabel
 from app.modules.bank_sync.plaid import PlaidClient, PlaidError, get_plaid_client
+from app.modules.bank_sync.yodlee import YodleeClient, YodleeError, get_yodlee_client
 from app.problems import ProblemDetails, ValidationProblemDetails
 
 PROVIDER_UNAVAILABLE = "We couldn't reach our bank connection provider. Try again."
@@ -41,6 +42,9 @@ CONNECT_FAILED = "We couldn't finish connecting your bank. Try again."
 ALREADY_CONNECTED = "This bank is already connected."
 ACCOUNT_NOT_FOUND = "Account not found."
 CONNECTION_NOT_FOUND = "Bank connection not found."
+NO_YODLEE = "Yodlee is not available."
+WRONG_PROVIDER = "This bank connects through a different provider."
+USE_YODLEE_WINDOW = "Use the Yodlee window to reconnect this bank."
 STILL_LOGIN_REQUIRED = "Your bank still needs you to log in."
 INVALID_SIGNATURE = "Invalid webhook signature."
 ACCOUNT_CONFLICTS: dict[service.AccountConflict, str] = {
@@ -60,6 +64,8 @@ webhook_router = APIRouter(tags=["bank_sync"])
 
 SessionDep = Annotated[Session, Depends(get_session)]
 PlaidDep = Annotated[PlaidClient, Depends(get_plaid_client)]
+# None while Yodlee is off (fewer than all six settings).
+YodleeDep = Annotated[YodleeClient | None, Depends(get_yodlee_client)]
 OwnerDep = Annotated[Member, Depends(require_member(Role.OWNER))]
 
 OWNER_ERRORS: dict[int | str, dict[str, object]] = {
@@ -67,6 +73,7 @@ OWNER_ERRORS: dict[int | str, dict[str, object]] = {
     status.HTTP_404_NOT_FOUND: {"model": ProblemDetails},
     status.HTTP_422_UNPROCESSABLE_CONTENT: {"model": ValidationProblemDetails},
     status.HTTP_502_BAD_GATEWAY: {"model": ProblemDetails},
+    status.HTTP_503_SERVICE_UNAVAILABLE: {"model": ProblemDetails},
 }
 
 
@@ -78,8 +85,47 @@ class LinkToken(BaseModel):
 class ConnectionCreate(BaseModel):
     model_config = ConfigDict(extra="forbid")
 
+    provider: Provider = "plaid"
     # SecretStr: the token never shows in a repr, a log line or an error report.
-    public_token: Annotated[SecretStr, Field(min_length=1)]
+    public_token: Annotated[SecretStr, Field(min_length=1)] | None = None
+    # Yodlee's ID for the provider account FastLink just linked.
+    provider_account_id: Annotated[str, Field(min_length=1, max_length=64)] | None = (
+        None
+    )
+
+    @model_validator(mode="after")
+    def _field_matches_provider(self) -> "ConnectionCreate":
+        expected = (
+            self.public_token if self.provider == "plaid" else self.provider_account_id
+        )
+        other = (
+            self.provider_account_id if self.provider == "plaid" else self.public_token
+        )
+        if expected is None or other is not None:
+            raise ValueError(
+                "Send public_token for plaid, or provider_account_id for yodlee."
+            )
+        return self
+
+
+class ProviderList(BaseModel):
+    providers: list[Provider]
+
+
+class FastLinkRequest(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+
+    # Set to reconnect an existing Yodlee connection (FastLink's edit mode).
+    connection_id: uuid.UUID | None = None
+
+
+class FastLink(BaseModel):
+    fastlink_url: str
+    # A short-lived Yodlee token for the business's own user, never the admin login's.
+    access_token: str
+    config_name: str
+    expires_in: int
+    provider_account_id: str | None
 
 
 class Account(BaseModel):
@@ -152,6 +198,18 @@ def _plaid_failed(exc: PlaidError, *, business_id: uuid.UUID) -> None:
     )
 
 
+def _yodlee_failed(exc: YodleeError, *, business_id: uuid.UUID) -> HTTPException:
+    log.warning(
+        "yodlee.request_failed",
+        business_id=str(business_id),
+        error_code=exc.error_code,
+        http_status=exc.http_status,
+    )
+    return HTTPException(
+        status.HTTP_503_SERVICE_UNAVAILABLE, detail=PROVIDER_UNAVAILABLE
+    )
+
+
 def _unavailable() -> HTTPException:
     return HTTPException(status.HTTP_502_BAD_GATEWAY, detail=PROVIDER_UNAVAILABLE)
 
@@ -174,6 +232,51 @@ def create_link_token(member: OwnerDep, plaid: PlaidDep) -> LinkToken:
     return LinkToken(link_token=token.link_token, expiration=token.expiration)
 
 
+@router.get(
+    "/businesses/{business_id}/bank/providers",
+    response_model=ProviderList,
+    responses={
+        k: v
+        for k, v in OWNER_ERRORS.items()
+        if k not in (status.HTTP_502_BAD_GATEWAY, status.HTTP_503_SERVICE_UNAVAILABLE)
+    },
+)
+def list_providers(member: OwnerDep, yodlee: YodleeDep) -> ProviderList:
+    return ProviderList(providers=["plaid"] if yodlee is None else ["plaid", "yodlee"])
+
+
+@router.post(
+    "/businesses/{business_id}/bank/yodlee/fastlink",
+    response_model=FastLink,
+    responses={**OWNER_ERRORS, status.HTTP_409_CONFLICT: {"model": ProblemDetails}},
+)
+def create_fastlink(
+    body: FastLinkRequest, member: OwnerDep, yodlee: YodleeDep, session: SessionDep
+) -> FastLink:
+    if yodlee is None:
+        raise HTTPException(status.HTTP_404_NOT_FOUND, detail=NO_YODLEE)
+    try:
+        launch = service.launch_fastlink(
+            session,
+            yodlee,
+            business_id=member.business_id,
+            connection_id=body.connection_id,
+        )
+    except service.ConnectionNotFoundError:
+        raise _connection_not_found() from None
+    except service.ProviderMismatchError:
+        raise HTTPException(status.HTTP_409_CONFLICT, detail=WRONG_PROVIDER) from None
+    except YodleeError as exc:
+        raise _yodlee_failed(exc, business_id=member.business_id) from None
+    return FastLink(
+        fastlink_url=launch.fastlink_url,
+        access_token=launch.access_token,
+        config_name=launch.config_name,
+        expires_in=launch.expires_in,
+        provider_account_id=launch.provider_account_id,
+    )
+
+
 @router.post(
     "/businesses/{business_id}/bank/connections",
     status_code=status.HTTP_201_CREATED,
@@ -188,21 +291,36 @@ def create_connection(
     body: ConnectionCreate,
     member: OwnerDep,
     plaid: PlaidDep,
+    yodlee: YodleeDep,
     session: SessionDep,
     background: BackgroundTasks,
 ) -> Connection:
     try:
-        connection = service.connect_bank(
-            session,
-            plaid,
-            business_id=member.business_id,
-            user_id=member.user_id,
-            public_token=body.public_token.get_secret_value(),
-        )
+        if body.provider == "yodlee":
+            if yodlee is None or body.provider_account_id is None:
+                raise HTTPException(status.HTTP_404_NOT_FOUND, detail=NO_YODLEE)
+            connection = service.connect_yodlee_bank(
+                session,
+                yodlee,
+                business_id=member.business_id,
+                user_id=member.user_id,
+                provider_account_id=body.provider_account_id,
+            )
+        else:
+            assert body.public_token is not None
+            connection = service.connect_bank(
+                session,
+                plaid,
+                business_id=member.business_id,
+                user_id=member.user_id,
+                public_token=body.public_token.get_secret_value(),
+            )
     except service.DuplicateBankError:
         raise HTTPException(
             status.HTTP_409_CONFLICT, detail=ALREADY_CONNECTED
         ) from None
+    except YodleeError as exc:
+        raise _yodlee_failed(exc, business_id=member.business_id) from None
     except PlaidError as exc:
         _plaid_failed(exc, business_id=member.business_id)
         if exc.error_type == "INVALID_INPUT":
@@ -217,6 +335,7 @@ def create_connection(
         plaid,
         business_id=member.business_id,
         connection_id=connection.id,
+        yodlee=yodlee,
     )
     return Connection.model_validate(connection, from_attributes=True)
 
@@ -313,7 +432,7 @@ def update_account(
 @router.post(
     "/businesses/{business_id}/bank/connections/{connection_id}/link-token",
     response_model=LinkToken,
-    responses=OWNER_ERRORS,
+    responses={**OWNER_ERRORS, status.HTTP_409_CONFLICT: {"model": ProblemDetails}},
 )
 def create_update_link_token(
     connection_id: uuid.UUID, member: OwnerDep, plaid: PlaidDep, session: SessionDep
@@ -328,6 +447,10 @@ def create_update_link_token(
         )
     except service.ConnectionNotFoundError:
         raise _connection_not_found() from None
+    except service.ProviderMismatchError:
+        raise HTTPException(
+            status.HTTP_409_CONFLICT, detail=USE_YODLEE_WINDOW
+        ) from None
     except PlaidError as exc:
         _plaid_failed(exc, business_id=member.business_id)
         raise _unavailable() from None
@@ -340,7 +463,11 @@ def create_update_link_token(
     responses={**OWNER_ERRORS, status.HTTP_409_CONFLICT: {"model": ProblemDetails}},
 )
 def repair_connection(
-    connection_id: uuid.UUID, member: OwnerDep, plaid: PlaidDep, session: SessionDep
+    connection_id: uuid.UUID,
+    member: OwnerDep,
+    plaid: PlaidDep,
+    yodlee: YodleeDep,
+    session: SessionDep,
 ) -> Connection:
     try:
         connection = service.repair_connection(
@@ -348,6 +475,7 @@ def repair_connection(
             plaid,
             business_id=member.business_id,
             connection_id=connection_id,
+            yodlee=yodlee,
         )
     except service.ConnectionNotFoundError:
         raise _connection_not_found() from None
@@ -355,6 +483,8 @@ def repair_connection(
         raise HTTPException(
             status.HTTP_409_CONFLICT, detail=STILL_LOGIN_REQUIRED
         ) from None
+    except YodleeError as exc:
+        raise _yodlee_failed(exc, business_id=member.business_id) from None
     except PlaidError as exc:
         _plaid_failed(exc, business_id=member.business_id)
         raise _unavailable() from None
@@ -367,7 +497,11 @@ def repair_connection(
     responses=OWNER_ERRORS,
 )
 def disconnect_bank(
-    connection_id: uuid.UUID, member: OwnerDep, plaid: PlaidDep, session: SessionDep
+    connection_id: uuid.UUID,
+    member: OwnerDep,
+    plaid: PlaidDep,
+    yodlee: YodleeDep,
+    session: SessionDep,
 ) -> None:
     try:
         service.disconnect_bank(
@@ -376,9 +510,12 @@ def disconnect_bank(
             business_id=member.business_id,
             connection_id=connection_id,
             user_id=member.user_id,
+            yodlee=yodlee,
         )
     except service.ConnectionNotFoundError:
         raise _connection_not_found() from None
+    except YodleeError as exc:
+        raise _yodlee_failed(exc, business_id=member.business_id) from None
     except PlaidError as exc:
         _plaid_failed(exc, business_id=member.business_id)
         raise _unavailable() from None
