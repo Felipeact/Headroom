@@ -7,6 +7,7 @@ import type { AccountChange } from "@/app/(app)/settings/banks/actions"
 import { AccountRow } from "@/components/settings/account-row"
 import { DisconnectDialog } from "@/components/settings/disconnect-dialog"
 import { ReconnectBanner } from "@/components/settings/reconnect-banner"
+import { YodleeReconnectBanner } from "@/components/settings/yodlee-reconnect-banner"
 import { Badge } from "@/components/ui/badge"
 import { formatSyncedAt } from "@/lib/format"
 import type { components } from "@/lib/api/schema"
@@ -68,15 +69,23 @@ export function BankCard({
         <DisconnectDialog businessId={businessId} connectionId={connection.id} bank={bank} />
       </div>
 
-      {attention && (
-        <ReconnectBanner
-          businessId={businessId}
-          connectionId={connection.id}
-          bank={bank}
-          reason={connection.status === "login_required" ? "login" : "failing"}
-          updateToken={updateToken}
-        />
-      )}
+      {attention &&
+        (connection.provider === "yodlee" ? (
+          <YodleeReconnectBanner
+            businessId={businessId}
+            connectionId={connection.id}
+            bank={bank}
+            reason={connection.status === "login_required" ? "login" : "failing"}
+          />
+        ) : (
+          <ReconnectBanner
+            businessId={businessId}
+            connectionId={connection.id}
+            bank={bank}
+            reason={connection.status === "login_required" ? "login" : "failing"}
+            updateToken={updateToken}
+          />
+        ))}
 
       <table className="w-full border-collapse text-[15px]">
         <thead className="max-sm:sr-only">

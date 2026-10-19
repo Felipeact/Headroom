@@ -6,6 +6,9 @@ const contentSecurityPolicy = [
   "base-uri 'self'",
   "form-action 'self'",
   "object-src 'none'",
+  // Yodlee's FastLink (spec 17b): its script, and the window it opens in an iframe.
+  "script-src 'self' https://cdn.yodlee.com",
+  "frame-src 'self' https://*.yodlee.com",
 ].join("; ");
 
 export const securityHeaders = [

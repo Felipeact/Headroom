@@ -61,3 +61,23 @@ export async function createUpdateLinkToken(businessId: string, connectionId: st
   }
   return null
 }
+
+export type Provider = components["schemas"]["ProviderList"]["providers"][number]
+
+/**
+ * Which bank-data providers the business can connect through (spec 17b). Plaid is always there;
+ * a failed call leaves just Plaid rather than breaking the screen.
+ */
+export async function loadProviders(businessId: string): Promise<Provider[]> {
+  try {
+    const { data, response } = await api.GET("/v1/businesses/{business_id}/bank/providers", {
+      params: { path: { business_id: businessId } },
+      headers: await authHeaders(),
+    })
+    if (data?.providers) return data.providers
+    Sentry.captureMessage(`GET /v1/businesses/{business_id}/bank/providers returned ${response.status}`)
+  } catch (error) {
+    Sentry.captureException(error)
+  }
+  return ["plaid"]
+}

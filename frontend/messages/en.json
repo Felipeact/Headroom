@@ -89,8 +89,13 @@
       "connecting": "Connecting your bank…",
       "errors": {
         "alreadyConnected": "This bank is already connected.",
-        "connectFailed": "We couldn't connect your bank. Try again."
-      }
+        "connectFailed": "We couldn't connect your bank. Try again.",
+        "launchFailed": "We couldn't open the bank window. Try again."
+      },
+      "yodleeHint": "Is your bank not working above? Connect another way.",
+      "yodleeConnect": "Connect another way",
+      "yodleeOpening": "Opening…",
+      "yodleeProvider": "This option is provided by Yodlee."
     },
     "Accounts": {
       "title": "Which accounts count as cash?",
@@ -219,7 +224,8 @@
         "reconnectFailed": "We couldn't reconnect {bank}. Try again.",
         "disconnectFailed": "We couldn't disconnect {bank}. Try again.",
         "alreadyConnected": "This bank is already connected.",
-        "connectFailed": "We couldn't connect your bank. Try again."
+        "connectFailed": "We couldn't connect your bank. Try again.",
+        "launchFailed": "We couldn't open the bank window. Try again."
       }
     },
     "Email": {

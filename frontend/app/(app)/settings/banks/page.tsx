@@ -20,7 +20,10 @@ export default async function BankSettingsPage() {
 
   // Link tokens last four hours and cost nothing: one to connect another bank, and one in
   // update mode for each bank that needs the owner to log in again.
-  const attention = connections.filter((connection) => NEEDS_ATTENTION.has(connection.status))
+  // A Yodlee bank is reconnected in FastLink (spec 17b), which needs no Plaid token.
+  const attention = connections.filter(
+    (connection) => NEEDS_ATTENTION.has(connection.status) && connection.provider !== "yodlee",
+  )
   const [linkToken, ...updates] = await Promise.all([
     createLinkToken(business.id),
     ...attention.map((connection) => createUpdateLinkToken(business.id, connection.id)),

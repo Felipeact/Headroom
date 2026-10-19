@@ -28,10 +28,10 @@ const LINK_ERROR = {
   display_message: null,
 }
 
-function renderView() {
+function renderView(yodlee = false) {
   return render(
     <NextIntlClientProvider locale="en" messages={messages}>
-      <ConnectBank businessId={BUSINESS} linkToken="link-sandbox-123" />
+      <ConnectBank businessId={BUSINESS} linkToken="link-sandbox-123" yodlee={yodlee} />
     </NextIntlClientProvider>,
   )
 }
@@ -130,5 +130,15 @@ describe('connect bank view', () => {
     expect(alert().textContent).toBe(BANK.errors.connectFailed)
     expect(button().disabled).toBe(false)
     expect(follows(alert(), button())).toBe(true)
+  })
+
+  test('yodlee action shows only where the API offers Yodlee', () => {
+    const without = renderView(false)
+    expect(screen.getAllByRole('button')).toHaveLength(1)
+    expect(screen.queryByText(BANK.yodleeConnect)).toBeNull()
+    without.unmount()
+
+    renderView(true)
+    expect(screen.getAllByRole('button').map((b) => b.textContent)).toEqual([BANK.connect, BANK.yodleeConnect])
   })
 })

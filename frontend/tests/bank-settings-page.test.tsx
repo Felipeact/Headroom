@@ -7,7 +7,7 @@ import { afterEach, beforeEach, describe, expect, test, vi } from 'vitest'
 import { disconnectBank, repairConnection, updateBankAccount } from '@/app/(app)/settings/banks/actions'
 import Loading from '@/app/(app)/settings/banks/loading'
 import BankSettingsPage from '@/app/(app)/settings/banks/page'
-import { connectBank } from '@/app/onboarding/bank/actions'
+import { connectBank, launchFastLink } from '@/app/onboarding/bank/actions'
 import { api } from '@/lib/api/client'
 import type { components } from '@/lib/api/schema'
 import messages from '@/messages/en.json'
@@ -24,7 +24,7 @@ vi.mock('@/app/(app)/settings/banks/actions', () => ({
   repairConnection: vi.fn(),
   disconnectBank: vi.fn(),
 }))
-vi.mock('@/app/onboarding/bank/actions', () => ({ connectBank: vi.fn() }))
+vi.mock('@/app/onboarding/bank/actions', () => ({ connectBank: vi.fn(), launchFastLink: vi.fn() }))
 vi.mock('next-intl/server', () => ({
   getTranslations: async () => createTranslator({ locale: 'en', messages }),
 }))
@@ -388,5 +388,34 @@ describe('bank settings page', () => {
     expect(disconnectBank).toHaveBeenCalledWith(BUSINESS, td.id)
     expect(screen.queryByRole('dialog')).toBeNull()
     expect(toast).toHaveBeenCalledWith('TD Canada Trust disconnected')
+  })
+
+  test('yodlee reconnect opens fastlink in edit mode, then repairs', async () => {
+    const fastlink = { open: vi.fn() }
+    window.fastlink = fastlink
+    vi.mocked(launchFastLink).mockResolvedValue({
+      launch: {
+        fastlink_url: 'https://fastlink.test/fastlink',
+        access_token: 'yodlee-user-token',
+        config_name: 'Headroom',
+        expires_in: 1800,
+        provider_account_id: '4242',
+      },
+    })
+    vi.mocked(repairConnection).mockResolvedValue({ error: null })
+    const rbc = bank('RBC Royal Bank', { provider: 'yodlee', status: 'login_required' })
+    await renderPage([rbc])
+
+    await act(async () => {
+      fireEvent.click(card('RBC Royal Bank').getByRole('button', { name: BANKS.reconnect }))
+    })
+
+    expect(launchFastLink).toHaveBeenCalledWith(BUSINESS, rbc.id)
+    const [config] = fastlink.open.mock.calls[0]
+    expect(config.params).toEqual({ configName: 'Headroom', flow: 'edit', providerAccountId: 4242 })
+    expect(plaid.links.has(`update-${rbc.id}`)).toBe(false)
+    await act(async () => config.onSuccess({ providerAccountId: 4242 }))
+    expect(repairConnection).toHaveBeenCalledWith(BUSINESS, rbc.id)
+    delete window.fastlink
   })
 })

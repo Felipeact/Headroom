@@ -42,7 +42,7 @@ describe('connect bank action', () => {
     expect(redirect).toHaveBeenCalledWith('/onboarding/accounts')
     expect(api.POST).toHaveBeenCalledWith('/v1/businesses/{business_id}/bank/connections', {
       params: { path: { business_id: BUSINESS } },
-      body: { public_token: PUBLIC_TOKEN },
+      body: { provider: 'plaid', public_token: PUBLIC_TOKEN },
       headers: { Authorization: 'Bearer tok_test' },
     })
   })

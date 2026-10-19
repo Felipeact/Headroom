@@ -4,7 +4,7 @@ import { getTranslations } from "next-intl/server"
 import { ConnectBank } from "@/components/onboarding/connect-bank"
 import { StepIndicator } from "@/components/onboarding/step-indicator"
 import { LayoutError } from "@/components/shell/layout-error"
-import { createLinkToken } from "@/lib/api/bank"
+import { createLinkToken, loadProviders } from "@/lib/api/bank"
 import { loadBusinesses } from "@/lib/api/businesses"
 
 export default async function BankStepPage() {
@@ -13,6 +13,7 @@ export default async function BankStepPage() {
   if (businesses && businesses.length === 0) redirect("/onboarding/business")
   const business = businesses?.[0]
   const linkToken = business ? await createLinkToken(business.id) : null
+  const providers = business ? await loadProviders(business.id) : []
   const t = await getTranslations()
 
   return (
@@ -25,7 +26,7 @@ export default async function BankStepPage() {
         </StepIndicator>
       </header>
       {business && linkToken ? (
-        <ConnectBank businessId={business.id} linkToken={linkToken} />
+        <ConnectBank businessId={business.id} linkToken={linkToken} yodlee={providers.includes("yodlee")} />
       ) : (
         <LayoutError />
       )}
