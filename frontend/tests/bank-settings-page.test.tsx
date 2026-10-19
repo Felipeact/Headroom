@@ -418,4 +418,34 @@ describe('bank settings page', () => {
     expect(repairConnection).toHaveBeenCalledWith(BUSINESS, rbc.id)
     delete window.fastlink
   })
+
+  test('reconnect container exists when fastlink opens', async () => {
+    // Like Yodlee's initialize.js: open() throws when the container is not in the document.
+    const present: boolean[] = []
+    window.fastlink = {
+      open: vi.fn((_config: unknown, containerId: string) => {
+        present.push(document.getElementById(containerId) !== null)
+        if (!present.at(-1)) throw new Error('Invalid container element')
+      }),
+    }
+    vi.mocked(launchFastLink).mockResolvedValue({
+      launch: {
+        fastlink_url: 'https://fastlink.test/fastlink',
+        access_token: 'yodlee-user-token',
+        config_name: 'Headroom',
+        expires_in: 1800,
+        provider_account_id: '4242',
+      },
+    })
+    const rbc = bank('RBC Royal Bank', { provider: 'yodlee', status: 'login_required' })
+    await renderPage([rbc])
+
+    await act(async () => {
+      fireEvent.click(card('RBC Royal Bank').getByRole('button', { name: BANKS.reconnect }))
+    })
+
+    expect(present).toEqual([true])
+    expect(card('RBC Royal Bank').queryByText(BANKS.errors.reconnectFailed.replace('{bank}', 'RBC Royal Bank'))).toBeNull()
+    delete window.fastlink
+  })
 })

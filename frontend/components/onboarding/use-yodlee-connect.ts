@@ -46,8 +46,52 @@ export function useYodleeConnect(
 ) {
   const [error, setError] = useState<YodleeConnectError | null>(null)
   const [active, setActive] = useState(false)
+  // FastLink's open() throws unless its container is already in the document, and the
+  // container renders only once `active` is true: the launch waits here until it is attached.
+  const [launch, setLaunch] = useState<FastLinkLaunch | null>(null)
   const [opening, setOpening] = useState(false)
   const [saving, startSaving] = useTransition()
+
+  // The ref callback of the element with `FASTLINK_CONTAINER_ID`. A new launch gives it a new
+  // identity, so React calls it again with the mounted element, and FastLink opens there.
+  const attachContainer = useCallback(
+    (element: HTMLDivElement | null) => {
+      if (!element || !launch) return
+      setLaunch(null)
+      try {
+        window.fastlink!.open(
+          {
+            fastLinkURL: launch.fastlink_url,
+            accessToken: `Bearer ${launch.access_token}`,
+            params: {
+              configName: launch.config_name,
+              ...(launch.provider_account_id
+                ? { flow: "edit" as const, providerAccountId: Number(launch.provider_account_id) }
+                : {}),
+            },
+            onSuccess: (data) => {
+              setActive(false)
+              if (data.providerAccountId === undefined) {
+                setError("connectFailed")
+                return
+              }
+              startSaving(async () => setError(await onLinked(String(data.providerAccountId))))
+            },
+            onError: () => {
+              setActive(false)
+              setError("connectFailed")
+            },
+            onClose: () => setActive(false),
+          },
+          FASTLINK_CONTAINER_ID,
+        )
+      } catch {
+        setActive(false)
+        setError("launchFailed")
+      }
+    },
+    [launch, onLinked],
+  )
 
   const open = useCallback(async () => {
     setError(null)
@@ -59,40 +103,14 @@ export function useYodleeConnect(
         return
       }
       await loadScript()
-      const launch: FastLinkLaunch = result.launch
       setActive(true)
-      window.fastlink!.open(
-        {
-          fastLinkURL: launch.fastlink_url,
-          accessToken: `Bearer ${launch.access_token}`,
-          params: {
-            configName: launch.config_name,
-            ...(launch.provider_account_id
-              ? { flow: "edit" as const, providerAccountId: Number(launch.provider_account_id) }
-              : {}),
-          },
-          onSuccess: (data) => {
-            setActive(false)
-            if (data.providerAccountId === undefined) {
-              setError("connectFailed")
-              return
-            }
-            startSaving(async () => setError(await onLinked(String(data.providerAccountId))))
-          },
-          onError: () => {
-            setActive(false)
-            setError("connectFailed")
-          },
-          onClose: () => setActive(false),
-        },
-        FASTLINK_CONTAINER_ID,
-      )
+      setLaunch(result.launch)
     } catch {
       setError("launchFailed")
     } finally {
       setOpening(false)
     }
-  }, [businessId, connectionId, onLinked])
+  }, [businessId, connectionId])
 
-  return { open, pending: opening || saving, active, error, clearError: () => setError(null) }
+  return { open, attachContainer, pending: opening || saving, active, error, clearError: () => setError(null) }
 }

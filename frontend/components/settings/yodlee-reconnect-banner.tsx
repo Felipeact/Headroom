@@ -25,7 +25,7 @@ export function YodleeReconnectBanner({
     const result = await repairConnection(businessId, connectionId)
     return result.error === null ? null : ("connectFailed" as const)
   }, [businessId, connectionId])
-  const { open, pending, active, error } = useYodleeConnect(businessId, onLinked, connectionId)
+  const { open, attachContainer, pending, active, error } = useYodleeConnect(businessId, onLinked, connectionId)
 
   return (
     <div
@@ -55,7 +55,7 @@ export function YodleeReconnectBanner({
           {pending ? t("reconnecting") : t("reconnect")}
         </Button>
       </div>
-      {active && <div id={FASTLINK_CONTAINER_ID} className="min-h-[640px] w-full" />}
+      {active && <div id={FASTLINK_CONTAINER_ID} ref={attachContainer} className="min-h-[640px] w-full" />}
     </div>
   )
 }

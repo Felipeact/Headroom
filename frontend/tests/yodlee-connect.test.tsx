@@ -3,6 +3,7 @@ import { NextIntlClientProvider } from 'next-intl'
 import { afterEach, beforeEach, describe, expect, test, vi } from 'vitest'
 import { connectBank, connectYodleeBank, launchFastLink } from '@/app/onboarding/bank/actions'
 import { ConnectBank } from '@/components/onboarding/connect-bank'
+import { FASTLINK_CONTAINER_ID } from '@/components/onboarding/use-yodlee-connect'
 import messages from '@/messages/en.json'
 
 vi.mock('@/app/onboarding/bank/actions', () => ({
@@ -112,6 +113,31 @@ describe('yodlee connect (spec 17b)', () => {
     expect(yodleeButton().disabled).toBe(false)
     expect(yodleeButton().textContent).toBe(BANK.yodleeConnect)
     expect(alert().textContent).toBe('')
+  })
+
+  test('container exists when fastlink opens', async () => {
+    // Like Yodlee's initialize.js: open() throws when the container is not in the document.
+    const present: boolean[] = []
+    fastlink.open.mockImplementation((_config, containerId) => {
+      present.push(document.getElementById(containerId) !== null)
+      if (!present.at(-1)) throw new Error('Invalid container element')
+    })
+    vi.mocked(launchFastLink).mockResolvedValue(LAUNCH)
+    renderView()
+
+    await act(async () => fireEvent.click(yodleeButton()))
+
+    expect(present).toEqual([true])
+    expect(alert().textContent).toBe('')
+
+    fastlink.open.mockReset()
+    fastlink.open.mockImplementation(() => {
+      throw new Error('fastlink failed')
+    })
+    await act(async () => fireEvent.click(yodleeButton()))
+
+    expect(alert().textContent).toBe(BANK.errors.launchFailed)
+    expect(document.getElementById(FASTLINK_CONTAINER_ID)).toBeNull()
   })
 
   test('copy from messages', () => {

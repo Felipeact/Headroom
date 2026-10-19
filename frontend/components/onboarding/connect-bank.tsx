@@ -31,7 +31,7 @@ export function ConnectBank({
     async (providerAccountId: string) => (await connectYodleeBank(businessId, providerAccountId)).error,
     [businessId],
   )
-  const fastLink = useYodleeConnect(businessId, onLinked)
+  const { attachContainer, ...fastLink } = useYodleeConnect(businessId, onLinked)
   const pending = plaid.pending || fastLink.pending
   const error = plaid.error ?? fastLink.error
 
@@ -101,7 +101,9 @@ export function ConnectBank({
             <p className="text-[13px] text-ink-3">{t("Bank.yodleeProvider")}</p>
           </>
         )}
-        {fastLink.active && <div id={FASTLINK_CONTAINER_ID} className="min-h-[640px] w-full" />}
+        {fastLink.active && (
+          <div id={FASTLINK_CONTAINER_ID} ref={attachContainer} className="min-h-[640px] w-full" />
+        )}
       </div>
     </div>
   )
