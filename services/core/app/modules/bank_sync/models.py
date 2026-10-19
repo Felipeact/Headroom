@@ -28,9 +28,9 @@ ACCOUNT_TYPES: tuple[str, ...] = get_args(AccountType)
 CASH_TYPES = ("checking", "savings")
 CASH_CURRENCY = "CAD"
 
-# Who fetches a connection's data (spec 17a). Plaid only for now; the next provider adds
+# Who fetches a connection's data (spec 17a, 17b). A new provider adds
 # its value here and to `ck_bank_connections_provider`.
-Provider = Literal["plaid"]
+Provider = Literal["plaid", "yodlee"]
 PROVIDERS: tuple[str, ...] = get_args(Provider)
 
 TransactionLabel = Literal[
