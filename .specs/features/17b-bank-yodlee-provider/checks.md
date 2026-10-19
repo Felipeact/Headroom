@@ -20,9 +20,9 @@ Proof: `uv run pytest tests/test_bank_yodlee_migration.py -k "downgrade_refuses_
 **C3** - With no `yodlee` rows, the downgrade restores the check to `provider IN ('plaid')` (door 1)
 Proof: `uv run pytest tests/test_bank_yodlee_migration.py -k "downgrade_restores_plaid_only"`
 
-**C4** - The existing Plaid connect, accounts, sync, nightly, settings, webhook and fixture suites pass, and no existing assertion was edited (AC 3)
+**C4** - The existing Plaid connect, accounts, sync, nightly, settings, webhook and fixture suites pass, and no existing assertion was weakened or removed; the only edited assertions are the two route-count tripwires in `services/core/tests/test_security_rules.py` (28 to 30 and 35 to 37, one per new route) (AC 3)
 Proof: `uv run pytest tests/test_bank_connect.py tests/test_bank_accounts.py tests/test_bank_connection_nightly.py tests/test_bank_connection_settings.py tests/test_plaid_webhook.py tests/test_plaid_item_webhooks.py tests/test_plaid_client.py`
-Proof: `git diff <base>..HEAD -- services/core/tests | grep -E "^-\s+assert"` prints nothing
+Proof: `git diff <base>..HEAD -- services/core/tests | grep -E "^-\s+assert"` prints exactly `assert len(routes) == 28` and `assert len(routes) == 35`, both in `test_security_rules.py`, and nothing else
 
 **C5** - `GET .../bank/connections` returns `provider: "yodlee"` for a Yodlee connection and `"plaid"` for a Plaid one (AC 4)
 Proof: `uv run pytest tests/test_bank_connect_yodlee.py -k "list_shows_provider"`
