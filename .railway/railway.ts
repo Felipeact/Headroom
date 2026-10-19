@@ -61,6 +61,13 @@ export default defineRailway((ctx) => {
       PLAID_SECRET: preserve(),
       PLAID_ENV: preserve(),
       PLAID_WEBHOOK_URL: preserve(),
+      // Yodlee (spec 17b), set with `railway variable set`; any of the six unset keeps Yodlee off.
+      YODLEE_API_URL: preserve(),
+      YODLEE_CLIENT_ID: preserve(),
+      YODLEE_CLIENT_SECRET: preserve(),
+      YODLEE_ADMIN_LOGIN_NAME: preserve(),
+      YODLEE_FASTLINK_URL: preserve(),
+      YODLEE_FASTLINK_CONFIG_NAME: preserve(),
       TOKEN_ENCRYPTION_KEYS: preserve(),
       // Email (spec 28), set with `railway variable set`: the sender (`console` or `resend`)
       // and its key, the From address, the footer's mailing address, the public web and API
@@ -123,6 +130,13 @@ export default defineRailway((ctx) => {
       PLAID_CLIENT_ID: "${{api.PLAID_CLIENT_ID}}",
       PLAID_SECRET: "${{api.PLAID_SECRET}}",
       PLAID_ENV: "${{api.PLAID_ENV}}",
+      // Spec 17b: the nightly sync reads Yodlee banks through the same settings as `api`.
+      YODLEE_API_URL: "${{api.YODLEE_API_URL}}",
+      YODLEE_CLIENT_ID: "${{api.YODLEE_CLIENT_ID}}",
+      YODLEE_CLIENT_SECRET: "${{api.YODLEE_CLIENT_SECRET}}",
+      YODLEE_ADMIN_LOGIN_NAME: "${{api.YODLEE_ADMIN_LOGIN_NAME}}",
+      YODLEE_FASTLINK_URL: "${{api.YODLEE_FASTLINK_URL}}",
+      YODLEE_FASTLINK_CONFIG_NAME: "${{api.YODLEE_FASTLINK_CONFIG_NAME}}",
       TOKEN_ENCRYPTION_KEYS: "${{api.TOKEN_ENCRYPTION_KEYS}}",
       SENTRY_DSN: "${{api.SENTRY_DSN}}",
       SENTRY_ENVIRONMENT: "${{api.SENTRY_ENVIRONMENT}}",
