@@ -116,3 +116,4 @@ Context used per request, measured against a context window of about 250,000 tok
 | Spec 17b: build (sandbox probes, settings, migration, Yodlee client, service, API, web, tests), proofs, e2e | ~210,000 (~84%) | Low (past 60%) |
 | Spec 17b: verifier rounds 1-3 (separate contexts, ~194k, ~138k, ~150k) | ~480,000 across three contexts (each 55-78%) | Low to Medium |
 | Spec 17b: verification fixes (rounds 1-2), C4 reword, decisions, STATE | ~110,000 (~44%) | Medium (attention degrades) |
+| Spec 17b: CI fix (caplog), the-judge review, F1 fix and C50, verifier round 4 (separate context, ~135,000) | ~110,000 (~44%) | Medium (attention degrades) |

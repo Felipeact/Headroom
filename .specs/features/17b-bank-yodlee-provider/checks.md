@@ -3,7 +3,7 @@
 Profile: light
 Plan: `.specs/features/17b-bank-yodlee-provider/plan.md`
 
-49 checks in 8 slices · 7 one-way doors · 3 open, of which 1 blocks the build (sandbox shapes) and 2 block go-live (RBC authenticator proof; Yodlee agreement)
+50 checks in 8 slices · 7 one-way doors · 3 open, of which 1 blocks the build (sandbox shapes) and 2 block go-live (RBC authenticator proof; Yodlee agreement)
 
 API proofs run from `services/core`, web proofs from `frontend`. Profile `light` is the default (AGENTS.md declares none). Because this touches secrets and a screen, `standard` would add the recomputed coverage join; say so if you want it raised.
 
