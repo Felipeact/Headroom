@@ -34,6 +34,7 @@ Proof: `uv run pytest tests/test_bank_connect_yodlee.py -k "off_when_any_setting
 
 **C7** - A Yodlee call that exceeds 15 s raises `YodleeError` with `http_status` `None` (AC 6)
 Proof: `uv run pytest tests/test_yodlee_client.py -k "timeout_raises_yodlee_error"`
+Proof: `uv run pytest tests/test_yodlee_client.py -k "timeout_is_15_seconds"`
 
 **C8** - A Yodlee error response yields a `YodleeError` whose `http_status` and `error_code` are set and whose message and attributes contain none of the response body (AC 7)
 Proof: `uv run pytest tests/test_yodlee_client.py -k "error_carries_no_body"`
@@ -69,6 +70,7 @@ Proof: `uv run pytest tests/test_bank_connect_yodlee.py -k "fastlink_yodlee_fail
 
 **C18** - After a fastlink call, the captured logs and Sentry events contain neither the access token, the client secret nor the admin login name (AC 15, door 7)
 Proof: `uv run pytest tests/test_bank_connect_yodlee.py -k "fastlink_secrets_not_logged"`
+Proof: `uv run pytest tests/test_bank_connect_yodlee.py -k "no_yodlee_secret_in_logs_or_sentry"`
 Proof: `uv run pytest tests/test_log.py -k "yodlee"`
 
 **C19** - The user token is requested with the business's `hr-` loginName and never with `YODLEE_ADMIN_LOGIN_NAME` (AC 40)
@@ -124,6 +126,7 @@ Proof: `uv run pytest tests/test_bank_sync_yodlee.py -k "disconnect_deletes_remo
 
 **C34** - When Yodlee's delete fails with a non-"not found" error, the route returns `503` and the connection, accounts and transactions remain (AC 29)
 Proof: `uv run pytest tests/test_bank_sync_yodlee.py -k "disconnect_remote_failure"`
+Proof: `uv run pytest tests/test_bank_connect_yodlee.py -k "repair_and_disconnect_over_http"`
 
 **C35** - When Yodlee says the provider account does not exist, the disconnect succeeds and removes the local rows (AC 30)
 Proof: `uv run pytest tests/test_bank_sync_yodlee.py -k "disconnect_remote_not_found"`
@@ -144,6 +147,7 @@ Proof: `npx vitest run tests/yodlee-connect.test.tsx -t "error and retry"`
 
 **C40** - FastLink's `onSuccess` with `providerAccountId` `42` calls the connect server action with `provider = yodlee` and `provider_account_id = "42"` (AC 35)
 Proof: `npx vitest run tests/yodlee-connect.test.tsx -t "success posts provider account"`
+Proof: `npx vitest run tests/connect-yodlee-bank-action.test.ts -t "sends the yodlee provider"`
 
 **C41** - Closing FastLink without success returns the screen to its initial state and calls no connect action (AC 36)
 Proof: `npx vitest run tests/yodlee-connect.test.tsx -t "close returns to start"`
