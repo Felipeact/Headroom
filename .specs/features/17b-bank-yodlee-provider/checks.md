@@ -164,6 +164,10 @@ Proof: `npx playwright test e2e/bank-yodlee.spec.ts`
 **C45** - The Content-Security-Policy-Report-Only header allows `https://cdn.yodlee.com` in `script-src` and the FastLink host in `frame-src` (Impact, config)
 Proof: `npx vitest run tests/security-headers.test.ts -t "yodlee"`
 
+**C50** - On the first activation of the Yodlee action, and of the settings reconnect, the element `#container-fastlink` is in the document when `window.fastlink.open` is called, so no error shows; after a failed open, the container is gone (the-judge F1, user decision 2026-10-19; AC 32, AC 38)
+Proof: `npx vitest run tests/yodlee-connect.test.tsx -t "container exists when fastlink opens"`
+Proof: `npx vitest run tests/bank-settings-page.test.tsx -t "reconnect container exists when fastlink opens"`
+
 ### S8 - Access and secrets · 3 files · ~30 KB · ~8k
 
 **C46** - A user from another business gets `404` from `GET .../bank/providers`, `POST .../yodlee/fastlink` and `POST .../bank/connections` with `provider = yodlee` (AC 39)
