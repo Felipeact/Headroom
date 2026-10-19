@@ -112,3 +112,5 @@ Context used per request, measured against a context window of about 250,000 tok
 | Spec 17a: verifier round 1 (separate context) | ~177,000 (~71%) | Low (past 60%) |
 | Spec 17a: round-1 fixes (Sentry redaction, parsing, tests), verifier round 2 (separate context, ~128,000) | ~60,000 (~24%) | High (smart zone) |
 | Spec 17a: the-judge review and fixes (providers.py extraction, token refresh, fixtures) | ~40,000 (~16%) | High (smart zone) |
+| Spec 17b: provider search (Plaid RBC OAuth check, Mastercard, Yodlee, direct RBC), plan, checks | ~95,000 (~38%) | High (smart zone) |
+| Spec 17b: build (sandbox probes, settings, migration, Yodlee client, service, API, web, tests), proofs, e2e | ~210,000 (~84%) | Low (past 60%) |

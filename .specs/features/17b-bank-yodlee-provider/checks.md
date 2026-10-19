@@ -217,3 +217,15 @@ Estimates are bytes read plus bytes written, divided by four, from `wc -c` on th
 - S8 = 8k; total 119k, under the 150k budget - one builder
 
 Mechanism: one builder.
+
+- **Boundary:** C1-C49 closed; proofs green at `62e719f` (API 1182 passed, web 421 passed, `npm run build`, Playwright C44)
+- **Settled mid-build:**
+  - Door 2a (`YODLEE_TEST_LOGIN_NAME`): the sandbox refuses `POST /user/register` with `Y820`; the user supplied one sandbox test user.
+  - The user approved the plan with a second button for every owner, where the API offers Yodlee.
+  - Yodlee failures answer `503` as the plan's `Surface` says; the Plaid routes answer `502`. Both stay.
+  - C45 is met by `script-src` and `frame-src` directives added to the report-only CSP in `frontend/lib/security-headers.ts`; the plan's Impact said the same.
+  - The Plaid connect call now sends `provider: "plaid"` (the generated type requires it), so one assertion in `frontend/tests/connect-bank-action.test.ts` gained the key, as in spec 17a.
+  - `tests/test_security_rules.py` route counts went 28 -> 30 and 35 -> 37, and `tests/test_bookkeeper_access.py` lists the two new owner-only routes.
+- **Abandoned:** nothing. The spec 34 shared-credential check allows `YODLEE_FASTLINK_CONFIG_NAME` (a name, not a credential).
+- **Not proven by any check:** whether RBC with an authenticator app connects through Yodlee in production, and the live `register_user` call (the sandbox cannot register). Both block go-live (plan Open questions 2 and 3).
+

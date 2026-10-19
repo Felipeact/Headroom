@@ -12,7 +12,8 @@ This reuses the whole sync pipeline: the `_apply` upsert, relabelling, the conne
 
 ```mermaid
 flowchart TD
-    UI["connect-bank screen (exists): Plaid button, Yodlee button"] -->|Yodlee| FL["POST .../bank/yodlee/fastlink -> bank_sync api (exists)"]
+    UI["connect-bank screen (exists): Plaid button, Yodlee button"] -->|which providers| PR["GET .../bank/providers -> bank_sync api (exists)"]
+    UI -->|Yodlee| FL["POST .../bank/yodlee/fastlink -> bank_sync api (exists)"]
     FL --> YC["YodleeClient port (door 3): register user once, user token"]
     UI -->|FastLink onSuccess: providerAccountId| ACT["server action connectBank (exists)"]
     ACT --> CON["POST .../bank/connections provider=yodlee -> bank_sync.service.connect_bank (exists)"]
