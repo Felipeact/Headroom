@@ -36,6 +36,9 @@ class Settings(BaseSettings):
     yodlee_admin_login_name: str | None = None
     yodlee_fastlink_url: str | None = None
     yodlee_fastlink_config_name: str | None = None
+    # The sandbox cannot register users (Y820): when set, every business uses this one
+    # pre-registered test user. Local and staging only; production leaves it unset.
+    yodlee_test_login_name: str | None = None
     # Fernet keys for Plaid access tokens and Yodlee login names, comma-separated; the first
     # encrypts, any decrypts.
     token_encryption_keys: Annotated[list[str], NoDecode]
@@ -86,6 +89,7 @@ class Settings(BaseSettings):
         "yodlee_admin_login_name",
         "yodlee_fastlink_url",
         "yodlee_fastlink_config_name",
+        "yodlee_test_login_name",
         mode="before",
     )
     @classmethod
