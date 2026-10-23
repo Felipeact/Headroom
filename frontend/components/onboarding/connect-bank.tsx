@@ -1,11 +1,8 @@
 "use client"
 
-import { useCallback } from "react"
 import { CircleAlert, Eye, Lock, Power, type LucideIcon } from "lucide-react"
 import { useTranslations } from "next-intl"
-import { connectYodleeBank } from "@/app/onboarding/bank/actions"
 import { useConnectBank } from "@/components/onboarding/use-connect-bank"
-import { FASTLINK_CONTAINER_ID, useYodleeConnect } from "@/components/onboarding/use-yodlee-connect"
 import { Button } from "@/components/ui/button"
 
 const TRUST_ITEMS = [
@@ -16,24 +13,9 @@ const TRUST_ITEMS = [
 
 // Onboarding step 3, from design/mockups/onboarding-3-connect-bank.dc.html (spec 12). The owner
 // logs in on the bank's own screen inside Plaid Link; only the public token comes back here.
-export function ConnectBank({
-  businessId,
-  linkToken,
-  yodlee = false,
-}: {
-  businessId: string
-  linkToken: string
-  yodlee?: boolean
-}) {
+export function ConnectBank({ businessId, linkToken }: { businessId: string; linkToken: string }) {
   const t = useTranslations("Onboarding")
-  const plaid = useConnectBank(businessId, linkToken)
-  const onLinked = useCallback(
-    async (providerAccountId: string) => (await connectYodleeBank(businessId, providerAccountId)).error,
-    [businessId],
-  )
-  const { attachContainer, ...fastLink } = useYodleeConnect(businessId, onLinked)
-  const pending = plaid.pending || fastLink.pending
-  const error = plaid.error ?? fastLink.error
+  const { open, ready, pending, error } = useConnectBank(businessId, linkToken)
 
   return (
     <div className="flex flex-1 flex-col gap-6">
@@ -58,9 +40,6 @@ export function ConnectBank({
         ))}
       </ul>
       <p className="text-[13px] text-ink-3">{t("Bank.provider")}</p>
-      {/* Plaid cannot finish RBC sign-ins that use an authenticator app; a text-message code
-          works (Plaid docs on unsupported MFA). */}
-      <p className="text-[13px] leading-[1.45] text-ink-3">{t("Bank.rbcHint")}</p>
       <div className="mt-auto flex flex-col gap-3">
         <div role="alert">
           {error && (
@@ -72,38 +51,13 @@ export function ConnectBank({
         </div>
         <Button
           type="button"
-          disabled={!plaid.ready || pending}
+          disabled={!ready || pending}
           aria-busy={pending}
-          onClick={() => {
-            fastLink.clearError()
-            plaid.open()
-          }}
+          onClick={() => open()}
           className="min-h-[52px] text-base"
         >
           {pending ? t("Bank.connecting") : t("Bank.connect")}
         </Button>
-        {yodlee && (
-          <>
-            <p className="text-[13px] leading-[1.45] text-ink-3">{t("Bank.yodleeHint")}</p>
-            <Button
-              type="button"
-              variant="outline"
-              disabled={pending}
-              aria-busy={fastLink.pending}
-              onClick={() => {
-                plaid.clearError()
-                void fastLink.open()
-              }}
-              className="min-h-[52px] text-base"
-            >
-              {fastLink.pending ? t("Bank.yodleeOpening") : t("Bank.yodleeConnect")}
-            </Button>
-            <p className="text-[13px] text-ink-3">{t("Bank.yodleeProvider")}</p>
-          </>
-        )}
-        {fastLink.active && (
-          <div id={FASTLINK_CONTAINER_ID} ref={attachContainer} className="min-h-[640px] w-full" />
-        )}
       </div>
     </div>
   )

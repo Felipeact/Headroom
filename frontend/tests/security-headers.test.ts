@@ -30,11 +30,4 @@ describe("security headers", () => {
     expect(headers["Content-Security-Policy-Report-Only"]).toContain("default-src 'self'");
     expect(Object.keys(headers)).not.toContain("Content-Security-Policy");
   });
-
-  it("csp allows yodlee's fastlink script and frame", async () => {
-    const policy = (await sent())["Content-Security-Policy-Report-Only"];
-
-    expect(policy).toContain("script-src 'self' https://cdn.yodlee.com");
-    expect(policy).toContain("frame-src 'self' https://*.yodlee.com");
-  });
 });

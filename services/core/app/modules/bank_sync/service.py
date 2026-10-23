@@ -3,7 +3,7 @@ from collections.abc import Iterable, Mapping
 from dataclasses import dataclass, replace
 from datetime import UTC, date, datetime, timedelta
 from decimal import ROUND_HALF_EVEN, Decimal
-from typing import Literal, cast
+from typing import Literal
 from zoneinfo import ZoneInfo
 
 import structlog
@@ -24,7 +24,6 @@ from app.modules.bank_sync.models import (
     BankAccount,
     BankConnection,
     BankTransaction,
-    Provider,
 )
 from app.modules.bank_sync.plaid import (
     ExchangedItem,
@@ -37,20 +36,10 @@ from app.modules.bank_sync.plaid import (
     SyncPage,
 )
 from app.modules.bank_sync.tokens import decrypt_access_token, encrypt_access_token
-from app.modules.bank_sync.yodlee import (
-    LOGIN_REQUIRED as YODLEE_LOGIN_REQUIRED,
-)
-from app.modules.bank_sync.yodlee import (
-    FastLinkLaunch,
-    YodleeClient,
-    YodleeError,
-    login_name_for,
-)
 from app.modules.forecasting.events import FORECAST_INPUTS_CHANGED
 from app.settings import get_settings
 
-INSTITUTION_INDEX = "uq_bank_connections_business_provider_institution"
-ITEM_INDEX = "uq_bank_connections_provider_provider_item_id"
+INSTITUTION_INDEX = "uq_bank_connections_business_id_plaid_institution_id"
 PRIMARY_INDEX = "uq_bank_accounts_primary_business_id"
 # 24 months of history, Plaid's maximum.
 DAYS_REQUESTED = 730
@@ -60,10 +49,6 @@ SYNC_ATTEMPTS = 3
 # The Plaid error codes this module acts on (spec 17).
 LOGIN_REQUIRED = "ITEM_LOGIN_REQUIRED"
 ITEM_NOT_FOUND = "ITEM_NOT_FOUND"
-LOGIN_REQUIRED_CODES = frozenset({LOGIN_REQUIRED, YODLEE_LOGIN_REQUIRED})
-# Yodlee gives a window of dates, not a cursor (spec 17b): all the history the first time,
-# 90 days after that.
-YODLEE_LATER_SYNC_DAYS = 90
 
 # Plaid (type, subtype) -> our account type. Anything not listed is `other`.
 ACCOUNT_TYPES: dict[tuple[str, str | None], str] = {
@@ -85,20 +70,12 @@ class DuplicateBankError(Exception):
     """The business already has a connection to this institution."""
 
 
-class _ProviderAccountStoredError(DuplicateBankError):
-    """This very provider account is already stored; deleting it would break that connection."""
-
-
 class AccountNotFoundError(Exception):
     """The business has no account with this ID."""
 
 
 class ConnectionNotFoundError(Exception):
     """The business has no connection with this ID."""
-
-
-class ProviderMismatchError(Exception):
-    """The connection belongs to another provider than the one asked for."""
 
 
 class LoginRequiredError(Exception):
@@ -158,7 +135,6 @@ class SyncResult:
 @dataclass(frozen=True)
 class ConnectionView:
     id: uuid.UUID
-    provider: Provider
     institution_name: str
     created_at: datetime
     accounts: list[AccountView]
@@ -230,7 +206,6 @@ def _connection_view(
 ) -> ConnectionView:
     return ConnectionView(
         id=connection.id,
-        provider=cast(Provider, connection.provider),
         institution_name=connection.institution_name,
         created_at=connection.created_at,
         accounts=sorted((_view(a) for a in accounts), key=lambda a: (a.name, a.id)),
@@ -275,8 +250,6 @@ def create_update_link_token(
     )
     if connection is None:
         raise ConnectionNotFoundError
-    if connection.provider != "plaid":
-        raise ProviderMismatchError
     return plaid.create_link_token(
         LinkTokenRequest(
             client_user_id=str(user_id),
@@ -303,7 +276,7 @@ def _account(
     return BankAccount(
         business_id=business_id,
         connection_id=connection_id,
-        provider_account_id=account.account_id,
+        plaid_account_id=account.account_id,
         name=account.name,
         type=type_,
         mask=account.mask,
@@ -354,7 +327,7 @@ def _remove_new_item(
         log.error(
             "bank_connection.orphaned",
             business_id=str(business_id),
-            provider_item_id=item.item_id,
+            plaid_item_id=item.item_id,
         )
 
 
@@ -378,10 +351,7 @@ def connect_bank(
         accounts = plaid.get_accounts(item.access_token)
         institution_id = accounts.institution_id
         if repository.has_institution(
-            session,
-            business_id=business_id,
-            provider="plaid",
-            institution_id=institution_id,
+            session, business_id=business_id, institution_id=institution_id
         ):
             raise DuplicateBankError
         institution_name = plaid.get_institution_name(institution_id)
@@ -389,8 +359,8 @@ def connect_bank(
             connection = repository.insert_connection(
                 session,
                 business_id=business_id,
-                provider_item_id=item.item_id,
-                provider_institution_id=institution_id,
+                plaid_item_id=item.item_id,
+                plaid_institution_id=institution_id,
                 institution_name=institution_name,
                 access_token_ciphertext=encrypt_access_token(item.access_token),
             )
@@ -418,173 +388,6 @@ def connect_bank(
     except BaseException:
         session.rollback()
         _remove_new_item(plaid, item, business_id=business_id)
-        raise
-    log.info(
-        "bank_connection.created",
-        business_id=str(business_id),
-        connection_id=str(view.id),
-        institution_id=institution_id,
-        account_count=len(view.accounts),
-    )
-    return view
-
-
-def launch_fastlink(
-    session: Session,
-    yodlee: YodleeClient,
-    *,
-    business_id: uuid.UUID,
-    connection_id: uuid.UUID | None = None,
-) -> FastLinkLaunch:
-    """The launch parameters for Yodlee's FastLink, registering the business's user once.
-
-    With `connection_id` it opens FastLink in edit mode for that Yodlee connection.
-    Raises `ConnectionNotFoundError`, `ProviderMismatchError` for a connection that is
-    not Yodlee's, and `YodleeError` when Yodlee fails.
-    """
-    provider_account_id: str | None = None
-    login_name = login_name_for(business_id)
-    if connection_id is not None:
-        connection = repository.get_connection(
-            session, business_id=business_id, connection_id=connection_id
-        )
-        if connection is None:
-            raise ConnectionNotFoundError
-        if connection.provider != "yodlee":
-            raise ProviderMismatchError
-        login_name = decrypt_access_token(connection.access_token_ciphertext)
-        provider_account_id = connection.provider_item_id
-    elif (
-        get_settings().yodlee_test_login_name is None
-        and not repository.has_provider_connection(
-            session, business_id=business_id, provider="yodlee"
-        )
-    ):
-        # A business that has a Yodlee connection has its user already; the client skips
-        # a user Yodlee knows, which covers a connect that failed after registering.
-        yodlee.register_user(login_name)
-    return yodlee.launch(login_name, provider_account_id)
-
-
-def _remove_new_provider_account(
-    yodlee: YodleeClient,
-    login_name: str,
-    provider_account_id: str,
-    *,
-    business_id: uuid.UUID,
-) -> None:
-    try:
-        yodlee.delete_provider_account(login_name, provider_account_id)
-    except YodleeError:
-        # Nothing stored it, so no one can remove it later: say so loudly.
-        log.error(
-            "bank_connection.orphaned",
-            business_id=str(business_id),
-            provider_item_id=provider_account_id,
-        )
-
-
-def _is_ours_to_delete(
-    session: Session,
-    exc: BaseException,
-    business_id: uuid.UUID,
-    provider_account_id: str,
-) -> bool:
-    """Whether a failed connect may delete the provider account it was handed at Yodlee.
-
-    Never when this account is already stored (a racing connect won), and never on the
-    shared sandbox user, where the account may belong to another business.
-    """
-    if isinstance(exc, _ProviderAccountStoredError):
-        return False
-    if get_settings().yodlee_test_login_name is not None:
-        return False
-    return not repository.has_provider_item(
-        session,
-        business_id=business_id,
-        provider="yodlee",
-        provider_item_id=provider_account_id,
-    )
-
-
-def connect_yodlee_bank(
-    session: Session,
-    yodlee: YodleeClient,
-    *,
-    business_id: uuid.UUID,
-    user_id: uuid.UUID,
-    provider_account_id: str,
-) -> ConnectionView:
-    """Store the bank FastLink just linked: its connection, accounts and an audit entry.
-
-    Everything is stored in one transaction with the user's login name encrypted. If
-    anything fails after reading the provider account, it is deleted at Yodlee and nothing
-    is stored. Raises `DuplicateBankError` when the business already has this provider
-    account or institution, and `YodleeError` when Yodlee fails or returns no accounts.
-    Commits the session.
-    """
-    if repository.has_provider_item(
-        session,
-        business_id=business_id,
-        provider="yodlee",
-        provider_item_id=provider_account_id,
-    ):
-        raise _ProviderAccountStoredError
-    login_name = login_name_for(business_id)
-    try:
-        status = yodlee.provider_account(login_name, provider_account_id)
-        accounts = yodlee.accounts(login_name, provider_account_id)
-        if not accounts:
-            raise YodleeError(http_status=None, error_code="NO_ACCOUNTS")
-        institution_id = status.provider_id
-        if repository.has_institution(
-            session,
-            business_id=business_id,
-            provider="yodlee",
-            institution_id=institution_id,
-        ):
-            raise DuplicateBankError
-        institution_name = yodlee.institution_name(login_name, institution_id)
-        try:
-            connection = repository.insert_connection(
-                session,
-                business_id=business_id,
-                provider="yodlee",
-                provider_item_id=provider_account_id,
-                provider_institution_id=institution_id,
-                institution_name=institution_name,
-                access_token_ciphertext=encrypt_access_token(login_name),
-            )
-        except IntegrityError as exc:
-            if _violates(exc, ITEM_INDEX):
-                # Another connect (or another business, on a shared sandbox user) stored it.
-                raise _ProviderAccountStoredError from None
-            if _violates(exc, INSTITUTION_INDEX):
-                raise DuplicateBankError from None
-            raise
-        rows = [
-            _account(a, business_id=business_id, connection_id=connection.id)
-            for a in accounts
-        ]
-        repository.insert_accounts(session, rows)
-        _choose_primary(session, rows, business_id=business_id)
-        audit.record(
-            session,
-            action="bank_connection.created",
-            business_id=business_id,
-            actor_user_id=str(user_id),
-            target_type="bank_connection",
-            target_id=str(connection.id),
-            details={"institution_id": institution_id, "account_count": len(rows)},
-        )
-        view = _connection_view(connection, rows)
-        session.commit()
-    except BaseException as exc:
-        session.rollback()
-        if _is_ours_to_delete(session, exc, business_id, provider_account_id):
-            _remove_new_provider_account(
-                yodlee, login_name, provider_account_id, business_id=business_id
-            )
         raise
     log.info(
         "bank_connection.created",
@@ -829,7 +632,7 @@ def _apply(
 ) -> SyncResult:
     business_id = connection.business_id
     accounts = {
-        a.provider_account_id: a
+        a.plaid_account_id: a
         for a in repository.connection_accounts(
             session, business_id=business_id, connection_id=connection.id
         )
@@ -851,10 +654,10 @@ def _apply(
     added = modified = removed = 0
     for page in pages:
         changes = [*page.added, *page.modified]
-        existing = repository.transactions_by_provider_id(
+        existing = repository.transactions_by_plaid_id(
             session,
             business_id=business_id,
-            provider_transaction_ids=[t.transaction_id for t in changes],
+            plaid_transaction_ids=[t.transaction_id for t in changes],
         )
         replaced: list[str] = []
         for transaction in changes:
@@ -865,7 +668,7 @@ def _apply(
             stored = existing.get(transaction.transaction_id)
             if stored is None:
                 stored = BankTransaction(
-                    provider_transaction_id=transaction.transaction_id, **values
+                    plaid_transaction_id=transaction.transaction_id, **values
                 )
                 repository.insert_transaction(
                     session, business_id=business_id, transaction=stored
@@ -885,7 +688,7 @@ def _apply(
         removed += repository.delete_transactions(
             session,
             business_id=business_id,
-            provider_transaction_ids=[*page.removed, *replaced],
+            plaid_transaction_ids=[*page.removed, *replaced],
         )
 
     balances_changed = bool(new_accounts)
@@ -899,8 +702,7 @@ def _apply(
             row.updated_at = func.now()
             balances_changed = True
 
-    if connection.provider == "plaid":
-        connection.transactions_cursor = pages[-1].next_cursor
+    connection.transactions_cursor = pages[-1].next_cursor
     session.flush()
     return SyncResult(
         added=added,
@@ -959,45 +761,8 @@ def _relabel(session: Session, business_id: uuid.UUID, now: datetime) -> int:
     return len(changed)
 
 
-def _yodlee_snapshot(
-    yodlee: YodleeClient | None, connection: BankConnection, now: datetime
-) -> tuple[list[SyncPage], datetime | None]:
-    """One snapshot of a Yodlee connection, and when Yodlee last refreshed its data.
-
-    Raises `YodleeError`, with the login-required code when the owner must log in again.
-    """
-    if yodlee is None:
-        raise YodleeError(http_status=None, error_code="NOT_CONFIGURED")
-    login_name = decrypt_access_token(connection.access_token_ciphertext)
-    status = yodlee.provider_account(login_name, connection.provider_item_id)
-    if status.needs_login:
-        raise YodleeError(http_status=None, error_code=YODLEE_LOGIN_REQUIRED)
-    accounts = yodlee.accounts(login_name, connection.provider_item_id)
-    days = (
-        DAYS_REQUESTED if connection.last_synced_at is None else YODLEE_LATER_SYNC_DAYS
-    )
-    transactions = yodlee.transactions(
-        login_name,
-        frozenset(a.account_id for a in accounts),
-        now.date() - timedelta(days=days),
-    )
-    page = SyncPage(
-        added=transactions,
-        modified=[],
-        removed=[],
-        accounts=accounts,
-        next_cursor="",
-        has_more=False,
-    )
-    return [page], status.last_refreshed
-
-
 def _sync_locked(
-    session: Session,
-    plaid: PlaidClient,
-    connection: BankConnection,
-    now: datetime,
-    yodlee: YodleeClient | None = None,
+    session: Session, plaid: PlaidClient, connection: BankConnection, now: datetime
 ) -> SyncResult:
     """Fetch and apply every change since the cursor, inside the caller's transaction.
 
@@ -1007,25 +772,17 @@ def _sync_locked(
     sync that succeeds also clears the connection's run of failed nights (spec 15) and
     its login problem, and records `now` as when it last synced (spec 17).
     """
-    synced_at: datetime | None = now
-    if connection.provider == "yodlee":
-        pages, refreshed = _yodlee_snapshot(yodlee, connection, now)
-        # Cached data from a refresh that silently stopped must not read as fresh.
-        synced_at = (
-            min(now, refreshed) if refreshed is not None else connection.last_synced_at
-        )
-    else:
-        pages = _fetch_pages(
-            plaid,
-            decrypt_access_token(connection.access_token_ciphertext),
-            connection.transactions_cursor,
-        )
+    pages = _fetch_pages(
+        plaid,
+        decrypt_access_token(connection.access_token_ciphertext),
+        connection.transactions_cursor,
+    )
     repository.lock_accounts(session, business_id=connection.business_id)
     result = _apply(session, connection, pages)
     result = replace(result, relabeled=_relabel(session, connection.business_id, now))
     connection.failed_nights = 0
     connection.login_required = False
-    connection.last_synced_at = synced_at
+    connection.last_synced_at = now
     return result
 
 
@@ -1067,7 +824,6 @@ def sync_connection(
     business_id: uuid.UUID,
     connection_id: uuid.UUID,
     now: datetime | None = None,
-    yodlee: YodleeClient | None = None,
 ) -> SyncResult:
     """Bring in every transaction and balance change since the connection's last sync.
 
@@ -1080,8 +836,7 @@ def sync_connection(
     Publishes `transactions.synced` after the commit when something changed. When Plaid
     answers that the bank wants a new login, records that on the connection, in a
     transaction of its own, before raising. Commits the session.
-    Raises `ConnectionNotFoundError`, and `PlaidError` or `YodleeError` when the
-    connection's provider fails.
+    Raises `ConnectionNotFoundError`, and `PlaidError` when Plaid fails.
     """
     try:
         connection = repository.lock_connection(
@@ -1089,13 +844,11 @@ def sync_connection(
         )
         if connection is None:
             raise ConnectionNotFoundError
-        result = _sync_locked(
-            session, plaid, connection, now or datetime.now(UTC), yodlee
-        )
+        result = _sync_locked(session, plaid, connection, now or datetime.now(UTC))
         session.commit()
-    except (PlaidError, YodleeError) as exc:
+    except PlaidError as exc:
         session.rollback()
-        if exc.error_code in LOGIN_REQUIRED_CODES:
+        if exc.error_code == LOGIN_REQUIRED:
             _record_login_required(
                 session, business_id=business_id, connection_id=connection_id
             )
@@ -1108,11 +861,7 @@ def sync_connection(
 
 
 def sync_in_background(
-    plaid: PlaidClient,
-    *,
-    business_id: uuid.UUID,
-    connection_id: uuid.UUID,
-    yodlee: YodleeClient | None = None,
+    plaid: PlaidClient, *, business_id: uuid.UUID, connection_id: uuid.UUID
 ) -> None:
     """`sync_connection` in a session of its own, for work that runs after a response.
 
@@ -1123,11 +872,7 @@ def sync_in_background(
     with get_sessionmaker()() as session:
         try:
             sync_connection(
-                session,
-                plaid,
-                business_id=business_id,
-                connection_id=connection_id,
-                yodlee=yodlee,
+                session, plaid, business_id=business_id, connection_id=connection_id
             )
         except ConnectionNotFoundError:
             log.info(
@@ -1144,24 +889,13 @@ def sync_in_background(
                 error_code=exc.error_code,
                 request_id=exc.request_id,
             )
-        except YodleeError as exc:
-            log.error(
-                "bank_sync.sync_failed",
-                business_id=str(business_id),
-                connection_id=str(connection_id),
-                error_type="YodleeError",
-                error_code=exc.error_code,
-                http_status=exc.http_status,
-            )
 
 
 def connection_for_item(
-    session: Session, *, provider_item_id: str
+    session: Session, *, plaid_item_id: str
 ) -> tuple[uuid.UUID, uuid.UUID] | None:
     """The `(business_id, connection_id)` of a Plaid item; None when it is not stored."""
-    connection = repository.connection_for_item(
-        session, provider_item_id=provider_item_id
-    )
+    connection = repository.connection_for_item(session, plaid_item_id=plaid_item_id)
     return None if connection is None else (connection.business_id, connection.id)
 
 
@@ -1211,18 +945,11 @@ def _log_failure(
     business_id: uuid.UUID, connection_id: uuid.UUID, exc: Exception
 ) -> None:
     # Never the exception text: it can carry provider data.
-    details: dict[str, str | int | None]
     if isinstance(exc, PlaidError):
         details = {
             "error_type": exc.error_type,
             "error_code": exc.error_code,
             "request_id": exc.request_id,
-        }
-    elif isinstance(exc, YodleeError):
-        details = {
-            "error_type": "YodleeError",
-            "error_code": exc.error_code,
-            "http_status": exc.http_status,
         }
     else:
         details = {"error_type": type(exc).__name__}
@@ -1235,11 +962,7 @@ def _log_failure(
 
 
 def _nightly_sync(
-    plaid: PlaidClient,
-    candidate: BankConnection,
-    time_zone: str,
-    now: datetime,
-    yodlee: YodleeClient | None = None,
+    plaid: PlaidClient, candidate: BankConnection, time_zone: str, now: datetime
 ) -> Literal["synced", "failed", "skipped_locked", "not_due"]:
     """One connection's nightly sync, its outcome stored under the connection's lock."""
     business_id, connection_id = candidate.business_id, candidate.id
@@ -1256,14 +979,11 @@ def _nightly_sync(
             # A savepoint: a failed sync rolls back to here and keeps the lock, so the
             # failure is recorded before any other run can take the connection.
             with session.begin_nested():
-                result = _sync_locked(session, plaid, connection, now, yodlee)
+                result = _sync_locked(session, plaid, connection, now)
                 _end_night(connection, night)
         except Exception as exc:  # noqa: BLE001 - any failure is one failed attempt
             _log_failure(business_id, connection_id, exc)
-            if (
-                isinstance(exc, PlaidError | YodleeError)
-                and exc.error_code in LOGIN_REQUIRED_CODES
-            ):
+            if isinstance(exc, PlaidError) and exc.error_code == LOGIN_REQUIRED:
                 connection.login_required = True
             attempts = connection.nightly_attempts + 1
             if attempts > len(RETRY_DELAYS):
@@ -1279,9 +999,7 @@ def _nightly_sync(
     return "synced"
 
 
-def run_nightly_syncs(
-    plaid: PlaidClient, now: datetime, yodlee: YodleeClient | None = None
-) -> NightlyCounts:
+def run_nightly_syncs(plaid: PlaidClient, now: datetime) -> NightlyCounts:
     """Sync every connection whose business night is due at `now`, once per night.
 
     A connection is due from 02:00 in its business's time zone until it has synced that
@@ -1302,7 +1020,7 @@ def run_nightly_syncs(
     ]
     counts = NightlyCounts(due=len(due))
     for candidate, time_zone in due:
-        outcome = _nightly_sync(plaid, candidate, time_zone, now, yodlee)
+        outcome = _nightly_sync(plaid, candidate, time_zone, now)
         if outcome == "synced":
             counts.synced += 1
         elif outcome == "failed":
@@ -1351,12 +1069,12 @@ def _record_login_required(
     return True
 
 
-def record_login_required(session: Session, *, provider_item_id: str) -> bool:
+def record_login_required(session: Session, *, plaid_item_id: str) -> bool:
     """Mark a Plaid item's connection as needing a new bank login (`ITEM` / `ERROR`).
 
     Returns False when no stored connection has this item. Commits the session.
     """
-    found = connection_for_item(session, provider_item_id=provider_item_id)
+    found = connection_for_item(session, plaid_item_id=plaid_item_id)
     if found is None:
         return False
     business_id, connection_id = found
@@ -1372,7 +1090,6 @@ def repair_connection(
     business_id: uuid.UUID,
     connection_id: uuid.UUID,
     now: datetime | None = None,
-    yodlee: YodleeClient | None = None,
 ) -> ConnectionView:
     """Sync the connection after the owner logged in again through Link's update mode.
 
@@ -1387,10 +1104,9 @@ def repair_connection(
             business_id=business_id,
             connection_id=connection_id,
             now=now,
-            yodlee=yodlee,
         )
-    except (PlaidError, YodleeError) as exc:
-        if exc.error_code in LOGIN_REQUIRED_CODES:
+    except PlaidError as exc:
+        if exc.error_code == LOGIN_REQUIRED:
             raise LoginRequiredError from None
         raise
     connection = repository.get_connection(
@@ -1414,7 +1130,6 @@ def disconnect_bank(
     connection_id: uuid.UUID,
     user_id: uuid.UUID,
     now: datetime | None = None,
-    yodlee: YodleeClient | None = None,
 ) -> None:
     """Remove the bank at Plaid, then delete its token, accounts and transactions.
 
@@ -1433,29 +1148,12 @@ def disconnect_bank(
         )
         if connection is None:
             raise ConnectionNotFoundError
-        if connection.provider == "yodlee":
-            if yodlee is None:
-                # Yodlee is switched off: the owner can still remove the bank here. The
-                # provider account stays at Yodlee until someone deletes it by hand.
-                log.error(
-                    "bank_connection.orphaned",
-                    business_id=str(business_id),
-                    provider_item_id=connection.provider_item_id,
-                )
-            else:
-                yodlee.delete_provider_account(
-                    decrypt_access_token(connection.access_token_ciphertext),
-                    connection.provider_item_id,
-                )
-        else:
-            try:
-                plaid.remove_item(
-                    decrypt_access_token(connection.access_token_ciphertext)
-                )
-            except PlaidError as exc:
-                if exc.error_code != ITEM_NOT_FOUND:
-                    raise
-        institution_id = connection.provider_institution_id
+        try:
+            plaid.remove_item(decrypt_access_token(connection.access_token_ciphertext))
+        except PlaidError as exc:
+            if exc.error_code != ITEM_NOT_FOUND:
+                raise
+        institution_id = connection.plaid_institution_id
         accounts = repository.lock_accounts(session, business_id=business_id)
         removed_accounts = [a for a in accounts if a.connection_id == connection_id]
         remaining = [a for a in accounts if a.connection_id != connection_id]

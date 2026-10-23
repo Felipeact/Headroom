@@ -107,7 +107,7 @@ def test_stranger_denied_on_every_business_route() -> None:
         for method, tail in OWNER_ONLY | SHARED | BOOKKEEPER_ONLY
     }
     assert routes == expected
-    assert len(routes) == 30
+    assert len(routes) == 28
 
     before = business_rows(business_a)
     for method, path in sorted(routes):
@@ -144,7 +144,7 @@ def other_key() -> str:
 def test_unauthenticated_gets_401_with_challenge() -> None:
     """C19."""
     routes = {r for r in v1_routes() if r[1].startswith("/v1") and r not in PUBLIC}
-    assert len(routes) == 37
+    assert len(routes) == 35
     for method, path in sorted(routes):
         for label, headers in (
             ("missing", {}),

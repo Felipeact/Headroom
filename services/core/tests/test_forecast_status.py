@@ -230,7 +230,7 @@ def test_details_excluded_account_not_counted() -> None:
         assert visa_row is not None
         visa = dataclasses.replace(
             plaid_account("Visa", type="credit", subtype="credit card", mask="5530"),
-            account_id=visa_row.provider_account_id,
+            account_id=visa_row.plaid_account_id,
         )
     fake = SyncFake()
     fake.script = [

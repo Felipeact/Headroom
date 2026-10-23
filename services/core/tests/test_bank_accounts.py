@@ -646,8 +646,6 @@ def test_list_connections(owner_a: tuple[Caller, str], fake: FakePlaid) -> None:
             "accounts",
             "status",
             "last_synced_at",
-            # Spec 17a added the provider (AD-142).
-            "provider",
         }
     assert [a["name"] for a in body["items"][0]["accounts"]] == ["Alpha", "Zed"]
 
@@ -668,7 +666,7 @@ def test_account_json_keys(owner_a: tuple[Caller, str], fake: FakePlaid) -> None
     ]
     assert all(set(a) == ACCOUNT_KEYS for a in returned)
     stored = rows(business_id).values()
-    plaid_ids = [r.provider_account_id for r in stored] + fake.item_ids
+    plaid_ids = [r.plaid_account_id for r in stored] + fake.item_ids
     for body in (json.dumps(created), listed.text, patched.text):
         assert not any(pid in body for pid in plaid_ids)
 

@@ -898,212 +898,6 @@
               }
             },
             "description": "Bad Gateway"
-          },
-          "503": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ProblemDetails"
-                }
-              }
-            },
-            "description": "Service Unavailable"
-          }
-        }
-      }
-    },
-    "/v1/businesses/{business_id}/bank/providers": {
-      "get": {
-        "tags": [
-          "bank_sync"
-        ],
-        "summary": "List Providers",
-        "operationId": "list_providers_v1_businesses__business_id__bank_providers_get",
-        "security": [
-          {
-            "HTTPBearer": []
-          }
-        ],
-        "parameters": [
-          {
-            "name": "business_id",
-            "in": "path",
-            "required": true,
-            "schema": {
-              "type": "string",
-              "format": "uuid",
-              "title": "Business Id"
-            }
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": "Successful Response",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ProviderList"
-                }
-              }
-            }
-          },
-          "401": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ProblemDetails"
-                }
-              }
-            },
-            "description": "Unauthorized"
-          },
-          "403": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ProblemDetails"
-                }
-              }
-            },
-            "description": "Forbidden"
-          },
-          "404": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ProblemDetails"
-                }
-              }
-            },
-            "description": "Not Found"
-          },
-          "422": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ValidationProblemDetails"
-                }
-              }
-            },
-            "description": "Unprocessable Entity"
-          }
-        }
-      }
-    },
-    "/v1/businesses/{business_id}/bank/yodlee/fastlink": {
-      "post": {
-        "tags": [
-          "bank_sync"
-        ],
-        "summary": "Create Fastlink",
-        "operationId": "create_fastlink_v1_businesses__business_id__bank_yodlee_fastlink_post",
-        "security": [
-          {
-            "HTTPBearer": []
-          }
-        ],
-        "parameters": [
-          {
-            "name": "business_id",
-            "in": "path",
-            "required": true,
-            "schema": {
-              "type": "string",
-              "format": "uuid",
-              "title": "Business Id"
-            }
-          }
-        ],
-        "requestBody": {
-          "required": true,
-          "content": {
-            "application/json": {
-              "schema": {
-                "$ref": "#/components/schemas/FastLinkRequest"
-              }
-            }
-          }
-        },
-        "responses": {
-          "200": {
-            "description": "Successful Response",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/FastLink"
-                }
-              }
-            }
-          },
-          "401": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ProblemDetails"
-                }
-              }
-            },
-            "description": "Unauthorized"
-          },
-          "403": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ProblemDetails"
-                }
-              }
-            },
-            "description": "Forbidden"
-          },
-          "404": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ProblemDetails"
-                }
-              }
-            },
-            "description": "Not Found"
-          },
-          "422": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ValidationProblemDetails"
-                }
-              }
-            },
-            "description": "Unprocessable Entity"
-          },
-          "502": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ProblemDetails"
-                }
-              }
-            },
-            "description": "Bad Gateway"
-          },
-          "503": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ProblemDetails"
-                }
-              }
-            },
-            "description": "Service Unavailable"
-          },
-          "409": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ProblemDetails"
-                }
-              }
-            },
-            "description": "Conflict"
           }
         }
       }
@@ -1203,16 +997,6 @@
             },
             "description": "Bad Gateway"
           },
-          "503": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ProblemDetails"
-                }
-              }
-            },
-            "description": "Service Unavailable"
-          },
           "400": {
             "content": {
               "application/json": {
@@ -1308,16 +1092,6 @@
               }
             },
             "description": "Unprocessable Entity"
-          },
-          "503": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ProblemDetails"
-                }
-              }
-            },
-            "description": "Service Unavailable"
           }
         }
       }
@@ -1425,16 +1199,6 @@
               }
             },
             "description": "Unprocessable Entity"
-          },
-          "503": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ProblemDetails"
-                }
-              }
-            },
-            "description": "Service Unavailable"
           }
         }
       }
@@ -1533,16 +1297,6 @@
               }
             },
             "description": "Unprocessable Entity"
-          },
-          "503": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ProblemDetails"
-                }
-              }
-            },
-            "description": "Service Unavailable"
           },
           "409": {
             "content": {
@@ -1651,26 +1405,6 @@
               }
             },
             "description": "Bad Gateway"
-          },
-          "503": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ProblemDetails"
-                }
-              }
-            },
-            "description": "Service Unavailable"
-          },
-          "409": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ProblemDetails"
-                }
-              }
-            },
-            "description": "Conflict"
           }
         }
       }
@@ -1769,16 +1503,6 @@
               }
             },
             "description": "Bad Gateway"
-          },
-          "503": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ProblemDetails"
-                }
-              }
-            },
-            "description": "Service Unavailable"
           },
           "409": {
             "content": {
@@ -1880,16 +1604,6 @@
               }
             },
             "description": "Bad Gateway"
-          },
-          "503": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ProblemDetails"
-                }
-              }
-            },
-            "description": "Service Unavailable"
           }
         }
       }
@@ -3907,14 +3621,6 @@
             "format": "uuid",
             "title": "Id"
           },
-          "provider": {
-            "type": "string",
-            "enum": [
-              "plaid",
-              "yodlee"
-            ],
-            "title": "Provider"
-          },
           "institution_name": {
             "type": "string",
             "title": "Institution Name"
@@ -3957,7 +3663,6 @@
         "type": "object",
         "required": [
           "id",
-          "provider",
           "institution_name",
           "created_at",
           "accounts",
@@ -3968,45 +3673,19 @@
       },
       "ConnectionCreate": {
         "properties": {
-          "provider": {
-            "type": "string",
-            "enum": [
-              "plaid",
-              "yodlee"
-            ],
-            "title": "Provider",
-            "default": "plaid"
-          },
           "public_token": {
-            "anyOf": [
-              {
-                "type": "string",
-                "minLength": 1,
-                "format": "password",
-                "writeOnly": true
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Public Token"
-          },
-          "provider_account_id": {
-            "anyOf": [
-              {
-                "type": "string",
-                "maxLength": 64,
-                "minLength": 1
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Provider Account Id"
+            "type": "string",
+            "minLength": 1,
+            "format": "password",
+            "title": "Public Token",
+            "writeOnly": true
           }
         },
         "additionalProperties": false,
         "type": "object",
+        "required": [
+          "public_token"
+        ],
         "title": "ConnectionCreate"
       },
       "ConnectionList": {
@@ -4930,65 +4609,6 @@
         ],
         "title": "ExpectedPaymentList"
       },
-      "FastLink": {
-        "properties": {
-          "fastlink_url": {
-            "type": "string",
-            "title": "Fastlink Url"
-          },
-          "access_token": {
-            "type": "string",
-            "title": "Access Token"
-          },
-          "config_name": {
-            "type": "string",
-            "title": "Config Name"
-          },
-          "expires_in": {
-            "type": "integer",
-            "title": "Expires In"
-          },
-          "provider_account_id": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Provider Account Id"
-          }
-        },
-        "type": "object",
-        "required": [
-          "fastlink_url",
-          "access_token",
-          "config_name",
-          "expires_in",
-          "provider_account_id"
-        ],
-        "title": "FastLink"
-      },
-      "FastLinkRequest": {
-        "properties": {
-          "connection_id": {
-            "anyOf": [
-              {
-                "type": "string",
-                "format": "uuid"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Connection Id"
-          }
-        },
-        "additionalProperties": false,
-        "type": "object",
-        "title": "FastLinkRequest"
-      },
       "FieldError": {
         "properties": {
           "loc": {
@@ -5742,26 +5362,6 @@
           "balance_cents"
         ],
         "title": "ProjectedLow"
-      },
-      "ProviderList": {
-        "properties": {
-          "providers": {
-            "items": {
-              "type": "string",
-              "enum": [
-                "plaid",
-                "yodlee"
-              ]
-            },
-            "type": "array",
-            "title": "Providers"
-          }
-        },
-        "type": "object",
-        "required": [
-          "providers"
-        ],
-        "title": "ProviderList"
       },
       "ReadyStatus": {
         "properties": {

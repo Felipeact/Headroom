@@ -36,8 +36,6 @@ OWNER_ONLY = {
     ("DELETE", "/members/{user_id}"),
     ("POST", "/bank/link-token"),
     ("POST", "/bank/connections"),
-    ("GET", "/bank/providers"),
-    ("POST", "/bank/yodlee/fastlink"),
     ("GET", "/bank/connections"),
     ("GET", "/bank/transactions"),
     ("PATCH", "/bank/accounts/{account_id}"),

@@ -28,19 +28,7 @@ class Settings(BaseSettings):
     # Public URL of POST /v1/webhooks/plaid, sent on every link token. Unset (local runs):
     # Plaid sends no webhooks, and banks sync on connect and from the nightly job.
     plaid_webhook_url: str | None = None
-    # Yodlee (spec 17b), the second bank provider. All optional: unless all six are set,
-    # Yodlee is off and owners connect through Plaid only.
-    yodlee_api_url: str | None = None
-    yodlee_client_id: str | None = None
-    yodlee_client_secret: str | None = None
-    yodlee_admin_login_name: str | None = None
-    yodlee_fastlink_url: str | None = None
-    yodlee_fastlink_config_name: str | None = None
-    # The sandbox cannot register users (Y820): when set, every business uses this one
-    # pre-registered test user. Local and staging only; production leaves it unset.
-    yodlee_test_login_name: str | None = None
-    # Fernet keys for Plaid access tokens and Yodlee login names, comma-separated; the first
-    # encrypts, any decrypts.
+    # Fernet keys for Plaid access tokens, comma-separated; the first encrypts, any decrypts.
     token_encryption_keys: Annotated[list[str], NoDecode]
     # The forecasting method (spec 21, AD-078); `rolling_average` is also the fallback.
     forecast_strategy: Literal["recurring_pattern", "rolling_average"] = (
@@ -78,23 +66,6 @@ class Settings(BaseSettings):
     @field_validator("resend_api_key", mode="before")
     @classmethod
     def empty_resend_key_is_unset(cls, value: object) -> object:
-        if isinstance(value, str) and not value.strip():
-            return None
-        return value
-
-    @field_validator(
-        "yodlee_api_url",
-        "yodlee_client_id",
-        "yodlee_client_secret",
-        "yodlee_admin_login_name",
-        "yodlee_fastlink_url",
-        "yodlee_fastlink_config_name",
-        "yodlee_test_login_name",
-        mode="before",
-    )
-    @classmethod
-    def empty_yodlee_setting_is_unset(cls, value: object) -> object:
-        # `YODLEE_CLIENT_SECRET=` copied from .env.example means "not set", not "".
         if isinstance(value, str) and not value.strip():
             return None
         return value

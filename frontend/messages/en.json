@@ -84,18 +84,12 @@
       "controlTitle": "You're in control",
       "controlBody": "Disconnect at any time, and Headroom removes that bank's data.",
       "provider": "Bank connections are provided by Plaid.",
-      "rbcHint": "Banking with RBC and using an authenticator app? Switch your RBC 2-step verification to text messages first, then connect.",
       "connect": "Connect your bank",
       "connecting": "Connecting your bank…",
       "errors": {
         "alreadyConnected": "This bank is already connected.",
-        "connectFailed": "We couldn't connect your bank. Try again.",
-        "launchFailed": "We couldn't open the bank window. Try again."
-      },
-      "yodleeHint": "Is your bank not working above? Connect another way.",
-      "yodleeConnect": "Connect another way",
-      "yodleeOpening": "Opening…",
-      "yodleeProvider": "This option is provided by Yodlee."
+        "connectFailed": "We couldn't connect your bank. Try again."
+      }
     },
     "Accounts": {
       "title": "Which accounts count as cash?",
@@ -224,8 +218,7 @@
         "reconnectFailed": "We couldn't reconnect {bank}. Try again.",
         "disconnectFailed": "We couldn't disconnect {bank}. Try again.",
         "alreadyConnected": "This bank is already connected.",
-        "connectFailed": "We couldn't connect your bank. Try again.",
-        "launchFailed": "We couldn't open the bank window. Try again."
+        "connectFailed": "We couldn't connect your bank. Try again."
       }
     },
     "Email": {

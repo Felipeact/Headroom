@@ -134,8 +134,8 @@ def new_connection(
         connection = repository.insert_connection(
             session,
             business_id=bid,
-            provider_item_id=f"item-{uuid.uuid4().hex}",
-            provider_institution_id=f"ins_{uuid.uuid4().hex[:8]}",
+            plaid_item_id=f"item-{uuid.uuid4().hex}",
+            plaid_institution_id=f"ins_{uuid.uuid4().hex[:8]}",
             institution_name="TD Canada Trust",
             access_token_ciphertext=encrypt_access_token(token),
         )
@@ -339,7 +339,7 @@ def test_each_sync_scoped_to_its_business(fake: NightlyFake) -> None:
 
     with get_sessionmaker()() as session:
         stored = session.scalars(select(BankTransaction)).all()
-        by_business = {(r.business_id, r.provider_transaction_id) for r in stored}
+        by_business = {(r.business_id, r.plaid_transaction_id) for r in stored}
     assert len(stored) == 2
     for c in (toronto, vancouver):
         assert any(

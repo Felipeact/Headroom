@@ -242,24 +242,6 @@ Seen once or not yet corroborated. Tracked, not trusted.
 - evidence: C11/C12 round 1, tests/test_email_template.py:11 (services/core/notifications)
 - last seen: 2026-10-10T23:00:39Z
 
-### L-039 - A column rename by sed must exclude tests of older migration revisions, which still use the old names.
-- signal: `gate_fail` · recurrence: 1 feature(s) · scope: `services/core/tests` · harmful: 0
-- features: 17a-bank-flinks-provider
-- evidence: services/core/tests/test_migrations.py (services/core/tests)
-- last seen: 2026-10-17T04:41:06Z
-
-### L-040 - After moving a function out of a module, grep the deselected sandbox tests for the old module path; ruff --fix drops the now-unused re-export.
-- signal: `gate_fail` · recurrence: 1 feature(s) · scope: `services/core/app/modules/bank_sync` · harmful: 0
-- features: 17a-bank-flinks-provider
-- evidence: services/core/tests/test_transaction_sync_sandbox.py:104 (services/core/app/modules/bank_sync)
-- last seen: 2026-10-17T04:41:07Z
-
-### L-041 - A new provider's secret field and header names (loginId, hyphenated api-key headers, AccountNumber) must be added to the log/Sentry redactor, with a Sentry capture test that includes frame locals.
-- signal: `ac_gap` · recurrence: 1 feature(s) · scope: `services/core/app/log.py` · harmful: 0
-- features: 17a-bank-flinks-provider
-- evidence: services/core/app/log.py:27 (services/core/app/log.py)
-- last seen: 2026-10-17T04:41:07Z
-
 ## Quarantined (failed when applied - ignore)
 
 A confirmed lesson that recurred alongside failure. Kept for the maintainer to review.
