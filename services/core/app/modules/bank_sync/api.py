@@ -32,7 +32,7 @@ from app.auth import Member, require_member
 from app.db import get_session
 from app.modules.accounts.service import Role
 from app.modules.bank_sync import service, webhooks
-from app.modules.bank_sync.models import AccountType, Provider, TransactionLabel
+from app.modules.bank_sync.models import AccountType, TransactionLabel
 from app.modules.bank_sync.plaid import PlaidClient, PlaidError, get_plaid_client
 from app.problems import ProblemDetails, ValidationProblemDetails
 
@@ -96,7 +96,6 @@ class Account(BaseModel):
 
 class Connection(BaseModel):
     id: uuid.UUID
-    provider: Provider
     institution_name: str
     created_at: datetime
     accounts: list[Account]
@@ -457,9 +456,9 @@ def plaid_webhook(
             and webhook.error.error_code == service.LOGIN_REQUIRED
         )
         if login_required and not service.record_login_required(
-            session, provider_item_id=webhook.item_id
+            session, plaid_item_id=webhook.item_id
         ):
-            log.info("plaid.webhook_unknown_item", provider_item_id=webhook.item_id)
+            log.info("plaid.webhook_unknown_item", plaid_item_id=webhook.item_id)
         return WebhookAck(status="ok")
     # A login repaired anywhere: the next sync proves it and clears the problem.
     if kind not in (
@@ -467,10 +466,10 @@ def plaid_webhook(
         ("ITEM", "LOGIN_REPAIRED"),
     ):
         return WebhookAck(status="ok")
-    found = service.connection_for_item(session, provider_item_id=webhook.item_id)
+    found = service.connection_for_item(session, plaid_item_id=webhook.item_id)
     if found is None:
         # Answered 200 so Plaid stops retrying: an item we do not store has nothing to sync.
-        log.info("plaid.webhook_unknown_item", provider_item_id=webhook.item_id)
+        log.info("plaid.webhook_unknown_item", plaid_item_id=webhook.item_id)
         return WebhookAck(status="ok")
     business_id, connection_id = found
     background.add_task(

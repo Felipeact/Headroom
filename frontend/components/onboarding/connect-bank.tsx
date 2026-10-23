@@ -40,9 +40,6 @@ export function ConnectBank({ businessId, linkToken }: { businessId: string; lin
         ))}
       </ul>
       <p className="text-[13px] text-ink-3">{t("Bank.provider")}</p>
-      {/* Plaid cannot finish RBC sign-ins that use an authenticator app; a text-message code
-          works (Plaid docs on unsupported MFA). */}
-      <p className="text-[13px] leading-[1.45] text-ink-3">{t("Bank.rbcHint")}</p>
       <div className="mt-auto flex flex-col gap-3">
         <div role="alert">
           {error && (

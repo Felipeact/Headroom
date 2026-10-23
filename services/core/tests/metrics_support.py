@@ -95,8 +95,8 @@ def connection(business_id: uuid.UUID, created_at: datetime) -> None:
         session.add(
             BankConnection(
                 business_id=business_id,
-                provider_item_id=f"item-{uuid.uuid4().hex}",
-                provider_institution_id=f"ins-{uuid.uuid4().hex}",
+                plaid_item_id=f"item-{uuid.uuid4().hex}",
+                plaid_institution_id=f"ins-{uuid.uuid4().hex}",
                 institution_name="Bank",
                 access_token_ciphertext="x",
                 created_at=created_at,

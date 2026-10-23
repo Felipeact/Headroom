@@ -166,7 +166,7 @@ class SyncFake(FakePlaid):
 class Connected:
     business_id: uuid.UUID
     connection_id: uuid.UUID
-    provider_item_id: str
+    plaid_item_id: str
 
 
 def make_connection(business_id: str, accounts: Sequence[PlaidAccount]) -> Connected:
@@ -177,8 +177,8 @@ def make_connection(business_id: str, accounts: Sequence[PlaidAccount]) -> Conne
         connection = repository.insert_connection(
             session,
             business_id=bid,
-            provider_item_id=item_id,
-            provider_institution_id=f"ins_{uuid.uuid4().hex[:8]}",
+            plaid_item_id=item_id,
+            plaid_institution_id=f"ins_{uuid.uuid4().hex[:8]}",
             institution_name="TD Canada Trust",
             access_token_ciphertext=encrypt_access_token(ACCESS_TOKEN),
         )
@@ -203,7 +203,7 @@ def sync(fake: SyncFake, c: Connected) -> service.SyncResult:
 def rows(business_id: uuid.UUID) -> dict[str, BankTransaction]:
     with get_sessionmaker()() as session:
         found = {
-            r.provider_transaction_id.split("@")[0]: r
+            r.plaid_transaction_id.split("@")[0]: r
             for r in session.scalars(
                 select(BankTransaction).where(
                     BankTransaction.business_id == business_id
@@ -231,7 +231,7 @@ def snapshot(business_id: uuid.UUID) -> dict[str, Any]:
                         )
                     )
                 ),
-                key=lambda v: v["provider_transaction_id"],
+                key=lambda v: v["plaid_transaction_id"],
             ),
             "accounts": sorted(
                 (
@@ -258,7 +258,7 @@ def snapshot(business_id: uuid.UUID) -> dict[str, Any]:
 def accounts_by_plaid_id(business_id: uuid.UUID) -> dict[str, BankAccount]:
     with get_sessionmaker()() as session:
         found = {
-            a.provider_account_id: a
+            a.plaid_account_id: a
             for a in session.scalars(
                 select(BankAccount).where(BankAccount.business_id == business_id)
             )
@@ -569,7 +569,7 @@ def test_added_twice_one_row(fake: SyncFake, setup: Setup) -> None:
     with get_sessionmaker()() as session:
         found = session.scalars(
             select(BankTransaction).where(
-                BankTransaction.provider_transaction_id == tid("t1")
+                BankTransaction.plaid_transaction_id == tid("t1")
             )
         ).all()
     assert len(found) == 1
@@ -905,7 +905,7 @@ def test_no_secrets_logged(
     capsys.readouterr()
 
     sync(fake, c)
-    content = webhook_signing.body(c.provider_item_id)
+    content = webhook_signing.body(c.plaid_item_id)
     headers = webhook_signing.headers(content)
     response = TestClient(app).post(
         "/v1/webhooks/plaid", content=content, headers=headers

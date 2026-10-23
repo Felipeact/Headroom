@@ -235,17 +235,17 @@ def test_no_plaid_ids() -> None:
     with get_sessionmaker()() as session:
         values = [
             *session.scalars(
-                select(BankTransaction.provider_transaction_id).where(
+                select(BankTransaction.plaid_transaction_id).where(
                     BankTransaction.business_id == c.business_id
                 )
             ),
             *session.scalars(
-                select(BankAccount.provider_account_id).where(
+                select(BankAccount.plaid_account_id).where(
                     BankAccount.business_id == c.business_id
                 )
             ),
             *session.scalars(
-                select(BankConnection.provider_item_id).where(
+                select(BankConnection.plaid_item_id).where(
                     BankConnection.business_id == c.business_id
                 )
             ),
@@ -254,5 +254,5 @@ def test_no_plaid_ids() -> None:
     text = get(caller, business_id).text
     for value in values:
         assert value not in text
-    for key in ("provider_transaction_id", "provider_account_id", "provider_item_id"):
+    for key in ("plaid_transaction_id", "plaid_account_id", "plaid_item_id"):
         assert key not in text

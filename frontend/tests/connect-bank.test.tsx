@@ -66,8 +66,6 @@ describe('connect bank view', () => {
       BANK.controlTitle,
       BANK.controlBody,
       BANK.provider,
-      // Plaid cannot finish RBC sign-ins that use an authenticator app (spec 17a).
-      BANK.rbcHint,
     ]
     const nodes = [heading, ...texts.map((text) => screen.getByText(text))]
     for (let i = 1; i < nodes.length; i++) expect(follows(nodes[i - 1], nodes[i])).toBe(true)

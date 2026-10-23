@@ -3621,11 +3621,6 @@
             "format": "uuid",
             "title": "Id"
           },
-          "provider": {
-            "type": "string",
-            "const": "plaid",
-            "title": "Provider"
-          },
           "institution_name": {
             "type": "string",
             "title": "Institution Name"
@@ -3668,7 +3663,6 @@
         "type": "object",
         "required": [
           "id",
-          "provider",
           "institution_name",
           "created_at",
           "accounts",

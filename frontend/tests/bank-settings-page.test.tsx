@@ -91,8 +91,6 @@ const CARD = account('Business Visa', {
 function bank(name: string, overrides: Partial<Connection> = {}): Connection {
   return {
     id: `c-${name}`,
-    provider: 'plaid',
-
     institution_name: name,
     created_at: '2026-10-04T15:00:00Z',
     accounts: [CHECKING],

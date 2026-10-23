@@ -89,7 +89,7 @@ def stored_count(c: Connected) -> int:
 
 
 def test_bad_header_rejected(fake: SyncFake, connected: Connected) -> None:
-    content = signing.body(connected.provider_item_id)
+    content = signing.body(connected.plaid_item_id)
     claims = {"iat": int(time.time()), "request_body_sha256": "x"}
     for header in (
         None,
@@ -104,7 +104,7 @@ def test_bad_header_rejected(fake: SyncFake, connected: Connected) -> None:
 
 
 def test_wrong_key_rejected(fake: SyncFake, connected: Connected) -> None:
-    content = signing.body(connected.provider_item_id)
+    content = signing.body(connected.plaid_item_id)
 
     response = post(content, signing.headers(content, key=signing.OTHER_KEY))
 
@@ -112,7 +112,7 @@ def test_wrong_key_rejected(fake: SyncFake, connected: Connected) -> None:
 
 
 def test_stale_iat(fake: SyncFake, connected: Connected) -> None:
-    content = signing.body(connected.provider_item_id)
+    content = signing.body(connected.plaid_item_id)
     now = int(time.time())
 
     assert_invalid(post(content, signing.headers(content, iat=now - 301)), fake)
@@ -121,7 +121,7 @@ def test_stale_iat(fake: SyncFake, connected: Connected) -> None:
 
 
 def test_body_hash_mismatch(fake: SyncFake, connected: Connected) -> None:
-    content = signing.body(connected.provider_item_id)
+    content = signing.body(connected.plaid_item_id)
     headers = signing.headers(content)
     tampered = content.replace(b"SYNC_UPDATES_AVAILABLE", b"SYNC_UPDATES_AVAILABLF")
 
@@ -129,7 +129,7 @@ def test_body_hash_mismatch(fake: SyncFake, connected: Connected) -> None:
 
 
 def test_expired_key(fake: SyncFake, connected: Connected) -> None:
-    content = signing.body(connected.provider_item_id)
+    content = signing.body(connected.plaid_item_id)
     fake.keys = {signing.KID: signing.jwk(expired_at=int(time.time()) - 1)}
 
     assert_invalid(post(content, signing.headers(content)), fake)
@@ -140,7 +140,7 @@ def test_expired_key(fake: SyncFake, connected: Connected) -> None:
 
 
 def test_key_fetch_fails(fake: SyncFake, connected: Connected) -> None:
-    content = signing.body(connected.provider_item_id)
+    content = signing.body(connected.plaid_item_id)
     fake.fail = {
         "key": PlaidError(error_type="API_ERROR", error_code="X", request_id="r")
     }
@@ -153,7 +153,7 @@ def test_key_fetch_fails(fake: SyncFake, connected: Connected) -> None:
 
 
 def test_key_cached(fake: SyncFake, connected: Connected) -> None:
-    content = signing.body(connected.provider_item_id)
+    content = signing.body(connected.plaid_item_id)
 
     assert post(content, signing.headers(content)).status_code == 200
     assert post(content, signing.headers(content)).status_code == 200
@@ -167,7 +167,7 @@ def test_sync_updates_available_syncs(
     chq = checking()
     c = make_connection(owner[1], [chq])
     fake.script = [page([chq], added=[tx("w1", chq), tx("w2", chq)], cursor="cw")]
-    content = signing.body(c.provider_item_id)
+    content = signing.body(c.plaid_item_id)
 
     response = post(content, signing.headers(content))
 
@@ -184,7 +184,7 @@ def test_sync_updates_available_syncs(
 
 
 def test_other_webhooks_ignored(fake: SyncFake, connected: Connected) -> None:
-    item = connected.provider_item_id
+    item = connected.plaid_item_id
     bodies = [
         signing.body(item, code="DEFAULT_UPDATE"),
         json.dumps(
@@ -254,7 +254,7 @@ def test_background_sync_failure_logged(
             error_type="ITEM_ERROR", error_code="ITEM_LOGIN_REQUIRED", request_id="r-7"
         )
     ]
-    content = signing.body(connected.provider_item_id)
+    content = signing.body(connected.plaid_item_id)
     configure_logging()
     capsys.readouterr()
 

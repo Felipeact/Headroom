@@ -24,7 +24,6 @@ from app.modules.bank_sync.models import (
     BankAccount,
     BankConnection,
     BankTransaction,
-    Provider,
 )
 from app.modules.bank_sync.plaid import (
     ExchangedItem,
@@ -40,7 +39,7 @@ from app.modules.bank_sync.tokens import decrypt_access_token, encrypt_access_to
 from app.modules.forecasting.events import FORECAST_INPUTS_CHANGED
 from app.settings import get_settings
 
-INSTITUTION_INDEX = "uq_bank_connections_business_provider_institution"
+INSTITUTION_INDEX = "uq_bank_connections_business_id_plaid_institution_id"
 PRIMARY_INDEX = "uq_bank_accounts_primary_business_id"
 # 24 months of history, Plaid's maximum.
 DAYS_REQUESTED = 730
@@ -136,7 +135,6 @@ class SyncResult:
 @dataclass(frozen=True)
 class ConnectionView:
     id: uuid.UUID
-    provider: Provider
     institution_name: str
     created_at: datetime
     accounts: list[AccountView]
@@ -208,7 +206,6 @@ def _connection_view(
 ) -> ConnectionView:
     return ConnectionView(
         id=connection.id,
-        provider="plaid",
         institution_name=connection.institution_name,
         created_at=connection.created_at,
         accounts=sorted((_view(a) for a in accounts), key=lambda a: (a.name, a.id)),
@@ -279,7 +276,7 @@ def _account(
     return BankAccount(
         business_id=business_id,
         connection_id=connection_id,
-        provider_account_id=account.account_id,
+        plaid_account_id=account.account_id,
         name=account.name,
         type=type_,
         mask=account.mask,
@@ -330,7 +327,7 @@ def _remove_new_item(
         log.error(
             "bank_connection.orphaned",
             business_id=str(business_id),
-            provider_item_id=item.item_id,
+            plaid_item_id=item.item_id,
         )
 
 
@@ -354,10 +351,7 @@ def connect_bank(
         accounts = plaid.get_accounts(item.access_token)
         institution_id = accounts.institution_id
         if repository.has_institution(
-            session,
-            business_id=business_id,
-            provider="plaid",
-            institution_id=institution_id,
+            session, business_id=business_id, institution_id=institution_id
         ):
             raise DuplicateBankError
         institution_name = plaid.get_institution_name(institution_id)
@@ -365,8 +359,8 @@ def connect_bank(
             connection = repository.insert_connection(
                 session,
                 business_id=business_id,
-                provider_item_id=item.item_id,
-                provider_institution_id=institution_id,
+                plaid_item_id=item.item_id,
+                plaid_institution_id=institution_id,
                 institution_name=institution_name,
                 access_token_ciphertext=encrypt_access_token(item.access_token),
             )
@@ -638,7 +632,7 @@ def _apply(
 ) -> SyncResult:
     business_id = connection.business_id
     accounts = {
-        a.provider_account_id: a
+        a.plaid_account_id: a
         for a in repository.connection_accounts(
             session, business_id=business_id, connection_id=connection.id
         )
@@ -660,10 +654,10 @@ def _apply(
     added = modified = removed = 0
     for page in pages:
         changes = [*page.added, *page.modified]
-        existing = repository.transactions_by_provider_id(
+        existing = repository.transactions_by_plaid_id(
             session,
             business_id=business_id,
-            provider_transaction_ids=[t.transaction_id for t in changes],
+            plaid_transaction_ids=[t.transaction_id for t in changes],
         )
         replaced: list[str] = []
         for transaction in changes:
@@ -674,7 +668,7 @@ def _apply(
             stored = existing.get(transaction.transaction_id)
             if stored is None:
                 stored = BankTransaction(
-                    provider_transaction_id=transaction.transaction_id, **values
+                    plaid_transaction_id=transaction.transaction_id, **values
                 )
                 repository.insert_transaction(
                     session, business_id=business_id, transaction=stored
@@ -694,7 +688,7 @@ def _apply(
         removed += repository.delete_transactions(
             session,
             business_id=business_id,
-            provider_transaction_ids=[*page.removed, *replaced],
+            plaid_transaction_ids=[*page.removed, *replaced],
         )
 
     balances_changed = bool(new_accounts)
@@ -898,12 +892,10 @@ def sync_in_background(
 
 
 def connection_for_item(
-    session: Session, *, provider_item_id: str
+    session: Session, *, plaid_item_id: str
 ) -> tuple[uuid.UUID, uuid.UUID] | None:
     """The `(business_id, connection_id)` of a Plaid item; None when it is not stored."""
-    connection = repository.connection_for_item(
-        session, provider_item_id=provider_item_id
-    )
+    connection = repository.connection_for_item(session, plaid_item_id=plaid_item_id)
     return None if connection is None else (connection.business_id, connection.id)
 
 
@@ -1077,12 +1069,12 @@ def _record_login_required(
     return True
 
 
-def record_login_required(session: Session, *, provider_item_id: str) -> bool:
+def record_login_required(session: Session, *, plaid_item_id: str) -> bool:
     """Mark a Plaid item's connection as needing a new bank login (`ITEM` / `ERROR`).
 
     Returns False when no stored connection has this item. Commits the session.
     """
-    found = connection_for_item(session, provider_item_id=provider_item_id)
+    found = connection_for_item(session, plaid_item_id=plaid_item_id)
     if found is None:
         return False
     business_id, connection_id = found
@@ -1161,7 +1153,7 @@ def disconnect_bank(
         except PlaidError as exc:
             if exc.error_code != ITEM_NOT_FOUND:
                 raise
-        institution_id = connection.provider_institution_id
+        institution_id = connection.plaid_institution_id
         accounts = repository.lock_accounts(session, business_id=business_id)
         removed_accounts = [a for a in accounts if a.connection_id == connection_id]
         remaining = [a for a in accounts if a.connection_id != connection_id]

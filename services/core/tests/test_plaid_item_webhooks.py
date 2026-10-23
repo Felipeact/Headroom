@@ -92,7 +92,7 @@ def test_item_error_login_required(fake: SyncFake, owner: tuple[Caller, str]) ->
 
     response = post(
         item_body(
-            target.provider_item_id, "ERROR", error=plaid_error("ITEM_LOGIN_REQUIRED")
+            target.plaid_item_id, "ERROR", error=plaid_error("ITEM_LOGIN_REQUIRED")
         )
     )
 
@@ -114,11 +114,11 @@ def test_item_webhooks_ignored(
     before = columns(c)
     content = {
         "other_error_code": item_body(
-            c.provider_item_id, "ERROR", error=plaid_error("INSTITUTION_DOWN")
+            c.plaid_item_id, "ERROR", error=plaid_error("INSTITUTION_DOWN")
         ),
-        "null_error": item_body(c.provider_item_id, "ERROR", error=None),
+        "null_error": item_body(c.plaid_item_id, "ERROR", error=None),
         "pending_disconnect": item_body(
-            c.provider_item_id, "PENDING_DISCONNECT", reason="INSTITUTION_MIGRATION"
+            c.plaid_item_id, "PENDING_DISCONNECT", reason="INSTITUTION_MIGRATION"
         ),
         "unknown_item": item_body(
             f"item-{uuid.uuid4().hex}",
@@ -140,7 +140,7 @@ def test_login_repaired_syncs(fake: SyncFake, owner: tuple[Caller, str]) -> None
     c = make_connection(owner[1], [checking()])
     set_login_required(c, True)
 
-    response = post(item_body(c.provider_item_id, "LOGIN_REPAIRED"))
+    response = post(item_body(c.plaid_item_id, "LOGIN_REPAIRED"))
 
     assert response.status_code == 200
     assert response.json() == {"status": "ok"}

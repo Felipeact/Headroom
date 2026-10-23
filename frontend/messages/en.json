@@ -84,7 +84,6 @@
       "controlTitle": "You're in control",
       "controlBody": "Disconnect at any time, and Headroom removes that bank's data.",
       "provider": "Bank connections are provided by Plaid.",
-      "rbcHint": "Banking with RBC and using an authenticator app? Switch your RBC 2-step verification to text messages first, then connect.",
       "connect": "Connect your bank",
       "connecting": "Connecting your bank…",
       "errors": {

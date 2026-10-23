@@ -74,8 +74,8 @@ def new_bank(business_id: uuid.UUID, accounts: Sequence[PlaidAccount]) -> Bank:
         connection = repository.insert_connection(
             session,
             business_id=business_id,
-            provider_item_id=f"item-{uuid.uuid4().hex}",
-            provider_institution_id=f"ins_{uuid.uuid4().hex[:8]}",
+            plaid_item_id=f"item-{uuid.uuid4().hex}",
+            plaid_institution_id=f"ins_{uuid.uuid4().hex[:8]}",
             institution_name="TD Canada Trust",
             access_token_ciphertext=encrypt_access_token(token),
         )

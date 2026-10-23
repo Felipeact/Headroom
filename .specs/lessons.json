@@ -3,7 +3,7 @@
   "promote_threshold": 2,
   "window_days": 45,
   "quarantine_threshold": 2,
-  "next_id": 42,
+  "next_id": 39,
   "lessons": [
     {
       "id": "L-001",
@@ -688,60 +688,6 @@
       ],
       "created": "2026-10-10T23:00:39Z",
       "last_seen": "2026-10-10T23:00:39Z"
-    },
-    {
-      "id": "L-039",
-      "key": "gate_fail::a column rename by sed must exclude tests of older migration revisions which still use the old names",
-      "text": "A column rename by sed must exclude tests of older migration revisions, which still use the old names.",
-      "signal": "gate_fail",
-      "scope": "services/core/tests",
-      "status": "candidate",
-      "features": [
-        "17a-bank-flinks-provider"
-      ],
-      "recurrence": 1,
-      "harmful": 0,
-      "evidence": [
-        "services/core/tests/test_migrations.py (services/core/tests)"
-      ],
-      "created": "2026-10-17T04:41:06Z",
-      "last_seen": "2026-10-17T04:41:06Z"
-    },
-    {
-      "id": "L-040",
-      "key": "gate_fail::after moving a function out of a module grep the deselected sandbox tests for the old module path ruff fix drops the now unused re export",
-      "text": "After moving a function out of a module, grep the deselected sandbox tests for the old module path; ruff --fix drops the now-unused re-export.",
-      "signal": "gate_fail",
-      "scope": "services/core/app/modules/bank_sync",
-      "status": "candidate",
-      "features": [
-        "17a-bank-flinks-provider"
-      ],
-      "recurrence": 1,
-      "harmful": 0,
-      "evidence": [
-        "services/core/tests/test_transaction_sync_sandbox.py:104 (services/core/app/modules/bank_sync)"
-      ],
-      "created": "2026-10-17T04:41:07Z",
-      "last_seen": "2026-10-17T04:41:07Z"
-    },
-    {
-      "id": "L-041",
-      "key": "ac_gap::a new provider s secret field and header names loginid hyphenated api key headers accountnumber must be added to the log sentry redactor with a sentry capture test that includes frame locals",
-      "text": "A new provider's secret field and header names (loginId, hyphenated api-key headers, AccountNumber) must be added to the log/Sentry redactor, with a Sentry capture test that includes frame locals.",
-      "signal": "ac_gap",
-      "scope": "services/core/app/log.py",
-      "status": "candidate",
-      "features": [
-        "17a-bank-flinks-provider"
-      ],
-      "recurrence": 1,
-      "harmful": 0,
-      "evidence": [
-        "services/core/app/log.py:27 (services/core/app/log.py)"
-      ],
-      "created": "2026-10-17T04:41:07Z",
-      "last_seen": "2026-10-17T04:41:07Z"
     }
   ]
 }

@@ -766,11 +766,6 @@ export interface components {
              * Format: uuid
              */
             id: string;
-            /**
-             * Provider
-             * @constant
-             */
-            provider: "plaid";
             /** Institution Name */
             institution_name: string;
             /**

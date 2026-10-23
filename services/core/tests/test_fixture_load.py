@@ -460,23 +460,21 @@ def test_fixture_plaid_identifiers(shared: tuple[Loaded, list[events.Event]]) ->
         )
         account_ids = list(
             session.scalars(
-                select(BankAccount.provider_account_id).where(
+                select(BankAccount.plaid_account_id).where(
                     BankAccount.business_id == business_id
                 )
             )
         )
         transaction_ids = list(
             session.scalars(
-                select(BankTransaction.provider_transaction_id).where(
+                select(BankTransaction.plaid_transaction_id).where(
                     BankTransaction.business_id == business_id
                 )
             )
         )
     assert len(connections) == 2 and len(account_ids) == 4
     assert len(transaction_ids) == len(SAMPLE.history)
-    for value in (
-        [c.provider_item_id for c in connections] + account_ids + transaction_ids
-    ):
+    for value in [c.plaid_item_id for c in connections] + account_ids + transaction_ids:
         assert value.startswith("sample-"), value
     for c in connections:
         assert decrypt_access_token(c.access_token_ciphertext) == "sample-not-a-token"
